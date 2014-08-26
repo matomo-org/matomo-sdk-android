@@ -1,0 +1,110 @@
+package org.piwik.sdk;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.app.Application;
+import android.os.Build;
+import android.os.Bundle;
+
+import java.net.MalformedURLException;
+import java.util.HashMap;
+
+
+public class Piwik {
+    private static HashMap<Application, Piwik> applications = new HashMap<Application, Piwik>();
+
+    private Application application;
+
+    private boolean optOut = false;
+
+    private boolean dryRun = false;
+
+    private Piwik(Application application){
+        this.application = application;
+    }
+
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+    public void autoBindActivities(final Tracker tracker){
+        this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity) {
+                tracker.activityStart(activity);
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity) {
+
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity) {
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity) {
+                tracker.activityStop(activity);
+            }
+        });
+    }
+
+    synchronized public static Piwik getInstance(Application application) {
+        Piwik piwik = applications.get(application);
+        if(piwik != null){
+            return piwik;
+        }
+        piwik = new Piwik(application);
+        applications.put(application, piwik);
+        return piwik;
+    }
+
+    public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException{
+        return new Tracker(trackerUrl, siteId, authToken, this);
+    }
+
+    public Tracker newTracker(String trackerUrl, int siteId) throws MalformedURLException{
+        return new Tracker(trackerUrl, siteId, null, this);
+    }
+
+    public void setOptOut(boolean optOut) {
+        this.optOut = optOut;
+    }
+
+    public boolean isOptOut() {
+        return optOut;
+    }
+
+    public boolean isDryRun() {
+        return dryRun;
+    }
+
+    /**
+     * The dryRun flag set to true prevents any data from being sent to Piwik.
+     * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
+     * test data to appear in your Piwik reports. To set the dry run flag, use:
+     *
+     *      Piwik.getInstance(this).setDryRun(true);
+     */
+    public void setDryRun(boolean dryRun) {
+        this.dryRun = dryRun;
+    }
+
+    public String getApplicationName(){
+        return application.getPackageName();
+    }
+
+}
