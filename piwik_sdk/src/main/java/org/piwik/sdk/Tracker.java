@@ -3,11 +3,13 @@ package org.piwik.sdk;
 import android.app.Activity;
 import android.text.TextUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -387,34 +389,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     private String getQuery() {
-        return urlEncodeUTF8(queryParams);
-    }
-
-    static String urlEncodeUTF8(String s) {
-        try {
-            return URLEncoder.encode(s, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-
-    /**
-     * For bulk tracking purposes
-     * @param map query map
-     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
-     */
-    static String urlEncodeUTF8(Map<String,String> map) {
-        StringBuilder sb = new StringBuilder(100);
-        sb.append("?");
-        for (Map.Entry<String,String> entry : map.entrySet()) {
-            sb.append(urlEncodeUTF8(entry.getKey()));
-            sb.append("=");
-            sb.append(urlEncodeUTF8(entry.getValue()));
-            sb.append("&");
-        }
-
-        return sb.toString();
+        return TrackerBulkURLProcessor.urlEncodeUTF8(queryParams);
     }
 
     protected String getParamUlr() {

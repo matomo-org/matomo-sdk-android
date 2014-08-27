@@ -14,9 +14,12 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -90,5 +93,32 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
             return 0;
         }
 
+    }
+
+    public static String urlEncodeUTF8(String s) {
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    /**
+     * For bulk tracking purposes
+     * @param map query map
+     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
+     */
+    public static String urlEncodeUTF8(Map<String,String> map) {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("?");
+        for (Map.Entry<String,String> entry : map.entrySet()) {
+            sb.append(urlEncodeUTF8(entry.getKey()));
+            sb.append("=");
+            sb.append(urlEncodeUTF8(entry.getValue()));
+            sb.append("&");
+        }
+
+        return sb.toString();
     }
 }
