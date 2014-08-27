@@ -38,16 +38,17 @@ public class Piwik {
 
             @Override
             public void onActivityResumed(Activity activity) {
-
+                tracker.activityResumed(activity);
             }
 
             @Override
             public void onActivityPaused(Activity activity) {
-
+                tracker.activityPaused(activity);
             }
 
             @Override
             public void onActivityStopped(Activity activity) {
+                tracker.activityStop(activity);
             }
 
             @Override
@@ -57,7 +58,7 @@ public class Piwik {
 
             @Override
             public void onActivityDestroyed(Activity activity) {
-                tracker.activityStop(activity);
+
             }
         });
     }
@@ -103,7 +104,7 @@ public class Piwik {
         this.dryRun = dryRun;
     }
 
-    public String getApplicationName(){
+    public String getApplicationDomain(){
         return application.getPackageName();
     }
 

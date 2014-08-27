@@ -1,19 +1,18 @@
 package org.piwik.sdk;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.Fragment;
-import android.os.Build;
+import android.text.TextUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.UUID;
+import java.net.URLEncoder;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-public class Tracker {
+public class Tracker implements Dispatchable<Integer> {
 
     // Piwik default parameter values
     private static final String defaultTrueValue = "1";
@@ -23,9 +22,6 @@ public class Tracker {
     // Default dispatcher values
     private static final int piwikDefaultSessionTimeout = 30 * 60;
     private static final int piwikDefaultDispatchTimer = 120;
-    private static final int piwikDefaultMaxNumberOfStoredEvents = 500;
-    private static final int piwikDefaultSampleRate = 100;
-    private static final int piwikDefaultNumberOfEventsPerRequest = 20;
     private static final int piwikHTTPRequestTimeout = 5;
     private static final int piwikQueryDefaultCapacity = 12;
 
@@ -33,24 +29,29 @@ public class Tracker {
     // @todo: doc
     private Piwik piwik;
     private boolean isDispatching = false;
-    private int dispatchInterval = 120;
+    private int dispatchInterval = piwikDefaultDispatchTimer;
+
     private int siteId;
     private URL apiUrl;
     private String userId;
     private String authToken;
+    private String defaultScreenResolution;
     private long sessionTimeoutMillis;
     private long sessionStartedMillis;
+
+    private ArrayList<String> queue = new ArrayList<String>();
     private HashMap<String, String> queryParams;
     private HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
-    private static final Logger LOGGER = Logger.getLogger(TrackerURLBuilder.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Piwik.class.getName());
+
 
     private Tracker(String url, int siteId) throws MalformedURLException {
-        this.setAPIUrl(url);
+        setAPIUrl(url);
+        setNewSession();
+        setSessionTimeout(piwikDefaultSessionTimeout);
+        clearQueryParams();
+        setUserId(getRandomVisitorId());
         this.siteId = siteId;
-        this.setNewSession();
-        this.setSessionTimeout(piwikDefaultSessionTimeout);
-        this.clearQueryParams();
-        this.setUserId(UUID.randomUUID().toString().substring(0, 32));
     }
 
     public Tracker(String url, int siteId, String authToken, Piwik piwik) throws MalformedURLException {
@@ -59,16 +60,47 @@ public class Tracker {
         this.piwik = piwik;
     }
 
+    /**
+     * Processes all queued events in background thread
+     *
+     * @return true if there are any queued events and opt out is inactive
+     */
     public boolean dispatch() {
-        if (this.isDispatching) {
-            return false;
-        } else {
-            this.isDispatching = true;
-            //commitEvents();
+        if (!piwik.isOptOut() && queue.size() > 0){
+
+            ArrayList<String> events = new ArrayList<String>(queue);
+            queue.clear();
+
+            TrackerBulkURLProcessor worker = new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout);
+            worker.processBulkURLs(apiUrl, events, authToken);
+
             return true;
         }
+        return false;
     }
 
+    @Override
+    synchronized public void dispatchingCompleted(Integer count){
+        isDispatching = false;
+        LOGGER.log(Level.ALL, String.format("dispatched %s url(s)", count));
+    }
+
+    @Override
+    synchronized public void startDispatching() {
+        isDispatching = true;
+    }
+
+    @Override
+    synchronized public boolean isDispatching() {
+        return isDispatching;
+    }
+
+    /**
+     * Public setter
+     * @param key name
+     * @param value value
+     * @return if value is not null
+     */
     public boolean set(String key, String value) {
         if (value != null) {
             queryParams.put(key, value);
@@ -85,87 +117,97 @@ public class Tracker {
         return false;
     }
 
-    public void setUserId(String userId){
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
     public void setDispatchInterval(int dispatchInterval) {
         this.dispatchInterval = dispatchInterval;
-        //@todo: stop dispatching loop when dispatchInterval < 1
+        // TODO stop dispatching loop when dispatchInterval < 1
     }
 
     /**
      * Sets the screen resolution of the browser which sends the request.
      *
-     * @param width the screen width as an int value
+     * @param width  the screen width as an int value
      * @param height the screen height as an int value
      */
     public void setResolution(final int width, final int height) {
         set(QueryParams.SCREEN_RESOLOUTION, String.format("%sx%s", width, height));
     }
 
-    private CustomVariables getCustomVariables(String namespace){
-        CustomVariables vars = customVariables.get(namespace);
-        if (vars == null){
-            vars = new CustomVariables();
-            customVariables.put(namespace, vars);
+    /**
+     * todo return real screen size if QueryParams.SCREEN_RESOLOUTION is empty
+     * http://stackoverflow.com/a/25215912
+     * @return formatted string  WxH
+     */
+    public String getResolution(){
+        if(queryParams.containsKey(QueryParams.SCREEN_RESOLOUTION)){
+            return queryParams.get(QueryParams.SCREEN_RESOLOUTION);
         }
-        return vars;
+        return defaultScreenResolution;
     }
 
-    private void setCustomVariable(String namespace, int index, String name, String value){
-        getCustomVariables(namespace).put(index, name, value);
-    }
-
-    public void setUserCustomVariable(int index, String name, String value){
+    public void setUserCustomVariable(int index, String name, String value) {
         this.setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
-    public void setScreenCustomVariable(int index, String name, String value){
+    public void setScreenCustomVariable(int index, String name, String value) {
         this.setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
-
-    public void setScreenTitle(String title){
+    public void setScreenTitle(String title) {
         set(QueryParams.ACTION_NAME, title);
     }
 
     /**
-     * @todo remove?
-     * @param fragment Current Fragment instance
+     * todo return well formatted user agent with android version and local
+     * @return
      */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public void fragmentStart(Fragment fragment){
-        int id = fragment.getId();
+    public String getUserAgent(){
+        return "Android";
     }
+
+
 
     /**
      * Set action_name param from activity's title and track view
+     *
      * @param activity Current Activity instance
      */
-    public void activityStart(Activity activity){
-        setScreenTitle(activity.getTitle().toString());
-        trackScreenView("");
+    public void activityStart(Activity activity) {
+        String breadcrumbs = getBreadcrumbs(activity);
+        trackScreenView(breadcrumbsToPath(breadcrumbs), breadcrumbs);
     }
 
     /**
      * Force dispatching events if main activity is about to stop
+     *
      * @param activity Current Activity instance
      */
     public void activityStop(Activity activity) {
-        if(activity.isTaskRoot()){
+        if (activity.isTaskRoot()) {
             this.dispatch();
         }
     }
 
     /**
+     * @todo pause handler when activity is paused
+     * @param activity
+     */
+    public void activityPaused(Activity activity) {
+
+    }
+
+    public void activityResumed(Activity activity) {
+    }
+
+    /**
      * Session handling
-     * Custom variables of scope "user" are cleared when new session is stared.
      */
     public void setNewSession() {
         this.touchSession();
         this.set(QueryParams.SESSION_START, defaultTrueValue);
-        this.getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).clear();
     }
 
     private void touchSession() {
@@ -176,35 +218,19 @@ public class Tracker {
         sessionTimeoutMillis = seconds * 1000;
     }
 
-
     private void checkSessionTimeout() {
         if (System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis) {
             setNewSession();
         }
     }
 
-    private void clearQueryParams() {
-        if (queryParams != null) {
-            queryParams.clear();
-        }
-        queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
-
-    }
-
-    protected String getParamUlr() {
-        String action = this.queryParams.get(QueryParams.ACTION_NAME);
-        String url = this.queryParams.get(QueryParams.URL);
-
-        url = (url != null) ? url : "";
-        if ("".equals(url)) {
-            url = (action != null) ? action : "";
-        }
-
-        return "http://" + this.piwik.getApplicationName() + "/" + url;
-    }
-
-    public void trackScreenView(String url) {
-        set(QueryParams.URL, url);
+    /**
+     * Tracking methods
+     *
+     * @param path required query param
+     */
+    public void trackScreenView(String path) {
+        set(QueryParams.URL_PATH, path);
         doTrack();
     }
 
@@ -216,48 +242,52 @@ public class Tracker {
     /**
      * Events are a useful way to collect data about a user's interaction with interactive components of your app,
      * like button presses or the use of a particular item in a game.
+     *
      * @param category (required) – this String defines the event category.
      *                 You might define event categories based on the class of user actions,
      *                 like clicks or gestures or voice commands, or you might define them based upon the
      *                 features available in your application (play, pause, fast forward, etc.).
-     * @param action (required) this String defines the specific event action within the category specified.
-     *               In the example, we are basically saying that the category of the event is user clicks,
-     *               and the action is a button click.
-     * @param label defines a label associated with the event. For example, if you have multiple Button controls on a
-     *              screen, you might use the label to specify the specific View control identifier that was clicked.
-     * @param value defines a numeric value associated with the event. For example, if you were tracking "Buy"
-     *              button clicks, you might log the number of items being purchased, or their total cost.
-     *
+     * @param action   (required) this String defines the specific event action within the category specified.
+     *                 In the example, we are basically saying that the category of the event is user clicks,
+     *                 and the action is a button click.
+     * @param label    defines a label associated with the event. For example, if you have multiple Button controls on a
+     *                 screen, you might use the label to specify the specific View control identifier that was clicked.
+     * @param value    defines a numeric value associated with the event. For example, if you were tracking "Buy"
+     *                 button clicks, you might log the number of items being purchased, or their total cost.
      */
-    public void trackEvent(String category, String action, String label, Integer value){
-        if(set(QueryParams.EVENT_CATEGORY, category) && set(QueryParams.EVENT_ACTION, action)){
+    public void trackEvent(String category, String action, String label, Integer value) {
+        if (set(QueryParams.EVENT_CATEGORY, category) && set(QueryParams.EVENT_ACTION, action)) {
             set(QueryParams.EVENT_NAME, label);
             set(QueryParams.EVENT_VALUE, value);
             doTrack();
         }
     }
 
-    public void trackEvent(String category, String action, String label){
+    public void trackEvent(String category, String action, String label) {
         trackEvent(category, action, label, null);
     }
 
-    public void trackEvent(String category, String action){
+    public void trackEvent(String category, String action) {
         trackEvent(category, action, null, null);
     }
 
-    public void trackGoal(Integer idGoal){
+    public void trackGoal(Integer idGoal) {
         set(QueryParams.GOAL_ID, idGoal);
         doTrack();
     }
 
     /**
-     * Set up default values
+     * Set up requierd values
      */
-    protected void beforeTracking(){
+    protected void beforeTracking() {
+        // obligatory params
         this.set(QueryParams.API_VERSION, defaultAPIVersionValue);
         this.set(QueryParams.SITE_ID, siteId);
         this.set(QueryParams.RECORD, defaultRecordValue);
-        this.set(QueryParams.URL, this.getParamUlr());
+        this.set(QueryParams.RANDOM_NUMBER, new Random().nextInt(100000));
+        this.set(QueryParams.SCREEN_RESOLOUTION, this.getResolution());
+        this.set(QueryParams.URL_PATH, this.getParamUlr());
+        this.set(QueryParams.USER_AGENT, this.getUserAgent());
         this.set(QueryParams.VISITOR_ID, this.userId);
         this.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
         this.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
@@ -266,34 +296,135 @@ public class Tracker {
     }
 
     /**
-     * Clean up all screen view related params
+     * Builds URL, adds event to queue, clean all params after url was added
      */
-    protected void afterTracking(){
-        this.clearQueryParams();
-        this.getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).clear();
-    }
+    protected void doTrack() {
+        beforeTracking();
 
-    protected void doTrack(){
-        this.beforeTracking();
-        this.queueEvent();
-        this.afterTracking();
-    }
-
-    protected void queueEvent() {
-        TrackerURLBuilder urlBuilder = new TrackerURLBuilder(siteId, apiUrl.toString());
-        URL url = urlBuilder.getPageTrackURL("/");
-
+        String event = getQuery();
         if (piwik.isOptOut()) {
-            LOGGER.log(Level.INFO, "isOptOut");
+            LOGGER.log(Level.ALL, String.format("URL omitted due to opt out: %s", event));
         } else if (piwik.isDryRun()) {
-            LOGGER.log(Level.INFO, "dryRun");
+            LOGGER.log(Level.INFO, String.format("dry run URL: %s", event));
         } else {
-            //queue.add(url);
+            LOGGER.log(Level.ALL, String.format("URL added to the queue: %s", event));
+            queue.add(event);
+        }
+
+        afterTracking();
+    }
+
+    /**
+     * Clean up params
+     */
+    protected void afterTracking() {
+        this.clearQueryParams();
+        this.clearAllCustomVariables();
+    }
+
+    /**
+     *
+     * HELPERS
+     *
+     */
+
+    /**
+     * Gets all custom vars from screen or visit scope
+     * @param namespace `_cvar` or `cvar` stored in
+     *      QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES and
+     *      QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES
+     * @return CustomVariables HashMap
+     */
+    private CustomVariables getCustomVariables(String namespace) {
+        if(namespace == null){
+            return null;
+        }
+        CustomVariables vars = customVariables.get(namespace);
+        if (vars == null) {
+            vars = new CustomVariables();
+            customVariables.put(namespace, vars);
+        }
+        return vars;
+    }
+
+    private void clearAllCustomVariables() {
+        getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).clear();
+        getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).clear();
+    }
+
+    private void setCustomVariable(String namespace, int index, String name, String value) {
+        getCustomVariables(namespace).put(index, name, value);
+    }
+
+    private void clearQueryParams() {
+        if (queryParams != null) {
+            queryParams.clear();
+        }
+        queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
+
+    }
+
+    private String getBreadcrumbs(final Activity activity){
+        Activity currentActivity = activity;
+        ArrayList<String> breadcrumbs = new ArrayList<String>();
+
+        while (currentActivity != null){
+            breadcrumbs.add(currentActivity.getTitle().toString());
+            currentActivity = currentActivity.getParent();
+        }
+        return joinSlash(breadcrumbs);
+    }
+
+    private String joinSlash(List<String> sequence){
+        if(sequence != null && sequence.size() > 0) {
+            return TextUtils.join("/", sequence);
+        }
+        return "";
+    }
+
+    private String breadcrumbsToPath(String breadcrumbs){
+        return breadcrumbs.replaceAll("\\s", "");
+    }
+
+    private String getQuery() {
+        return urlEncodeUTF8(queryParams);
+    }
+
+    static String urlEncodeUTF8(String s) {
+        try {
+            return URLEncoder.encode(s, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return "";
         }
     }
 
     /**
-     * Sets the url of the piwik installation the tracker will track to.
+     * For bulk tracking purposes
+     * @param map query map
+     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
+     */
+    static String urlEncodeUTF8(Map<String,String> map) {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("?");
+        for (Map.Entry<String,String> entry : map.entrySet()) {
+            sb.append(urlEncodeUTF8(entry.getKey()));
+            sb.append("=");
+            sb.append(urlEncodeUTF8(entry.getValue()));
+            sb.append("&");
+        }
+
+        return sb.toString();
+    }
+
+    protected String getParamUlr() {
+        String url = queryParams.get(QueryParams.URL_PATH);
+        url = (url == null) ? "" : url;
+        return String.format("http://%s/%s", piwik.getApplicationDomain() , url);
+    }
+
+    /**
+     * Sets the url of the piwik installation the dispatchable will track to.
      * <p/>
      * The given string should be in the format of RFC2396. The string will be converted to an url with no other url as
      * its context.
@@ -315,7 +446,13 @@ public class Tracker {
         }
     }
 
-    // Piwik query parameter names
+    private String getRandomVisitorId() {
+        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
+    }
+
+    /**
+     * CONSTANTS
+     */
     public static class QueryParams {
         public static final String SITE_ID = "idsite";
         public static final String AUTHENTICATION_TOKEN = "token_auth";
@@ -326,7 +463,8 @@ public class Tracker {
         public static final String MINUTES = "m";
         public static final String SECONDS = "s";
         public static final String ACTION_NAME = "action_name";
-        public static final String URL = "url";
+        public static final String URL_PATH = "url";
+        public static final String USER_AGENT = "ua";
         public static final String VISITOR_ID = "_id";
 
         public static final String VISIT_SCOPE_CUSTOM_VARIABLES = "_cvar";
@@ -345,6 +483,7 @@ public class Tracker {
         public static final String SEARCH_CATEGORY = "search_cat";
         public static final String SEARCH_NUMBER_OF_HITS = "search_count";
         public static final String REFERRER = "urlref";
+        public static final String DATETIME_OF_REQUEST = "cdt";
 
         // Campaign
         static final String CAMPAIGN_NAME = "_rcn";
