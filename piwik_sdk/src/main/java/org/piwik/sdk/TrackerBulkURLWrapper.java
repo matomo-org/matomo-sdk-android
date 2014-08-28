@@ -1,8 +1,8 @@
 package org.piwik.sdk;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URL;
 import java.util.Iterator;
@@ -27,6 +27,7 @@ public class TrackerBulkURLWrapper {
 
     /**
      * page iterator
+     *
      * @return iterator
      */
     public Iterator<Integer> iterator() {
@@ -42,7 +43,8 @@ public class TrackerBulkURLWrapper {
             }
 
             @Override
-            public void remove() {}
+            public void remove() {
+            }
         };
     }
 
@@ -52,15 +54,15 @@ public class TrackerBulkURLWrapper {
 
     /**
      * {
-     *  "requests": ["?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
-     *               "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"],
-     *  "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
+     * "requests": ["?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
+     * "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"],
+     * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
      * }
      *
      * @return json object
      */
     public JSONObject getJSONBody(Integer page) {
-        if(!(page >= 0 || page < pages)){
+        if (!(page >= 0 || page < pages)) {
             return null;
         }
 

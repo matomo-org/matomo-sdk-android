@@ -4,15 +4,15 @@ import android.app.Application;
 
 import java.net.MalformedURLException;
 
-public abstract class PiwikApplication extends Application{
+public abstract class PiwikApplication extends Application {
     Tracker piwikTracker;
 
-    public synchronized Tracker getTracker(){
-         if (piwikTracker != null) {
+    public synchronized Tracker getTracker() {
+        if (piwikTracker != null) {
             return piwikTracker;
-         }
+        }
 
-         Piwik analytics = Piwik.getInstance(this);
+        Piwik analytics = Piwik.getInstance(this);
 
         try {
             piwikTracker = analytics.newTracker(getTrackerUrl(), getSiteId(), getAuthToken());
@@ -25,15 +25,15 @@ public abstract class PiwikApplication extends Application{
 
     }
 
-    public String getTrackerUrl(){
+    public String getTrackerUrl() {
         return "";
     }
 
-    public String getAuthToken(){
+    public String getAuthToken() {
         return "";
     }
 
-    public Integer getSiteId(){
+    public Integer getSiteId() {
         return 1;
     }
 

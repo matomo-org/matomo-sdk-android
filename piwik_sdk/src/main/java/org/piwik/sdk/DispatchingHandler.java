@@ -48,13 +48,13 @@ public class DispatchingHandler extends Handler {
     }
 
     public void start() {
-        if(!isStarted()) {
+        if (!isStarted()) {
             sendEmptyMessage(DispatchingHandler.START_LOOP);
         }
     }
 
     public void stop() {
-        if(isStarted()) {
+        if (isStarted()) {
             started = false;
             sendEmptyMessage(DispatchingHandler.STOP_LOOP);
         }

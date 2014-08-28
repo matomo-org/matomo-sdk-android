@@ -19,12 +19,12 @@ public class Piwik {
 
     private boolean dryRun = false;
 
-    private Piwik(Application application){
+    private Piwik(Application application) {
         this.application = application;
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    public void autoBindActivities(final Tracker tracker){
+    public void autoBindActivities(final Tracker tracker) {
         this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle bundle) {
@@ -65,7 +65,7 @@ public class Piwik {
 
     synchronized public static Piwik getInstance(Application application) {
         Piwik piwik = applications.get(application);
-        if(piwik != null){
+        if (piwik != null) {
             return piwik;
         }
         piwik = new Piwik(application);
@@ -75,16 +75,16 @@ public class Piwik {
 
     /**
      * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId (required) id of site
-     * @param authToken (optional) could be null
+     * @param siteId     (required) id of site
+     * @param authToken  (optional) could be null
      * @return Tracker object
      * @throws MalformedURLException
      */
-    public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException{
+    public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, authToken, this);
     }
 
-    public Tracker newTracker(String trackerUrl, int siteId) throws MalformedURLException{
+    public Tracker newTracker(String trackerUrl, int siteId) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
@@ -104,14 +104,14 @@ public class Piwik {
      * The dryRun flag set to true prevents any data from being sent to Piwik.
      * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
      * test data to appear in your Piwik reports. To set the dry run flag, use:
-     *
-     *      Piwik.getInstance(this).setDryRun(true);
+     * <p/>
+     * Piwik.getInstance(this).setDryRun(true);
      */
     public void setDryRun(boolean dryRun) {
         this.dryRun = dryRun;
     }
 
-    public String getApplicationDomain(){
+    public String getApplicationDomain() {
         return application.getPackageName();
     }
 

@@ -10,12 +10,7 @@ import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -257,12 +252,13 @@ public class Tracker implements Dispatchable<Integer> {
      * A custom variable is defined by a name — for example,
      * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
      * You can track up to 5 custom variables for each user to your app.
+     *
      * @param index this Integer accepts values from 1 to 5.
      *              A given custom variable name must always be stored in the same "index" per session.
      *              For example, if you choose to store the variable name = "Gender" in
      *              index = 1 and you record another custom variable in index = 1, then the
      *              "Gender" variable will be deleted and replaced with the new custom variable stored in index 1.
-     * @param name String defines the name of a specific Custom Variable such as "User type".
+     * @param name  String defines the name of a specific Custom Variable such as "User type".
      * @param value String defines the value of a specific Custom Variable such as "Customer".
      *              Custom variable names and values are limited to 200 characters in length each.
      */
@@ -280,6 +276,7 @@ public class Tracker implements Dispatchable<Integer> {
 
     /**
      * Correspondents to action_name of Piwik Tracking API
+     *
      * @param title string The title of the action being tracked. It is possible to use
      *              slashes / to set one or several categories for this action.
      *              For example, Help / Feedback will create the Action Feedback in the category Help.

@@ -25,21 +25,21 @@ import java.util.Map;
 
 /**
  * Sends json POST request to tracking url http://piwik.example.com/piwik.php with body
- *
-   {
-   "requests": [
-      "?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
-      "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"
-   ],
-   "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
-   }
+ * <p/>
+ * {
+ * "requests": [
+ * "?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
+ * "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"
+ * ],
+ * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
+ * }
  */
 public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, Integer, Integer> {
 
     private final int timeout;
     private final Dispatchable<Integer> dispatchable;
 
-    public TrackerBulkURLProcessor(final Dispatchable<Integer> tracker, int timeout){
+    public TrackerBulkURLProcessor(final Dispatchable<Integer> tracker, int timeout) {
         dispatchable = tracker;
         this.timeout = timeout;
     }
@@ -47,9 +47,9 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
     protected Integer doInBackground(TrackerBulkURLWrapper... wrappers) {
         int count = 0;
 
-        for(TrackerBulkURLWrapper wrapper : wrappers){
+        for (TrackerBulkURLWrapper wrapper : wrappers) {
             Iterator<Integer> pageIterator = wrapper.iterator();
-            while (pageIterator.hasNext()){
+            while (pageIterator.hasNext()) {
                 // TODO use doGET when JSONBody contains only event
                 count += doPost(wrapper.getApiUrl(), wrapper.getJSONBody(pageIterator.next()));
                 if (isCancelled()) break;
@@ -90,10 +90,10 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
             post.setEntity(se);
             response = client.execute(post);
 
-            if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 return 1;
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
@@ -112,13 +112,14 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
     /**
      * For bulk tracking purposes
+     *
      * @param map query map
      * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
      */
-    public static String urlEncodeUTF8(Map<String,String> map) {
+    public static String urlEncodeUTF8(Map<String, String> map) {
         StringBuilder sb = new StringBuilder(100);
         sb.append('?');
-        for (Map.Entry<String,String> entry : map.entrySet()) {
+        for (Map.Entry<String, String> entry : map.entrySet()) {
             sb.append(urlEncodeUTF8(entry.getKey()));
             sb.append('=');
             sb.append(urlEncodeUTF8(entry.getValue()));
