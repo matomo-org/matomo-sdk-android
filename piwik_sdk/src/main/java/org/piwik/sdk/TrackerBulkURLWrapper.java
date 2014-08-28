@@ -42,9 +42,7 @@ public class TrackerBulkURLWrapper {
             }
 
             @Override
-            public void remove() {
-                // TODO Auto-generated method stub
-            }
+            public void remove() {}
         };
     }
 
@@ -75,7 +73,7 @@ public class TrackerBulkURLWrapper {
             params.put("requests", new JSONArray(events.subList(fromIndex, toIndex)));
 
             if (authToken != null) {
-                params.put("token_auth", authToken);
+                params.put(Tracker.QueryParams.AUTHENTICATION_TOKEN, authToken);
             }
         } catch (JSONException e) {
             e.printStackTrace();

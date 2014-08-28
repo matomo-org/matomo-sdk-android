@@ -9,7 +9,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -18,6 +20,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
+/**
+ * Main tracking class
+ */
 public class Tracker implements Dispatchable<Integer> {
 
     // Piwik default parameter values
@@ -36,6 +41,7 @@ public class Tracker implements Dispatchable<Integer> {
     private Piwik piwik;
     private boolean isDispatching = false;
     private int dispatchInterval = piwikDefaultDispatchTimer;
+    private DispatchingHandler dispatchingHandler;
 
     private int siteId;
     private URL apiUrl;
@@ -50,6 +56,11 @@ public class Tracker implements Dispatchable<Integer> {
     private HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
     private static final Logger LOGGER = Logger.getLogger(Piwik.class.getName());
 
+    /**
+     * Random object used for the request URl.
+     */
+    private Random randomObject = new Random(new Date().getTime());
+
 
     private Tracker(String url, int siteId) throws MalformedURLException {
         setAPIUrl(url);
@@ -60,7 +71,16 @@ public class Tracker implements Dispatchable<Integer> {
         this.siteId = siteId;
     }
 
-    public Tracker(String url, int siteId, String authToken, Piwik piwik) throws MalformedURLException {
+    /**
+     * Use Piwik.newTracker() method to create new trackers
+     *
+     * @param url       (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param siteId    (required) id of site
+     * @param authToken (optional) could be null
+     * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
+     * @throws MalformedURLException
+     */
+    protected Tracker(String url, int siteId, String authToken, Piwik piwik) throws MalformedURLException {
         this(url, siteId);
         this.authToken = authToken;
         this.piwik = piwik;
@@ -72,7 +92,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return true if there are any queued events and opt out is inactive
      */
     public boolean dispatch() {
-        if (!piwik.isOptOut() && queue.size() > 0){
+        if (!piwik.isOptOut() && queue.size() > 0) {
 
             ArrayList<String> events = new ArrayList<String>(queue);
             queue.clear();
@@ -85,14 +105,68 @@ public class Tracker implements Dispatchable<Integer> {
         return false;
     }
 
+    /**
+     * Does dispatch immediately if dispatchInterval == 0
+     * if dispatchInterval is greater than zero auto dispatching will be launched
+     */
+    private void tryDispatch() {
+        if (dispatchInterval == 0) {
+            dispatch();
+        } else if (dispatchInterval > 0) {
+            ensureAutoDispatching();
+        }
+    }
+
+    /**
+     * Starts infinity loop of dispatching process
+     * Auto invoked when any Tracker.track* method is called and dispatchInterval > 0
+     */
+    private void ensureAutoDispatching() {
+        if (dispatchingHandler == null) {
+            dispatchingHandler = new DispatchingHandler(this);
+        }
+        dispatchingHandler.start();
+    }
+
+    /**
+     * Auto invoked when negative interval passed in setDispatchInterval
+     * or Activity is paused
+     */
+    private void stopAutoDispatching() {
+        if (dispatchingHandler != null) {
+            dispatchingHandler.stop();
+        }
+    }
+
+    /**
+     * Set the interval to 0 to dispatch events as soon as they are queued.
+     * If a negative value is used the dispatch timer will never run, a manual dispatch must be used.
+     *
+     * @param dispatchInterval in seconds
+     */
+    public void setDispatchInterval(int dispatchInterval) {
+        this.dispatchInterval = dispatchInterval;
+        if (dispatchInterval < 1) {
+            stopAutoDispatching();
+        }
+    }
+
     @Override
-    synchronized public void dispatchingCompleted(Integer count){
+    public long getDispatchIntervalMillis() {
+        if (dispatchInterval > 0) {
+            return dispatchInterval * 1000;
+        }
+        return -1;
+    }
+
+    @Override
+    synchronized public void dispatchingCompleted(Integer count) {
         isDispatching = false;
         LOGGER.log(Level.ALL, String.format("dispatched %s url(s)", count));
     }
 
     @Override
-    synchronized public void startDispatching() {
+    synchronized public void dispatchingStarted() {
         isDispatching = true;
     }
 
@@ -102,8 +176,15 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Public setter
-     * @param key name
+     * You can set any additional Tracking API Parameters within the SDK.
+     * This includes for example the local time (parameters h, m and s).
+     * <pre>
+     * tracker.set(QueryParams.HOURS, "10");
+     * tracker.set(QueryParams.MINUTES, "45");
+     * tracker.set(QueryParams.SECONDS, "30");
+     * </pre>
+     *
+     * @param key   name
      * @param value value
      * @return if value is not null
      */
@@ -134,7 +215,7 @@ public class Tracker implements Dispatchable<Integer> {
      */
     public void setUserId(String userId) {
         if (userId != null) {
-            if(userId.toLowerCase().matches("[0-9a-f]{16}")) {
+            if (userId.length() == 16 && userId.matches("^[0-9a-fA-F]{16}$")) {
                 this.userId = userId;
             } else {
                 this.userId = md5(userId).substring(0, 16);
@@ -143,13 +224,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     public void setUserId(long userId) {
-        String hash = md5(Long.toString(userId));
-        setUserId(hash);
-    }
-
-    public void setDispatchInterval(int dispatchInterval) {
-        this.dispatchInterval = dispatchInterval;
-        // TODO stop dispatching loop when dispatchInterval < 1
+        setUserId(Long.toString(userId));
     }
 
     /**
@@ -165,36 +240,62 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * todo return real screen size if QueryParams.SCREEN_RESOLOUTION is empty
      * http://stackoverflow.com/a/25215912
+     *
      * @return formatted string  WxH
      */
-    public String getResolution(){
-        if(queryParams.containsKey(QueryParams.SCREEN_RESOLOUTION)){
+    public String getResolution() {
+        if (queryParams.containsKey(QueryParams.SCREEN_RESOLOUTION)) {
             return queryParams.get(QueryParams.SCREEN_RESOLOUTION);
         }
         return defaultScreenResolution;
     }
 
+    /**
+     * This methods have to be called before a call to trackScreenView.
+     * A custom variable is a custom name-value pair that you can assign to your users or screen views,
+     * and then visualize the reports of how many visits, conversions, etc. for each custom variable.
+     * A custom variable is defined by a name — for example,
+     * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
+     * You can track up to 5 custom variables for each user to your app.
+     * @param index this Integer accepts values from 1 to 5.
+     *              A given custom variable name must always be stored in the same "index" per session.
+     *              For example, if you choose to store the variable name = "Gender" in
+     *              index = 1 and you record another custom variable in index = 1, then the
+     *              "Gender" variable will be deleted and replaced with the new custom variable stored in index 1.
+     * @param name String defines the name of a specific Custom Variable such as "User type".
+     * @param value String defines the value of a specific Custom Variable such as "Customer".
+     *              Custom variable names and values are limited to 200 characters in length each.
+     */
     public void setUserCustomVariable(int index, String name, String value) {
         this.setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
+    /**
+     * Does exactly the same as setUserCustomVariable but use screen scope
+     * You can track up to 5 custom variables for each screen view.
+     */
     public void setScreenCustomVariable(int index, String name, String value) {
         this.setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
+    /**
+     * Correspondents to action_name of Piwik Tracking API
+     * @param title string The title of the action being tracked. It is possible to use
+     *              slashes / to set one or several categories for this action.
+     *              For example, Help / Feedback will create the Action Feedback in the category Help.
+     */
     public void setScreenTitle(String title) {
         set(QueryParams.ACTION_NAME, title);
     }
 
     /**
      * todo return well formatted user agent with android version and local
+     *
      * @return
      */
-    public String getUserAgent(){
+    public String getUserAgent() {
         return "Android";
     }
-
-
 
     /**
      * Set action_name param from activity's title and track view
@@ -218,13 +319,18 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * @todo pause handler when activity is paused
-     * @param activity
+     * @param activity current activity
      */
     public void activityPaused(Activity activity) {
-
+        stopAutoDispatching();
     }
 
+    /**
+     * Don't need to start auto dispatching
+     * due this will be started when any track event occurred
+     *
+     * @param activity current activity
+     */
     public void activityResumed(Activity activity) {
     }
 
@@ -253,16 +359,22 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Tracking methods
      *
-     * @param path required query param
+     * @param path required tracking param, for example: "/user/settings/billing"
      */
     public void trackScreenView(String path) {
         set(QueryParams.URL_PATH, path);
         doTrack();
     }
 
-    public void trackScreenView(String url, String title) {
+    /**
+     * @param path  view path for example: "/user/settings/billing" or just empty string ""
+     * @param title string The title of the action being tracked. It is possible to use
+     *              slashes / to set one or several categories for this action.
+     *              For example, Help / Feedback will create the Action Feedback in the category Help.
+     */
+    public void trackScreenView(String path, String title) {
         setScreenTitle(title);
-        trackScreenView(url);
+        trackScreenView(path);
     }
 
     /**
@@ -297,25 +409,36 @@ public class Tracker implements Dispatchable<Integer> {
         trackEvent(category, action, null, null);
     }
 
+    /**
+     * By default, Goals in Piwik are defined as "matching" parts of the screen path or screen title.
+     * In this case a conversion is logged automatically. In some situations, you may want to trigger
+     * a conversion manually on other types of actions, for example:
+     * when a user submits a form
+     * when a user has stayed more than a given amount of time on the page
+     * when a user does some interaction in your Android application
+     *
+     * @param idGoal id of goal as defined in piwik goal settings
+     */
     public void trackGoal(Integer idGoal) {
         set(QueryParams.GOAL_ID, idGoal);
         doTrack();
     }
 
     /**
-     * Set up requierd values
+     * Set up required params
      */
     protected void beforeTracking() {
         // obligatory params
         this.set(QueryParams.API_VERSION, defaultAPIVersionValue);
         this.set(QueryParams.SITE_ID, siteId);
         this.set(QueryParams.RECORD, defaultRecordValue);
-        this.set(QueryParams.RANDOM_NUMBER, new Random().nextInt(100000));
+        this.set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
         this.set(QueryParams.SCREEN_RESOLOUTION, this.getResolution());
         this.set(QueryParams.URL_PATH, this.getParamUlr());
         this.set(QueryParams.USER_AGENT, this.getUserAgent());
         this.set(QueryParams.VISITOR_ID, this.userId);
         this.set(QueryParams.ENFORCED_VISITOR_ID, this.userId);
+        this.set(QueryParams.DATETIME_OF_REQUEST, this.getCurrentDatetime());
         this.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
         this.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
         this.checkSessionTimeout();
@@ -336,7 +459,8 @@ public class Tracker implements Dispatchable<Integer> {
         } else {
             LOGGER.log(Level.ALL, String.format("URL added to the queue: %s", event));
             queue.add(event);
-            // TODO - fire dispatch if dispatchInterval equals 0
+
+            tryDispatch();
         }
 
         afterTracking();
@@ -358,13 +482,14 @@ public class Tracker implements Dispatchable<Integer> {
 
     /**
      * Gets all custom vars from screen or visit scope
+     *
      * @param namespace `_cvar` or `cvar` stored in
-     *      QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES and
-     *      QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES
+     *                  QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES and
+     *                  QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES
      * @return CustomVariables HashMap
      */
     private CustomVariables getCustomVariables(String namespace) {
-        if(namespace == null){
+        if (namespace == null) {
             return null;
         }
         CustomVariables vars = customVariables.get(namespace);
@@ -392,25 +517,29 @@ public class Tracker implements Dispatchable<Integer> {
 
     }
 
-    private String getBreadcrumbs(final Activity activity){
+    private String getCurrentDatetime() {
+        return new SimpleDateFormat("yyyyMMdd HH:mm:ssZ").format(new Date());
+    }
+
+    private String getBreadcrumbs(final Activity activity) {
         Activity currentActivity = activity;
         ArrayList<String> breadcrumbs = new ArrayList<String>();
 
-        while (currentActivity != null){
+        while (currentActivity != null) {
             breadcrumbs.add(currentActivity.getTitle().toString());
             currentActivity = currentActivity.getParent();
         }
         return joinSlash(breadcrumbs);
     }
 
-    private String joinSlash(List<String> sequence){
-        if(sequence != null && sequence.size() > 0) {
+    private String joinSlash(List<String> sequence) {
+        if (sequence != null && sequence.size() > 0) {
             return TextUtils.join("/", sequence);
         }
         return "";
     }
 
-    private String breadcrumbsToPath(String breadcrumbs){
+    private String breadcrumbsToPath(String breadcrumbs) {
         return breadcrumbs.replaceAll("\\s", "");
     }
 
@@ -421,7 +550,7 @@ public class Tracker implements Dispatchable<Integer> {
     protected String getParamUlr() {
         String url = queryParams.get(QueryParams.URL_PATH);
         url = (url == null) ? "" : url;
-        return String.format("http://%s/%s", piwik.getApplicationDomain() , url);
+        return String.format("http://%s/%s", piwik.getApplicationDomain(), url);
     }
 
     /**
@@ -452,7 +581,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     public static String md5(String s) {
-        if(s == null){
+        if (s == null) {
             return null;
         }
         try {

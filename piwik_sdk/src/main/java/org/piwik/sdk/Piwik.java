@@ -73,6 +73,13 @@ public class Piwik {
         return piwik;
     }
 
+    /**
+     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param siteId (required) id of site
+     * @param authToken (optional) could be null
+     * @return Tracker object
+     * @throws MalformedURLException
+     */
     public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException{
         return new Tracker(trackerUrl, siteId, authToken, this);
     }

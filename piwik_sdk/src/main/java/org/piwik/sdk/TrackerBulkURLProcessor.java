@@ -5,6 +5,7 @@ import android.annotation.TargetApi;
 import android.os.AsyncTask;
 import android.os.Build;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -49,6 +50,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         for(TrackerBulkURLWrapper wrapper : wrappers){
             Iterator<Integer> pageIterator = wrapper.iterator();
             while (pageIterator.hasNext()){
+                // TODO use doGET when JSONBody contains only event
                 count += doPost(wrapper.getApiUrl(), wrapper.getJSONBody(pageIterator.next()));
                 if (isCancelled()) break;
             }
@@ -58,11 +60,11 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
     }
 
     protected void onPostExecute(Integer count) {
-        this.dispatchable.dispatchingCompleted(count);
+        dispatchable.dispatchingCompleted(count);
     }
 
     public void processBulkURLs(URL apiUrl, List<String> events, String authToken) {
-        dispatchable.startDispatching();
+        dispatchable.dispatchingStarted();
         executeAsyncTask(this, new TrackerBulkURLWrapper(apiUrl, events, authToken));
     }
 
@@ -83,17 +85,21 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         try {
             HttpPost post = new HttpPost(url.toURI());
             StringEntity se = new StringEntity(json.toString());
+
             se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
             post.setEntity(se);
             response = client.execute(post);
-            // TODO check response code
-            return 1;
+
+            if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                return 1;
+            }
         } catch(Exception e) {
             e.printStackTrace();
-            return 0;
         }
-
+        return 0;
     }
+
+    // TODO create doGET
 
     public static String urlEncodeUTF8(String s) {
         try {
@@ -111,12 +117,12 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
      */
     public static String urlEncodeUTF8(Map<String,String> map) {
         StringBuilder sb = new StringBuilder(100);
-        sb.append("?");
+        sb.append('?');
         for (Map.Entry<String,String> entry : map.entrySet()) {
             sb.append(urlEncodeUTF8(entry.getKey()));
-            sb.append("=");
+            sb.append('=');
             sb.append(urlEncodeUTF8(entry.getValue()));
-            sb.append("&");
+            sb.append('&');
         }
 
         return sb.toString();
