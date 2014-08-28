@@ -81,7 +81,7 @@ public class Piwik {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
-    public void setOptOut(boolean optOut) {
+    public void setAppOptOut(boolean optOut) {
         this.optOut = optOut;
     }
 

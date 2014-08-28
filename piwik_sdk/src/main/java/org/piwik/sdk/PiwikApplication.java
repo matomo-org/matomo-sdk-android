@@ -4,7 +4,7 @@ import android.app.Application;
 
 import java.net.MalformedURLException;
 
-public class PiwikApplication extends Application{
+public abstract class PiwikApplication extends Application{
     Tracker piwikTracker;
 
     public synchronized Tracker getTracker(){

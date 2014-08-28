@@ -11,39 +11,62 @@ public class CustomVariables extends HashMap<String, List<String>> {
     /**
      * You can track up to 5 custom variables for each user to your app,
      * and up to 5 custom variables for each screen view.
-     *
+     * <p/>
      * Desired json output:
-     *      {
-     *          "1":["OS","iphone 5.0"],
-     *          "2":["Piwik Mobile Version","1.6.2"],
-     *          "3":["Locale","en::en"],
-     *          "4":["Num Accounts","2"],
-     *          "5":["Level","over9k"]
-     *      }
+     * {
+     * "1":["OS","iphone 5.0"],
+     * "2":["Piwik Mobile Version","1.6.2"],
+     * "3":["Locale","en::en"],
+     * "4":["Num Accounts","2"],
+     * "5":["Level","over9k"]
+     * }
      */
     private static final int MAX_VARIABLES = 5;
+    private static final int MAX_LENGTH = 200;
 
-    public CustomVariables(){
+    public CustomVariables() {
         super(MAX_VARIABLES);
     }
 
-    public List<String> put(int index, String name, String value){
-        if (index > 0 && index <= MAX_VARIABLES) {
+    /**
+     * Custom variable names and values are limited to 200 characters in length each.
+     *
+     * @param index this Integer accepts values from 1 to 5.
+     *              A given custom variable name must always be stored in the same "index" per session.
+     *              For example, if you choose to store the variable name = "Gender" in index = 1
+     *              and you record another custom variable in index = 1, then the "Gender" variable
+     *              will be deleted and replaced with the new custom variable stored in index 1.
+     * @param name
+     * @param value
+     * @return
+     */
+    public List<String> put(int index, String name, String value) {
+        if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
+
+            if (name.length() > MAX_LENGTH) name = name.substring(0, MAX_LENGTH);
+
+            if (value.length() > MAX_LENGTH) value = value.substring(0, MAX_LENGTH);
+
             return put(Integer.toString(index), Arrays.asList(name, value));
         }
         return null;
     }
 
+    /**
+     * @param key   this String defines the name of a specific Custom Variable such as "User type".
+     * @param value this String defines the value of a specific Custom Variable such as "Customer".
+     * @return super.put result or null if key is null or value length is not equals 2
+     */
     @Override
     public List<String> put(String key, List<String> value) {
-        if(value.size() == 2 && key != null) {
+        if (value.size() == 2 && key != null) {
             return super.put(key, value);
         }
         return null;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         if (size() == 0) {
             return null;
         }
