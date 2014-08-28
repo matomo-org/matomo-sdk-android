@@ -3,8 +3,12 @@ package org.piwik.sdk;
 import android.app.Activity;
 import android.text.TextUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -119,8 +123,28 @@ public class Tracker implements Dispatchable<Integer> {
         return false;
     }
 
+    /**
+     * Defines the visitor ID for this request. You must set this value to exactly a 16 character
+     * hexadecimal string (containing only characters 01234567890abcdefABCDEF).
+     * When specified, the Visitor ID will be "enforced". This means that if there is no recent visit with
+     * this visitor ID, a new one will be created. If a visit is found in the last 30 minutes with your
+     * specified Visitor Id, then the new action will be recorded to this existing visit.
+     *
+     * @param userId any not 16 character hexadecimal string will be converted to md5 hash
+     */
     public void setUserId(String userId) {
-        this.userId = userId;
+        if (userId != null) {
+            if(userId.toLowerCase().matches("[0-9a-f]{16}")) {
+                this.userId = userId;
+            } else {
+                this.userId = md5(userId).substring(0, 16);
+            }
+        }
+    }
+
+    public void setUserId(long userId) {
+        String hash = md5(Long.toString(userId));
+        setUserId(hash);
     }
 
     public void setDispatchInterval(int dispatchInterval) {
@@ -291,6 +315,7 @@ public class Tracker implements Dispatchable<Integer> {
         this.set(QueryParams.URL_PATH, this.getParamUlr());
         this.set(QueryParams.USER_AGENT, this.getUserAgent());
         this.set(QueryParams.VISITOR_ID, this.userId);
+        this.set(QueryParams.ENFORCED_VISITOR_ID, this.userId);
         this.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
         this.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
         this.checkSessionTimeout();
@@ -311,6 +336,7 @@ public class Tracker implements Dispatchable<Integer> {
         } else {
             LOGGER.log(Level.ALL, String.format("URL added to the queue: %s", event));
             queue.add(event);
+            // TODO - fire dispatch if dispatchInterval equals 0
         }
 
         afterTracking();
@@ -425,6 +451,27 @@ public class Tracker implements Dispatchable<Integer> {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
+    public static String md5(String s) {
+        if(s == null){
+            return null;
+        }
+        try {
+            MessageDigest m = MessageDigest.getInstance("MD5");
+            m.update(s.getBytes("UTF-8"), 0, s.length());
+            BigInteger i = new BigInteger(1, m.digest());
+
+            return String.format("%1$032x", i);
+
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.log(Level.WARNING, s, e);
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            LOGGER.log(Level.WARNING, s, e);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * CONSTANTS
      */
@@ -441,6 +488,7 @@ public class Tracker implements Dispatchable<Integer> {
         public static final String URL_PATH = "url";
         public static final String USER_AGENT = "ua";
         public static final String VISITOR_ID = "_id";
+        public static final String ENFORCED_VISITOR_ID = "cid";
 
         public static final String VISIT_SCOPE_CUSTOM_VARIABLES = "_cvar";
         public static final String SCREEN_SCOPE_CUSTOM_VARIABLES = "cvar";
