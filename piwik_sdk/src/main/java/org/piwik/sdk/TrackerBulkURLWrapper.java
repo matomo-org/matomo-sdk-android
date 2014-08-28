@@ -30,16 +30,16 @@ public class TrackerBulkURLWrapper {
      *
      * @return iterator
      */
-    public Iterator<Integer> iterator() {
-        return new Iterator<Integer>() {
+    public Iterator<Page> iterator() {
+        return new Iterator<Page>() {
             @Override
             public boolean hasNext() {
                 return currentPage < pages;
             }
 
             @Override
-            public Integer next() {
-                return currentPage++;
+            public Page next() {
+                return new Page(currentPage++);
             }
 
             @Override
@@ -61,18 +61,14 @@ public class TrackerBulkURLWrapper {
      *
      * @return json object
      */
-    public JSONObject getJSONBody(Integer page) {
-        if (!(page >= 0 || page < pages)) {
+    public JSONObject getEvents(Page page) {
+        if (page == null || page.isEmpty()) {
             return null;
         }
 
-        int fromIndex = page * eventsPerPage;
-        int toIndex = fromIndex + eventsPerPage;
-        toIndex = Math.min(toIndex, events.size());
-
         JSONObject params = new JSONObject();
         try {
-            params.put("requests", new JSONArray(events.subList(fromIndex, toIndex)));
+            params.put("requests", new JSONArray(events.subList(page.fromIndex, page.toIndex)));
 
             if (authToken != null) {
                 params.put(Tracker.QueryParams.AUTHENTICATION_TOKEN, authToken);
@@ -83,4 +79,39 @@ public class TrackerBulkURLWrapper {
         }
         return params;
     }
+
+    /**
+     * @param page "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
+     * @return tracked url
+     */
+    public String getEventUrl(Page page) {
+        if (page == null || page.isEmpty()) {
+            return null;
+        }
+
+        return getApiUrl().toString() + events.get(page.fromIndex);
+    }
+
+    public final class Page {
+
+        protected final int fromIndex, toIndex;
+
+        protected Page(int pageNumber) {
+            if (!(pageNumber >= 0 || pageNumber < pages)) {
+                fromIndex = toIndex = -1;
+                return;
+            }
+            fromIndex = pageNumber * eventsPerPage;
+            toIndex = Math.min(fromIndex + eventsPerPage, events.size());
+        }
+
+        public int elementsCount() {
+            return toIndex - fromIndex;
+        }
+
+        public boolean isEmpty() {
+            return fromIndex == -1 || elementsCount() == 0;
+        }
+    }
+
 }
