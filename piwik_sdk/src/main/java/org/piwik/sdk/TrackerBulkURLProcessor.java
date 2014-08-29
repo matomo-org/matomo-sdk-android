@@ -116,20 +116,21 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
             return false;
         }
 
+        String jsonBody = json.toString();
+
         try {
             HttpPost post = new HttpPost(url.toURI());
-            String jsonBody = json.toString();
             StringEntity se = new StringEntity(jsonBody);
             se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
             post.setEntity(se);
 
             return doRequest(post, jsonBody);
-
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, String.format("URI Syntax Error %s", url.toString()), e);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, String.format("Unsupported Encoding %s", jsonBody), e);
         }
+
         return false;
     }
 
@@ -139,30 +140,37 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         HttpResponse response;
 
         if (dryRun) {
-            Log.i("PIWIK", "Request wasn't send due to dry run is on");
-            Log.i("PIWIK", "\tURI: " + requestBase.getURI().toString());
-            if(body != null) {
-                Log.i("PIWIK", "\tBODY: " + body);
-            }
+            Log.i(Tracker.LOGGER_TAG, "Request wasn't send due to dry run is on");
+            logRequest(requestBase, body);
         } else {
             try {
                 response = client.execute(requestBase);
                 return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+
             } catch (ClientProtocolException e) {
-                e.printStackTrace();
+                Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
             }
+
+            logRequest(requestBase, body);
         }
 
         return false;
+    }
+
+    private void logRequest(HttpRequestBase requestBase, String body) {
+        Log.i(Tracker.LOGGER_TAG, "\tURI: " + requestBase.getURI().toString());
+        if (body != null) {
+            Log.i(Tracker.LOGGER_TAG, "\tBODY: " + body);
+        }
     }
 
     public static String urlEncodeUTF8(String s) {
         try {
             return URLEncoder.encode(s, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, String.format("Cannot encode %s", s), e);
             return "";
         }
     }

@@ -1,5 +1,7 @@
 package org.piwik.sdk;
 
+import android.text.TextUtils;
+import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,23 +68,32 @@ public class TrackerBulkURLWrapper {
             return null;
         }
 
+        List<String> pageElements = events.subList(page.fromIndex, page.toIndex);
+
+        if(pageElements.size() == 0){
+            Log.w(Tracker.LOGGER_TAG, "Empty page");
+            return null;
+        }
+
         JSONObject params = new JSONObject();
         try {
-            params.put("requests", new JSONArray(events.subList(page.fromIndex, page.toIndex)));
+            params.put("requests", new JSONArray(pageElements));
 
             if (authToken != null) {
                 params.put(Tracker.QueryParams.AUTHENTICATION_TOKEN, authToken);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, "Cannot create json object", e);
+            Log.i(Tracker.LOGGER_TAG, TextUtils.join(", ", pageElements));
             return null;
         }
         return params;
     }
 
     /**
-     * @param page "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
-     * @return tracked url
+     * @param page Page object
+     * @return tracked url. For example
+     *  "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
      */
     public String getEventUrl(Page page) {
         if (page == null || page.isEmpty()) {

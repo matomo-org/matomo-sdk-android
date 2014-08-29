@@ -2,6 +2,7 @@ package org.piwik.sdk;
 
 import android.app.Activity;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -11,8 +12,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -31,7 +30,6 @@ public class Tracker implements Dispatchable<Integer> {
     private static final int piwikHTTPRequestTimeout = 5;
     private static final int piwikQueryDefaultCapacity = 12;
 
-    // private
     // @todo: doc
     private Piwik piwik;
     private boolean isDispatching = false;
@@ -49,7 +47,7 @@ public class Tracker implements Dispatchable<Integer> {
     private ArrayList<String> queue = new ArrayList<String>();
     private HashMap<String, String> queryParams;
     private HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
-    private static final Logger LOGGER = Logger.getLogger(Piwik.class.getName());
+    protected static final String LOGGER_TAG = Piwik.class.getName().toUpperCase();
 
     /**
      * Random object used for the request URl.
@@ -158,7 +156,7 @@ public class Tracker implements Dispatchable<Integer> {
     @Override
     synchronized public void dispatchingCompleted(Integer count) {
         isDispatching = false;
-        LOGGER.log(Level.ALL, String.format("dispatched %s url(s)", count));
+        Log.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
     }
 
     @Override
@@ -289,7 +287,7 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * todo return well formatted user agent with android version and local
      *
-     * @return
+     * @return well formatted user agent header string
      */
     public String getUserAgent() {
         return "Android";
@@ -451,9 +449,9 @@ public class Tracker implements Dispatchable<Integer> {
 
         String event = getQuery();
         if (piwik.isOptOut()) {
-            LOGGER.log(Level.ALL, String.format("URL omitted due to opt out: %s", event));
+            Log.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
         } else {
-            LOGGER.log(Level.ALL, String.format("URL added to the queue: %s", event));
+            Log.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
             queue.add(event);
 
             tryDispatch();
@@ -588,11 +586,9 @@ public class Tracker implements Dispatchable<Integer> {
             return String.format("%1$032x", i);
 
         } catch (UnsupportedEncodingException e) {
-            LOGGER.log(Level.WARNING, s, e);
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, s, e);
         } catch (NoSuchAlgorithmException e) {
-            LOGGER.log(Level.WARNING, s, e);
-            e.printStackTrace();
+            Log.w(Tracker.LOGGER_TAG, s, e);
         }
         return null;
     }

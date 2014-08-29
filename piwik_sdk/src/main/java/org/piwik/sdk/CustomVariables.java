@@ -1,5 +1,6 @@
 package org.piwik.sdk;
 
+import android.util.Log;
 import org.json.JSONObject;
 
 import java.util.Arrays;
@@ -36,9 +37,9 @@ public class CustomVariables extends HashMap<String, List<String>> {
      *              For example, if you choose to store the variable name = "Gender" in index = 1
      *              and you record another custom variable in index = 1, then the "Gender" variable
      *              will be deleted and replaced with the new custom variable stored in index 1.
-     * @param name
-     * @param value
-     * @return
+     * @param name  of a specific Custom Variable such as "User type".
+     * @param value of a specific Custom Variable such as "Customer".
+     * @return super.put result if index in right range and name/value pair aren't null
      */
     public List<String> put(int index, String name, String value) {
         if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
@@ -49,6 +50,7 @@ public class CustomVariables extends HashMap<String, List<String>> {
 
             return put(Integer.toString(index), Arrays.asList(name, value));
         }
+        Log.d(Tracker.LOGGER_TAG, "Index is out of range or name/value is null");
         return null;
     }
 
@@ -62,6 +64,7 @@ public class CustomVariables extends HashMap<String, List<String>> {
         if (value.size() == 2 && key != null) {
             return super.put(key, value);
         }
+        Log.d(Tracker.LOGGER_TAG, "value length should be equal 2");
         return null;
     }
 
