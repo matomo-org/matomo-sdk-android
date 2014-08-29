@@ -38,7 +38,10 @@ public class Tracker implements Dispatchable<Integer> {
     private boolean isDispatching = false;
     private int dispatchInterval = piwikDefaultDispatchTimer;
     private DispatchingHandler dispatchingHandler;
-    private String realScreenResolution;
+    private static String realScreenResolution;
+    private static String userAgent;
+    private static String userLanguage;
+    private static String userCountry;
 
     private int siteId;
     private URL apiUrl;
@@ -284,7 +287,7 @@ public class Tracker implements Dispatchable<Integer> {
      *              Custom variable names and values are limited to 200 characters in length each.
      */
     public void setUserCustomVariable(int index, String name, String value) {
-        this.setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
+        setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
     /**
@@ -292,7 +295,7 @@ public class Tracker implements Dispatchable<Integer> {
      * You can track up to 5 custom variables for each screen view.
      */
     public void setScreenCustomVariable(int index, String name, String value) {
-        this.setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
+        setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
     /**
@@ -307,12 +310,39 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * todo return well formatted user agent with android version and local
+     * Returns android system user agent
      *
-     * @return well formatted user agent header string
+     * @return well formatted user agent
      */
     public String getUserAgent() {
-        return "Android";
+        if(userAgent == null){
+            userAgent = System.getProperty("http.agent");
+        }
+        return userAgent;
+    }
+
+    /**
+     * Returns user language
+     *
+     * @return language
+     */
+    public String getLanguage() {
+        if(userLanguage == null){
+            userLanguage = Locale.getDefault().getLanguage();
+        }
+        return userLanguage;
+    }
+
+    /**
+     * Returns user country
+     *
+     * @return country
+     */
+    public String getCountry() {
+        if(userCountry == null){
+            userCountry = Locale.getDefault().getCountry();
+        }
+        return userCountry;
     }
 
     /**
@@ -332,7 +362,7 @@ public class Tracker implements Dispatchable<Integer> {
      */
     public void activityStop(Activity activity) {
         if (activity.isTaskRoot()) {
-            this.dispatch();
+            dispatch();
         }
     }
 
@@ -356,8 +386,8 @@ public class Tracker implements Dispatchable<Integer> {
      * Session handling
      */
     public void setNewSession() {
-        this.touchSession();
-        this.set(QueryParams.SESSION_START, defaultTrueValue);
+        touchSession();
+        set(QueryParams.SESSION_START, defaultTrueValue);
     }
 
     private void touchSession() {
@@ -446,21 +476,22 @@ public class Tracker implements Dispatchable<Integer> {
      * Set up required params
      */
     protected void beforeTracking() {
-        // obligatory params
-        this.set(QueryParams.API_VERSION, defaultAPIVersionValue);
-        this.set(QueryParams.SITE_ID, siteId);
-        this.set(QueryParams.RECORD, defaultRecordValue);
-        this.set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
-        this.set(QueryParams.SCREEN_RESOLUTION, this.getResolution());
-        this.set(QueryParams.URL_PATH, this.getParamUlr());
-        this.set(QueryParams.USER_AGENT, this.getUserAgent());
-        this.set(QueryParams.VISITOR_ID, this.userId);
-        this.set(QueryParams.ENFORCED_VISITOR_ID, this.userId);
-        this.set(QueryParams.DATETIME_OF_REQUEST, this.getCurrentDatetime());
-        this.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
-        this.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
-        this.checkSessionTimeout();
-        this.touchSession();
+        set(QueryParams.API_VERSION, defaultAPIVersionValue);
+        set(QueryParams.SITE_ID, siteId);
+        set(QueryParams.RECORD, defaultRecordValue);
+        set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
+        set(QueryParams.SCREEN_RESOLUTION, getResolution());
+        set(QueryParams.URL_PATH, getParamUlr());
+        set(QueryParams.USER_AGENT, getUserAgent());
+        set(QueryParams.LANGUAGE, getLanguage());
+        set(QueryParams.COUNTRY, getCountry());
+        set(QueryParams.VISITOR_ID, userId);
+        set(QueryParams.ENFORCED_VISITOR_ID, userId);
+        set(QueryParams.DATETIME_OF_REQUEST, getCurrentDatetime());
+        set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
+        set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
+        checkSessionTimeout();
+        touchSession();
     }
 
     /**
@@ -486,8 +517,8 @@ public class Tracker implements Dispatchable<Integer> {
      * Clean up params
      */
     protected void afterTracking() {
-        this.clearQueryParams();
-        this.clearAllCustomVariables();
+        clearQueryParams();
+        clearAllCustomVariables();
     }
 
     /**
@@ -643,6 +674,7 @@ public class Tracker implements Dispatchable<Integer> {
         public static final String REVENUE = "revenue";
         public static final String SESSION_START = "new_visit";
         public static final String LANGUAGE = "lang";
+        public static final String COUNTRY = "country";
         public static final String LATITUDE = "lat";
         public static final String LONGITUDE = "long";
         public static final String SEARCH_KEYWORD = "search";
