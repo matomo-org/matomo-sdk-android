@@ -1,8 +1,11 @@
 package org.piwik.sdk;
 
 import android.app.Activity;
+import android.content.Context;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.WindowManager;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -35,12 +38,12 @@ public class Tracker implements Dispatchable<Integer> {
     private boolean isDispatching = false;
     private int dispatchInterval = piwikDefaultDispatchTimer;
     private DispatchingHandler dispatchingHandler;
+    private String realScreenResolution;
 
     private int siteId;
     private URL apiUrl;
     private String userId;
     private String authToken;
-    private String defaultScreenResolution;
     private long sessionTimeoutMillis;
     private long sessionStartedMillis;
 
@@ -228,20 +231,39 @@ public class Tracker implements Dispatchable<Integer> {
      * @param height the screen height as an int value
      */
     public void setResolution(final int width, final int height) {
-        set(QueryParams.SCREEN_RESOLOUTION, String.format("%sx%s", width, height));
+        set(QueryParams.SCREEN_RESOLUTION, formatResolution(width, height));
+    }
+
+    private String formatResolution(final int width, final int height) {
+        return String.format("%sx%s", width, height);
     }
 
     /**
-     * todo return real screen size if QueryParams.SCREEN_RESOLOUTION is empty
-     * http://stackoverflow.com/a/25215912
+     * Returns real screen size if QueryParams.SCREEN_RESOLUTION is empty
+     * Note that the results also depend on the current device orientation.
+     * http://stackoverflow.com/a/9316553
      *
-     * @return formatted string  WxH
+     * @return formatted string: WxH
      */
     public String getResolution() {
-        if (queryParams.containsKey(QueryParams.SCREEN_RESOLOUTION)) {
-            return queryParams.get(QueryParams.SCREEN_RESOLOUTION);
+        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION)) {
+            if (realScreenResolution == null) {
+                try {
+                    DisplayMetrics dm = new DisplayMetrics();
+                    WindowManager wm = (WindowManager) piwik.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+                    wm.getDefaultDisplay().getMetrics(dm);
+
+                    realScreenResolution = formatResolution(dm.widthPixels, dm.heightPixels);
+                } catch (Exception e) {
+                    Log.w(Tracker.LOGGER_TAG, "Cannot grab resolution", e);
+
+                    realScreenResolution = "unknown";
+                }
+            }
+            return realScreenResolution;
         }
-        return defaultScreenResolution;
+
+        return queryParams.get(QueryParams.SCREEN_RESOLUTION);
     }
 
     /**
@@ -429,7 +451,7 @@ public class Tracker implements Dispatchable<Integer> {
         this.set(QueryParams.SITE_ID, siteId);
         this.set(QueryParams.RECORD, defaultRecordValue);
         this.set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
-        this.set(QueryParams.SCREEN_RESOLOUTION, this.getResolution());
+        this.set(QueryParams.SCREEN_RESOLUTION, this.getResolution());
         this.set(QueryParams.URL_PATH, this.getParamUlr());
         this.set(QueryParams.USER_AGENT, this.getUserAgent());
         this.set(QueryParams.VISITOR_ID, this.userId);
@@ -601,7 +623,7 @@ public class Tracker implements Dispatchable<Integer> {
         public static final String AUTHENTICATION_TOKEN = "token_auth";
         public static final String RECORD = "rec";
         public static final String API_VERSION = "apiv";
-        public static final String SCREEN_RESOLOUTION = "res";
+        public static final String SCREEN_RESOLUTION = "res";
         public static final String HOURS = "h";
         public static final String MINUTES = "m";
         public static final String SECONDS = "s";
@@ -634,10 +656,10 @@ public class Tracker implements Dispatchable<Integer> {
         static final String CAMPAIGN_KEYWORD = "_rck";
 
         // Events
-        public static final String EVENT_CATEGORY = "e_c";
-        public static final String EVENT_ACTION = "e_a";
-        public static final String EVENT_NAME = "e_n";
-        public static final String EVENT_VALUE = "e_v";
+        static final String EVENT_CATEGORY = "e_c";
+        static final String EVENT_ACTION = "e_a";
+        static final String EVENT_NAME = "e_n";
+        static final String EVENT_VALUE = "e_v";
     }
 
 }

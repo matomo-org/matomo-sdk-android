@@ -3,6 +3,7 @@ package org.piwik.sdk;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -115,4 +116,7 @@ public class Piwik {
         return application.getPackageName();
     }
 
+    public Context getApplicationContext() {
+        return application.getApplicationContext();
+    }
 }
