@@ -92,7 +92,8 @@ public class Tracker implements Dispatchable<Integer> {
             ArrayList<String> events = new ArrayList<String>(queue);
             queue.clear();
 
-            TrackerBulkURLProcessor worker = new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout);
+            TrackerBulkURLProcessor worker =
+                    new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout, piwik.isDryRun());
             worker.processBulkURLs(apiUrl, events, authToken);
 
             return true;
@@ -451,8 +452,6 @@ public class Tracker implements Dispatchable<Integer> {
         String event = getQuery();
         if (piwik.isOptOut()) {
             LOGGER.log(Level.ALL, String.format("URL omitted due to opt out: %s", event));
-        } else if (piwik.isDryRun()) {
-            LOGGER.log(Level.INFO, String.format("dry run URL: %s", event));
         } else {
             LOGGER.log(Level.ALL, String.format("URL added to the queue: %s", event));
             queue.add(event);

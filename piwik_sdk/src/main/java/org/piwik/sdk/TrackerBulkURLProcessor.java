@@ -4,6 +4,7 @@ package org.piwik.sdk;
 import android.annotation.TargetApi;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.util.Log;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -42,11 +43,17 @@ import java.util.Map;
 public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, Integer, Integer> {
 
     private final int timeout;
+    private boolean dryRun = false;
     private final Dispatchable<Integer> dispatchable;
 
     public TrackerBulkURLProcessor(final Dispatchable<Integer> tracker, int timeout) {
         dispatchable = tracker;
         this.timeout = timeout;
+    }
+
+    public TrackerBulkURLProcessor(final Dispatchable<Integer> tracker, int timeout, boolean dryRun) {
+        this(tracker, timeout);
+        this.dryRun = dryRun;
     }
 
     protected Integer doInBackground(TrackerBulkURLWrapper... wrappers) {
@@ -101,7 +108,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
         HttpGet get = new HttpGet(trackingEndPointUrl);
 
-        return doRequest(get);
+        return doRequest(get, null);
     }
 
     public boolean doPost(URL url, JSONObject json) {
@@ -111,11 +118,12 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
         try {
             HttpPost post = new HttpPost(url.toURI());
-            StringEntity se = new StringEntity(json.toString());
+            String jsonBody = json.toString();
+            StringEntity se = new StringEntity(jsonBody);
             se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
             post.setEntity(se);
 
-            return doRequest(post);
+            return doRequest(post, jsonBody);
 
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -125,18 +133,26 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         return false;
     }
 
-    private boolean doRequest(HttpRequestBase requestBase) {
+    private boolean doRequest(HttpRequestBase requestBase, String body) {
         HttpClient client = new DefaultHttpClient();
         HttpConnectionParams.setConnectionTimeout(client.getParams(), timeout);
         HttpResponse response;
 
-        try {
-            response = client.execute(requestBase);
-            return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (dryRun) {
+            Log.i("PIWIK", "Request wasn't send due to dry run is on");
+            Log.i("PIWIK", "\tURI: " + requestBase.getURI().toString());
+            if(body != null) {
+                Log.i("PIWIK", "\tBODY: " + body);
+            }
+        } else {
+            try {
+                response = client.execute(requestBase);
+                return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         return false;
