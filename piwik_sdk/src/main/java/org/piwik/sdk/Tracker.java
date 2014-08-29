@@ -2,6 +2,7 @@ package org.piwik.sdk;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -470,6 +471,29 @@ public class Tracker implements Dispatchable<Integer> {
     public void trackGoal(Integer idGoal) {
         set(QueryParams.GOAL_ID, idGoal);
         doTrack();
+    }
+
+    /**
+     * Ensures that tracking application downloading will be fired only once
+     * by using SharedPreferences as flag storage
+     */
+    public void trackAppDownload(){
+        SharedPreferences prefs = piwik.getSharedPreferences(
+                Piwik.class.getPackage().getName(), Context.MODE_PRIVATE);
+
+        if(!prefs.getBoolean("downloaded", false)) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("downloaded", true);
+            editor.commit();
+            trackNewAppDownload();
+        }
+    }
+
+    /**
+     * Make sure to call this method only once per user
+     */
+    public void trackNewAppDownload(){
+        trackEvent("application", "downloaded");
     }
 
     /**

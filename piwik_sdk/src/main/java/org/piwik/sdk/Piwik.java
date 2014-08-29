@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -118,5 +119,9 @@ public class Piwik {
 
     public Context getApplicationContext() {
         return application.getApplicationContext();
+    }
+
+    public SharedPreferences getSharedPreferences(String s, int modePrivate) {
+        return application.getSharedPreferences(s, modePrivate);
     }
 }
