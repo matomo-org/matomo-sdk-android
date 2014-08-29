@@ -68,6 +68,7 @@ public class Tracker implements Dispatchable<Integer> {
         setSessionTimeout(piwikDefaultSessionTimeout);
         clearQueryParams();
         setUserId(getRandomVisitorId());
+        reportUncaughtExceptions(true);
         this.siteId = siteId;
     }
 
@@ -316,7 +317,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return well formatted user agent
      */
     public String getUserAgent() {
-        if(userAgent == null){
+        if (userAgent == null) {
             userAgent = System.getProperty("http.agent");
         }
         return userAgent;
@@ -328,7 +329,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return language
      */
     public String getLanguage() {
-        if(userLanguage == null){
+        if (userLanguage == null) {
             userLanguage = Locale.getDefault().getLanguage();
         }
         return userLanguage;
@@ -340,7 +341,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return country
      */
     public String getCountry() {
-        if(userCountry == null){
+        if (userCountry == null) {
             userCountry = Locale.getDefault().getCountry();
         }
         return userCountry;
@@ -474,14 +475,26 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
+     * Tracking request will trigger a conversion for the goal of the website being tracked with this ID
+     *
+     * @param idGoal  id of goal as defined in piwik goal settings
+     * @param revenue a monetary value that was generated as revenue by this goal conversion.
+     */
+    public void trackGoal(Integer idGoal, int revenue) {
+        set(QueryParams.GOAL_ID, idGoal);
+        set(QueryParams.REVENUE, revenue);
+        doTrack();
+    }
+
+    /**
      * Ensures that tracking application downloading will be fired only once
      * by using SharedPreferences as flag storage
      */
-    public void trackAppDownload(){
+    public void trackAppDownload() {
         SharedPreferences prefs = piwik.getSharedPreferences(
                 Piwik.class.getPackage().getName(), Context.MODE_PRIVATE);
 
-        if(!prefs.getBoolean("downloaded", false)) {
+        if (!prefs.getBoolean("downloaded", false)) {
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean("downloaded", true);
             editor.commit();
@@ -492,9 +505,53 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Make sure to call this method only once per user
      */
-    public void trackNewAppDownload(){
+    public void trackNewAppDownload() {
+        set(QueryParams.DOWNLOAD, getParamUlr());
+        set(QueryParams.ACTION_NAME, "application/downloaded");
+        set(QueryParams.URL_PATH, "/application/downloaded");
         trackEvent("application", "downloaded");
     }
+
+    /**
+     * Caught exceptions are errors in your app for which you've defined exception handling code,
+     * such as the occasional timeout of a network connection during a request for data.
+     *
+     * @param description description
+     * @param isFatal     true if it's RunTimeException
+     */
+    public void trackException(String description, boolean isFatal) {
+        String actionName = "exception/" + (isFatal ? "fatal/" : "") + description;
+        set(QueryParams.ACTION_NAME, actionName);
+        trackEvent("application", "failed", description, isFatal ? 1 : 0);
+    }
+
+    private final Thread.UncaughtExceptionHandler customUEH =
+            new Thread.UncaughtExceptionHandler() {
+
+                @Override
+                public void uncaughtException(Thread thread, Throwable ex) {
+                    boolean isFatal = ex.getClass().getName().equals("RuntimeException");
+                    trackException(ex.getMessage(), isFatal);
+
+                    // re-throw critical exception further to the os (important)
+                    Piwik.defaultUEH.uncaughtException(thread, ex);
+                }
+            };
+
+    /**
+     * Uncaught exceptions are sent to Piwik automatically by default
+     *
+     * @param toggle true if reporting should be enabled
+     */
+    public void reportUncaughtExceptions(boolean toggle) {
+        if (toggle) {
+            // Setup handler for uncaught exception
+            Thread.setDefaultUncaughtExceptionHandler(customUEH);
+        } else {
+            Thread.setDefaultUncaughtExceptionHandler(Piwik.defaultUEH);
+        }
+    }
+
 
     /**
      * Set up required params
@@ -706,6 +763,7 @@ public class Tracker implements Dispatchable<Integer> {
         public static final String SEARCH_NUMBER_OF_HITS = "search_count";
         public static final String REFERRER = "urlref";
         public static final String DATETIME_OF_REQUEST = "cdt";
+        public static final String DOWNLOAD = "download";
 
         // Campaign
         static final String CAMPAIGN_NAME = "_rcn";
