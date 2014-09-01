@@ -1,0 +1,54 @@
+package org.piwik.sdk;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
+
+
+@Config(emulateSdk = 18, manifest = Config.NONE)
+@RunWith(RobolectricTestRunner.class)
+public class CustomVariablesTest {
+
+    @Test
+    public void testToString() throws Exception {
+        CustomVariables cv = new CustomVariables();
+        cv.put(1, "name", "value");
+        cv.put(2, "name2", "uńicódę");
+
+        assertEquals(
+                "{\"2\":\"[name2, uńicódę]\",\"1\":\"[name, value]\"}",
+                cv.toString()
+        );
+    }
+
+    @Test
+    public void testWrongIndex() throws Exception {
+        CustomVariables cv = new CustomVariables();
+        cv.put(1, "name", "value");
+        cv.put(10, "name2", "value");
+        cv.put(-1, "name-1", "value");
+
+        assertEquals(
+                "{\"1\":\"[name, value]\"}",
+                cv.toString()
+        );
+    }
+
+    @Test
+    public void testWrongValueSize() throws Exception {
+        CustomVariables cv = new CustomVariables();
+
+        assertNull(cv.put("test", Arrays.asList("1", "2", "3")));
+        assertNull(cv.put("test", Arrays.asList("1", "2")));
+        assertArrayEquals(
+                cv.get("test").toArray(),
+                cv.put("test", Arrays.asList("4", "5")).toArray()
+        );
+
+    }
+}
