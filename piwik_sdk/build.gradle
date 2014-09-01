@@ -5,22 +5,36 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:0.12.2'
+        classpath 'com.github.jcandksolutions.gradle:android-unit-test:1.5.0'
     }
 }
 
 apply plugin: 'com.android.library'
 
-dependencies {
-  compile 'com.android.support:support-v4:20.0.0'
-}
 
 android {
-  compileSdkVersion 20
-  buildToolsVersion '20.0.0'
+    compileSdkVersion 20
+    buildToolsVersion '20.0.0'
 
-  defaultConfig {
-      applicationId 'piwikandroidsdk'
-      minSdkVersion 7
-      targetSdkVersion 20
-  }
+    defaultConfig {
+        applicationId 'org.piwik.sdk'
+        minSdkVersion 7
+        targetSdkVersion 20
+        versionCode 1
+        versionName '0.0.1'
+    }
+}
+
+apply plugin: 'android-unit-test'
+
+dependencies {
+    repositories {
+        mavenCentral()
+    }
+
+    compile 'com.android.support:support-v4:20.0.0'
+    testCompile 'com.android.support:support-v4:20.0.0'
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.robolectric:robolectric:2.+'
+    testCompile 'com.squareup:fest-android:1.0.+'
 }
