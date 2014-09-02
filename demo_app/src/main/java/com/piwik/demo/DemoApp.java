@@ -6,17 +6,17 @@ public class DemoApp extends PiwikApplication {
 
     @Override
     public String getTrackerUrl() {
-        return "http://example.com/piwik.php";
+        return "http://beacons.testing.piwik.pro/piwik.php";
     }
 
     @Override
     public String getAuthToken() {
-        return "abcdef1234567890";
+        return "1e7996408cbab0c443d71931f08e2fee";
     }
 
     @Override
     public Integer getSiteId() {
-        return 1;
+        return 4;
     }
 
 }

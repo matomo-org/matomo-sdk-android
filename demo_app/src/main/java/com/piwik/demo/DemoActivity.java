@@ -1,11 +1,13 @@
 package com.piwik.demo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import org.piwik.sdk.PiwikApplication;
 
 
@@ -34,6 +36,8 @@ public class DemoActivity extends ActionBarActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -43,18 +47,62 @@ public class DemoActivity extends ActionBarActivity {
         // do not send http requests
         ((PiwikApplication) getApplication()).getGlobalSettings().setDryRun(true);
 
-        ((PiwikApplication) getApplication()).getTracker().setDispatchInterval(5);
+        ((PiwikApplication) getApplication()).getTracker()
+                .setDispatchInterval(5)
+                .trackAppDownload()
+                .reportUncaughtExceptions(true);
 
-        initTrackViewListener();
+        initTrackViewListeners();
     }
 
-    protected void initTrackViewListener() {
-        Button button = (Button) findViewById(R.id.track_view_button_id);
+    protected void initTrackViewListeners() {
+        // simple track view
+        Button button = (Button) findViewById(R.id.trackMainScreenViewButton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ((PiwikApplication) getApplication()).getTracker().trackScreenView("/", "Main screen");
             }
         });
+
+        // custom vars track view
+        button = (Button) findViewById(R.id.trackCustomVarsButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((PiwikApplication) getApplication()).getTracker()
+                        .setScreenCustomVariable(1, "first", "var")
+                        .setScreenCustomVariable(2, "second", "long value")
+                        .trackScreenView("/custom_vars", "Custom Vars");
+            }
+        });
+
+        // exception tracking
+        button = (Button) findViewById(R.id.raiseExceptionButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int a = 1 / 0;
+            }
+        });
+
+        // goal tracking
+        button = (Button) findViewById(R.id.trackGoalButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int revenue;
+                try {
+                    revenue = Integer.valueOf(
+                            ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
+                    );
+                } catch (Exception e) {
+                    ((PiwikApplication) getApplication()).getTracker().trackException("wrong revenue", false);
+                    revenue = 0;
+                }
+                ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
+            }
+        });
+
     }
 }
