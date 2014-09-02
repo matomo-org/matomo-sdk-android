@@ -146,11 +146,16 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param dispatchInterval in seconds
      */
-    public void setDispatchInterval(int dispatchInterval) {
+    public Tracker setDispatchInterval(int dispatchInterval) {
         this.dispatchInterval = dispatchInterval;
         if (dispatchInterval < 1) {
             stopAutoDispatching();
         }
+        return this;
+    }
+
+    public int getDispatchInterval() {
+        return dispatchInterval;
     }
 
     @Override
@@ -188,22 +193,20 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param key   name
      * @param value value
-     * @return if value is not null
+     * @return tracker instance
      */
-    public boolean set(String key, String value) {
+    public Tracker set(String key, String value) {
         if (value != null) {
             queryParams.put(key, value);
-            return true;
         }
-        return false;
+        return this;
     }
 
-    public boolean set(String key, Integer value) {
+    public Tracker set(String key, Integer value) {
         if (value != null) {
             set(key, Integer.toString(value));
-            return true;
         }
-        return false;
+        return this;
     }
 
     /**
@@ -215,7 +218,7 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param userId any not 16 character hexadecimal string will be converted to md5 hash
      */
-    public void setUserId(String userId) {
+    public Tracker setUserId(String userId) {
         if (userId != null) {
             if (userId.length() == 16 && userId.matches("^[0-9a-fA-F]{16}$")) {
                 this.userId = userId;
@@ -223,10 +226,11 @@ public class Tracker implements Dispatchable<Integer> {
                 this.userId = md5(userId).substring(0, 16);
             }
         }
+        return this;
     }
 
-    public void setUserId(long userId) {
-        setUserId(Long.toString(userId));
+    public Tracker setUserId(long userId) {
+        return setUserId(Long.toString(userId));
     }
 
     /**
@@ -235,8 +239,8 @@ public class Tracker implements Dispatchable<Integer> {
      * @param width  the screen width as an int value
      * @param height the screen height as an int value
      */
-    public void setResolution(final int width, final int height) {
-        set(QueryParams.SCREEN_RESOLUTION, formatResolution(width, height));
+    public Tracker setResolution(final int width, final int height) {
+        return set(QueryParams.SCREEN_RESOLUTION, formatResolution(width, height));
     }
 
     private String formatResolution(final int width, final int height) {
@@ -288,16 +292,16 @@ public class Tracker implements Dispatchable<Integer> {
      * @param value String defines the value of a specific Custom Variable such as "Customer".
      *              Custom variable names and values are limited to 200 characters in length each.
      */
-    public void setUserCustomVariable(int index, String name, String value) {
-        setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
+    public Tracker setUserCustomVariable(int index, String name, String value) {
+        return setCustomVariable(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
     /**
      * Does exactly the same as setUserCustomVariable but use screen scope
      * You can track up to 5 custom variables for each screen view.
      */
-    public void setScreenCustomVariable(int index, String name, String value) {
-        setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
+    public Tracker setScreenCustomVariable(int index, String name, String value) {
+        return setCustomVariable(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, index, name, value);
     }
 
     /**
@@ -307,8 +311,8 @@ public class Tracker implements Dispatchable<Integer> {
      *              slashes / to set one or several categories for this action.
      *              For example, Help / Feedback will create the Action Feedback in the category Help.
      */
-    public void setScreenTitle(String title) {
-        set(QueryParams.ACTION_NAME, title);
+    public Tracker setScreenTitle(String title) {
+        return set(QueryParams.ACTION_NAME, title);
     }
 
     /**
@@ -411,9 +415,9 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param path required tracking param, for example: "/user/settings/billing"
      */
-    public void trackScreenView(String path) {
+    public Tracker trackScreenView(String path) {
         set(QueryParams.URL_PATH, path);
-        doTrack();
+        return doTrack();
     }
 
     /**
@@ -422,9 +426,9 @@ public class Tracker implements Dispatchable<Integer> {
      *              slashes / to set one or several categories for this action.
      *              For example, Help / Feedback will create the Action Feedback in the category Help.
      */
-    public void trackScreenView(String path, String title) {
+    public Tracker trackScreenView(String path, String title) {
         setScreenTitle(title);
-        trackScreenView(path);
+        return trackScreenView(path);
     }
 
     /**
@@ -443,20 +447,23 @@ public class Tracker implements Dispatchable<Integer> {
      * @param value    defines a numeric value associated with the event. For example, if you were tracking "Buy"
      *                 button clicks, you might log the number of items being purchased, or their total cost.
      */
-    public void trackEvent(String category, String action, String label, Integer value) {
-        if (set(QueryParams.EVENT_CATEGORY, category) && set(QueryParams.EVENT_ACTION, action)) {
+    public Tracker trackEvent(String category, String action, String label, Integer value) {
+        if (category != null && action != null) {
+            set(QueryParams.EVENT_ACTION, action);
+            set(QueryParams.EVENT_CATEGORY, category);
             set(QueryParams.EVENT_NAME, label);
             set(QueryParams.EVENT_VALUE, value);
             doTrack();
         }
+        return this;
     }
 
-    public void trackEvent(String category, String action, String label) {
-        trackEvent(category, action, label, null);
+    public Tracker trackEvent(String category, String action, String label) {
+        return trackEvent(category, action, label, null);
     }
 
-    public void trackEvent(String category, String action) {
-        trackEvent(category, action, null, null);
+    public Tracker trackEvent(String category, String action) {
+        return trackEvent(category, action, null, null);
     }
 
     /**
@@ -469,9 +476,9 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param idGoal id of goal as defined in piwik goal settings
      */
-    public void trackGoal(Integer idGoal) {
+    public Tracker trackGoal(Integer idGoal) {
         set(QueryParams.GOAL_ID, idGoal);
-        doTrack();
+        return doTrack();
     }
 
     /**
@@ -480,17 +487,17 @@ public class Tracker implements Dispatchable<Integer> {
      * @param idGoal  id of goal as defined in piwik goal settings
      * @param revenue a monetary value that was generated as revenue by this goal conversion.
      */
-    public void trackGoal(Integer idGoal, int revenue) {
+    public Tracker trackGoal(Integer idGoal, int revenue) {
         set(QueryParams.GOAL_ID, idGoal);
         set(QueryParams.REVENUE, revenue);
-        doTrack();
+        return doTrack();
     }
 
     /**
      * Ensures that tracking application downloading will be fired only once
      * by using SharedPreferences as flag storage
      */
-    public void trackAppDownload() {
+    public Tracker trackAppDownload() {
         SharedPreferences prefs = piwik.getSharedPreferences(
                 Piwik.class.getPackage().getName(), Context.MODE_PRIVATE);
 
@@ -500,16 +507,17 @@ public class Tracker implements Dispatchable<Integer> {
             editor.commit();
             trackNewAppDownload();
         }
+        return this;
     }
 
     /**
      * Make sure to call this method only once per user
      */
-    public void trackNewAppDownload() {
+    public Tracker trackNewAppDownload() {
         set(QueryParams.DOWNLOAD, getParamUlr());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
-        trackEvent("application", "downloaded");
+        return trackEvent("application", "downloaded");
     }
 
     /**
@@ -532,6 +540,7 @@ public class Tracker implements Dispatchable<Integer> {
                 public void uncaughtException(Thread thread, Throwable ex) {
                     boolean isFatal = ex.getClass().getName().equals("RuntimeException");
                     trackException(ex.getMessage(), isFatal);
+                    dispatch();
 
                     // re-throw critical exception further to the os (important)
                     Piwik.defaultUEH.uncaughtException(thread, ex);
@@ -543,13 +552,14 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param toggle true if reporting should be enabled
      */
-    public void reportUncaughtExceptions(boolean toggle) {
+    public Tracker reportUncaughtExceptions(boolean toggle) {
         if (toggle) {
             // Setup handler for uncaught exception
             Thread.setDefaultUncaughtExceptionHandler(customUEH);
         } else {
             Thread.setDefaultUncaughtExceptionHandler(Piwik.defaultUEH);
         }
+        return this;
     }
 
 
@@ -578,7 +588,7 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Builds URL, adds event to queue, clean all params after url was added
      */
-    protected void doTrack() {
+    protected Tracker doTrack() {
         beforeTracking();
 
         String event = getQuery();
@@ -592,6 +602,7 @@ public class Tracker implements Dispatchable<Integer> {
         }
 
         afterTracking();
+        return this;
     }
 
     /**
@@ -633,8 +644,9 @@ public class Tracker implements Dispatchable<Integer> {
         getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).clear();
     }
 
-    private void setCustomVariable(String namespace, int index, String name, String value) {
+    private Tracker setCustomVariable(String namespace, int index, String name, String value) {
         getCustomVariables(namespace).put(index, name, value);
+        return this;
     }
 
     private void clearQueryParams() {
@@ -646,7 +658,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     private String getCurrentDatetime() {
-        return new SimpleDateFormat("yyyyMMdd HH:mm:ssZ").format(new Date());
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date());
     }
 
     private String getBreadcrumbs(final Activity activity) {
@@ -678,6 +690,7 @@ public class Tracker implements Dispatchable<Integer> {
     protected String getParamUlr() {
         String url = queryParams.get(QueryParams.URL_PATH);
         url = (url == null) ? "" : url;
+        // todo check if url starts from "/"
         return String.format("http://%s/%s", piwik.getApplicationDomain(), url);
     }
 
