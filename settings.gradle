@@ -1,1 +1,1 @@
-include ':piwik_sdk'
+include ':demo_app', ':piwik_sdk'
