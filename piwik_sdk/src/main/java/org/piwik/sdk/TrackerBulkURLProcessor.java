@@ -136,7 +136,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
     private boolean doRequest(HttpRequestBase requestBase, String body) {
         HttpClient client = new DefaultHttpClient();
-        HttpConnectionParams.setConnectionTimeout(client.getParams(), timeout);
+        HttpConnectionParams.setConnectionTimeout(client.getParams(), timeout * 1000);
         HttpResponse response;
 
         if (dryRun) {
@@ -145,7 +145,9 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         } else {
             try {
                 response = client.execute(requestBase);
-                return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+                int statusCode = response.getStatusLine().getStatusCode();
+                Log.d(Tracker.LOGGER_TAG, String.format("status code %s", statusCode));
+                return statusCode == HttpStatus.SC_OK;
 
             } catch (ClientProtocolException e) {
                 Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
