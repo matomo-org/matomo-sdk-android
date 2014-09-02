@@ -1,14 +1,14 @@
 package org.piwik.sdk;
 
 import android.util.Log;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 
 
-public class CustomVariables extends HashMap<String, List<String>> {
+public class CustomVariables extends HashMap<String, JSONArray> {
     /**
      * You can track up to 5 custom variables for each user to your app,
      * and up to 5 custom variables for each screen view.
@@ -41,28 +41,28 @@ public class CustomVariables extends HashMap<String, List<String>> {
      * @param value of a specific Custom Variable such as "Customer".
      * @return super.put result if index in right range and name/value pair aren't null
      */
-    public List<String> put(int index, String name, String value) {
+    public JSONArray put(int index, String name, String value) {
         if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) name = name.substring(0, MAX_LENGTH);
 
             if (value.length() > MAX_LENGTH) value = value.substring(0, MAX_LENGTH);
 
-            return put(Integer.toString(index), Arrays.asList(name, value));
+            return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
         }
         Log.d(Tracker.LOGGER_TAG, "Index is out of range or name/value is null");
         return null;
     }
 
     /**
-     * @param key   this String defines the name of a specific Custom Variable such as "User type".
-     * @param value this String defines the value of a specific Custom Variable such as "Customer".
+     * @param index  index accepts values from 1 to 5.
+     * @param values packed key/value pair
      * @return super.put result or null if key is null or value length is not equals 2
      */
     @Override
-    public List<String> put(String key, List<String> value) {
-        if (value.size() == 2 && key != null) {
-            return super.put(key, value);
+    public JSONArray put(String index, JSONArray values) {
+        if (values.length() == 2 && index != null) {
+            return super.put(index, values);
         }
         Log.d(Tracker.LOGGER_TAG, "value length should be equal 2");
         return null;

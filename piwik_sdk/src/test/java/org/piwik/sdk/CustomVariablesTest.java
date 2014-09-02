@@ -1,5 +1,6 @@
 package org.piwik.sdk;
 
+import org.json.JSONArray;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -21,7 +22,7 @@ public class CustomVariablesTest {
         cv.put(2, "name2", "uńicódę");
 
         assertEquals(
-                "{\"2\":\"[name2, uńicódę]\",\"1\":\"[name, value]\"}",
+                "{\"2\":[\"name2\",\"uńicódę\"],\"1\":[\"name\",\"value\"]}",
                 cv.toString()
         );
     }
@@ -34,7 +35,7 @@ public class CustomVariablesTest {
         cv.put(-1, "name-1", "value");
 
         assertEquals(
-                "{\"1\":\"[name, value]\"}",
+                "{\"1\":[\"name\",\"value\"]}",
                 cv.toString()
         );
     }
@@ -43,11 +44,11 @@ public class CustomVariablesTest {
     public void testWrongValueSize() throws Exception {
         CustomVariables cv = new CustomVariables();
 
-        assertNull(cv.put("test", Arrays.asList("1", "2", "3")));
-        assertNull(cv.put("test", Arrays.asList("1", "2")));
-        assertArrayEquals(
-                cv.get("test").toArray(),
-                cv.put("test", Arrays.asList("4", "5")).toArray()
+        assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2", "3"))));
+        assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2"))));
+        assertEquals(
+                cv.get("test"),
+                cv.put("test", new JSONArray(Arrays.asList("4", "5")))
         );
 
     }
