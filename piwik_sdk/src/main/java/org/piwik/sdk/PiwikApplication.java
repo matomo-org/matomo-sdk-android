@@ -8,15 +8,17 @@ import java.net.MalformedURLException;
 public abstract class PiwikApplication extends Application {
     Tracker piwikTracker;
 
+    public Piwik getGlobalSettings(){
+        return Piwik.getInstance(this);
+    }
+
     public synchronized Tracker getTracker() {
         if (piwikTracker != null) {
             return piwikTracker;
         }
 
-        Piwik analytics = Piwik.getInstance(this);
-
         try {
-            piwikTracker = analytics.newTracker(getTrackerUrl(), getSiteId(), getAuthToken());
+            piwikTracker = getGlobalSettings().newTracker(getTrackerUrl(), getSiteId(), getAuthToken());
         } catch (MalformedURLException e) {
             Log.i(Tracker.LOGGER_TAG, getTrackerUrl());
             Log.w(Tracker.LOGGER_TAG, "url is malformed", e);

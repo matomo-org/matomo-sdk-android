@@ -63,10 +63,10 @@ public class Tracker implements Dispatchable<Integer> {
 
 
     private Tracker(String url, int siteId) throws MalformedURLException {
+        clearQueryParams();
         setAPIUrl(url);
         setNewSession();
         setSessionTimeout(piwikDefaultSessionTimeout);
-        clearQueryParams();
         setUserId(getRandomVisitorId());
         reportUncaughtExceptions(true);
         this.siteId = siteId;

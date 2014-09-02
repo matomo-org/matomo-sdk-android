@@ -4,5 +4,6 @@
     <string name="app_name">Demo App</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="track_screen_vew_button_label">Track Screen View</string>
 
 </resources>
