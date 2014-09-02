@@ -705,7 +705,7 @@ public class Tracker implements Dispatchable<Integer> {
      */
     protected final void setAPIUrl(final String APIUrl) throws MalformedURLException {
         if (APIUrl == null) {
-            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://your-website.org/piwik/\"");
+            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org");
         }
 
         URL url = new URL(APIUrl);

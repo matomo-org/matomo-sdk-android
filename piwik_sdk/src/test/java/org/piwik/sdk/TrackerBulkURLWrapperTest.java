@@ -8,6 +8,10 @@ import org.robolectric.annotation.Config;
 
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 
@@ -25,8 +29,41 @@ public class TrackerBulkURLWrapperTest {
     }
 
     @Test
-    public void testIterator() throws Exception {
+    public void testEmptyIterator() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null);
+        assertFalse(wrapper.iterator().hasNext());
+        assertNull(wrapper.iterator().next());
+    }
 
+    @Test
+    public void testPageIterator() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null, "test1");
+        assertTrue(wrapper.iterator().hasNext());
+        assertEquals(wrapper.iterator().next().elementsCount(), 1);
+        assertNull(wrapper.iterator().next());
+    }
+
+    @Test
+    public void testPage() throws Exception {
+        List<String> events = new LinkedList<String>();
+        for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() * 2; i++) {
+            events.add("eve" + i);
+        }
+        TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(null, events, null);
+
+        Iterator<TrackerBulkURLWrapper.Page> it = wrapper.iterator();
+        assertTrue(it.hasNext());
+        while (it.hasNext()){
+            TrackerBulkURLWrapper.Page page = it.next();
+            assertEquals(page.elementsCount(), TrackerBulkURLWrapper.getEventsPerPage());
+            JSONArray requests = wrapper.getEvents(page).getJSONArray("requests");
+            assertEquals(requests.length(), TrackerBulkURLWrapper.getEventsPerPage());
+            assertTrue(requests.get(0).toString().startsWith("eve"));
+            assertTrue(requests.get(TrackerBulkURLWrapper.getEventsPerPage()-1).toString().length() >= 4);
+            assertFalse(page.isEmpty());
+        }
+        assertFalse(it.hasNext());
+        assertNull(it.next());
     }
 
     @Test
@@ -49,6 +86,19 @@ public class TrackerBulkURLWrapperTest {
 
     @Test
     public void testGetEventUrl() throws Exception {
+        List<String> events = new LinkedList<String>();
+        for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() + 1; i++) {
+            events.add("?eve" + i);
+        }
+        URL url = new URL("http://example.com/");
+        TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(url, events, null);
+        //skip first page
+        wrapper.iterator().next();
 
+        //get second with only element
+        TrackerBulkURLWrapper.Page page = wrapper.iterator().next();
+        assertEquals(page.elementsCount(), 1);
+        assertFalse(page.isEmpty());
+        assertEquals(wrapper.getEventUrl(page), "http://example.com/?eve20");
     }
 }

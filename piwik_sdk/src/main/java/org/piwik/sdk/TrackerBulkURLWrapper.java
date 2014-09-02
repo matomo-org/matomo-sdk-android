@@ -27,6 +27,10 @@ public class TrackerBulkURLWrapper {
         this.events = events;
     }
 
+    protected static int getEventsPerPage(){
+        return eventsPerPage;
+    }
+
     /**
      * page iterator
      *
@@ -41,7 +45,10 @@ public class TrackerBulkURLWrapper {
 
             @Override
             public Page next() {
-                return new Page(currentPage++);
+                if (hasNext()) {
+                    return new Page(currentPage++);
+                }
+                return null;
             }
 
             @Override
