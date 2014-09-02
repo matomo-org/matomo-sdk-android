@@ -37,7 +37,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Dry Run"
-                    android:id="@+id/dryRunCheckbox" android:checked="true"/>
+                    android:id="@+id/dryRunCheckbox" android:checked="false"/>
         </TableRow>
         <TableRow android:layout_width="fill_parent" android:layout_height="fill_parent"
                   android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin"

@@ -45,7 +45,7 @@ public class DemoActivity extends ActionBarActivity {
 
     private void initPiwik() {
         // do not send http requests
-        ((PiwikApplication) getApplication()).getGlobalSettings().setDryRun(true);
+        ((PiwikApplication) getApplication()).getGlobalSettings().setDryRun(false);
 
         ((PiwikApplication) getApplication()).getTracker()
                 .setDispatchInterval(5)
