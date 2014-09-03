@@ -406,10 +406,14 @@ public class Tracker implements Dispatchable<Integer> {
         sessionTimeoutMillis = seconds * 1000;
     }
 
-    private void checkSessionTimeout() {
-        if (System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis) {
+    protected void checkSessionTimeout() {
+        if (isExpired()) {
             setNewSession();
         }
+    }
+
+    protected boolean isExpired(){
+        return System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis;
     }
 
     /**
@@ -735,6 +739,10 @@ public class Tracker implements Dispatchable<Integer> {
             url = "/" + url;
         }
         return String.format("http://%s%s", piwik.getApplicationDomain(), url);
+    }
+
+    protected String getUserId(){
+        return userId;
     }
 
     /**

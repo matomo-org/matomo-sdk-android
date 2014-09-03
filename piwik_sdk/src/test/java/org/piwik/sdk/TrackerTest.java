@@ -2,12 +2,14 @@ package org.piwik.sdk;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -25,9 +27,18 @@ public class TrackerTest {
     @BeforeClass
     public static void initDummyTracker() throws Exception {
         optOutedPiwik = Piwik.getInstance(new TestPiwikApplication());
+        dummyTracker = createNewTracker();
+    }
+
+    private static Tracker createNewTracker() throws MalformedURLException {
+        return optOutedPiwik.newTracker("http://example.com", 1);
+    }
+
+    @Before
+    public void clearTracker() throws Exception {
+        dummyTracker.afterTracking();
         optOutedPiwik.setDryRun(true);
         optOutedPiwik.setAppOptOut(true);
-        dummyTracker = optOutedPiwik.newTracker("http://example.com", 1);
     }
 
     private static Map<String, String> parseEventUrl(String url) throws Exception {
@@ -58,76 +69,126 @@ public class TrackerTest {
 
     @Test
     public void testSetDispatchInterval() throws Exception {
-
-    }
-
-    @Test
-    public void testGetDispatchInterval() throws Exception {
+        dummyTracker.setDispatchInterval(1);
+        assertEquals(dummyTracker.getDispatchInterval(), 1);
 
     }
 
     @Test
     public void testGetDispatchIntervalMillis() throws Exception {
-
+        dummyTracker.setDispatchInterval(1);
+        assertEquals(dummyTracker.getDispatchIntervalMillis(), 1000);
     }
 
     @Test
-    public void testDispatchingCompleted() throws Exception {
-
-    }
-
-    @Test
-    public void testDispatchingStarted() throws Exception {
-
-    }
-
-    @Test
-    public void testIsDispatching() throws Exception {
-
+    public void testDispatchingFlow() throws Exception {
+        dummyTracker.dispatchingStarted();
+        assertTrue(dummyTracker.isDispatching());
+        dummyTracker.dispatchingCompleted(1);
+        assertFalse(dummyTracker.isDispatching());
     }
 
     @Test
     public void testSet() throws Exception {
-
-    }
-
-    @Test
-    public void testSet1() throws Exception {
-
+        dummyTracker.set("a", "b")
+                .set("b", (Integer) null)
+                .set("c", (String) null);
+        assertEquals(dummyTracker.getQuery(), "?a=b");
     }
 
     @Test
     public void testSetUserId() throws Exception {
+        dummyTracker.setUserId("test");
+        assertEquals(dummyTracker.getUserId(), "098f6bcd4621d373");
 
+        dummyTracker.setUserId("098F6bcd4621d373");
+        dummyTracker.setUserId(null);
+        assertEquals(dummyTracker.getUserId(), "098F6bcd4621d373");
+
+        dummyTracker.setUserId("X98F6bcd4621d373");
+        assertNotEquals(dummyTracker.getUserId(), "X98F6bcd4621d373");
     }
 
     @Test
-    public void testSetUserId1() throws Exception {
-
+    public void testSetUserIdLong() throws Exception {
+        dummyTracker.setUserId(123456);
+        assertNotEquals(dummyTracker.getUserId(), "123456");
     }
 
     @Test
     public void testGetResolution() throws Exception {
-
+        dummyTracker.setResolution(100, 200);
+        assertEquals(dummyTracker.getQuery(), "?res=100x200");
     }
 
     @Test
     public void testSetUserCustomVariable() throws Exception {
+        dummyTracker.setUserCustomVariable(1, "2& ?", "3@#");
+        dummyTracker.trackScreenView("");
 
+        String event = dummyTracker.getLastEvent();
+        Map<String, String> queryParams = parseEventUrl(event);
+
+        assertEquals(queryParams.get("_cvar"), "{'1':['2& ?','3@#']}".replaceAll("'", "\""));
+        // check url encoding
+        assertTrue(event.contains("_cvar=%7B%221%22%3A%5B%222%26%20%3F%22%2C%223%40%23%22%5D%7D"));
     }
 
     @Test
     public void testSetScreenCustomVariable() throws Exception {
+        dummyTracker.setScreenCustomVariable(1, "2", "3");
+        dummyTracker.trackScreenView("");
+
+        String event = dummyTracker.getLastEvent();
+        Map<String, String> queryParams = parseEventUrl(event);
+
+        assertEquals(queryParams.get("cvar"), "{'1':['2','3']}".replaceAll("'", "\""));
 
     }
 
     @Test
     public void testSetNewSession() throws Exception {
+        Tracker newTracker = createNewTracker();
 
+        assertEquals(newTracker.getQuery(), "?new_visit=1");
+
+        newTracker.trackScreenView("");
+        assertEquals(newTracker.getQuery(), "");
+
+        newTracker.trackScreenView("");
+        assertEquals(newTracker.getQuery(), "");
+
+        newTracker.setNewSession();
+        assertEquals(newTracker.getQuery(), "?new_visit=1");
     }
 
     @Test
     public void testSetSessionTimeout() throws Exception {
+        Tracker newTracker = createNewTracker();
+
+        newTracker.setSessionTimeout(10);
+        assertFalse(newTracker.isExpired());
+
+        newTracker.setSessionTimeout(0);
+        Thread.sleep(1, 0);
+        assertTrue(newTracker.isExpired());
+
+        newTracker.setSessionTimeout(10);
+        assertFalse(newTracker.isExpired());
+
+    }
+
+    @Test
+    public void testCheckSessionTimeout() throws Exception {
+        Tracker newTracker = createNewTracker();
+        newTracker.setSessionTimeout(0);
+
+        assertEquals(newTracker.getQuery(), "?new_visit=1");
+        newTracker.afterTracking();
+        Thread.sleep(1, 0);
+        newTracker.checkSessionTimeout();
+
+        assertEquals(newTracker.getQuery(), "?new_visit=1");
 
     }
 
@@ -172,7 +233,7 @@ public class TrackerTest {
 
         try {
             int _ = 1 / 0;
-        }catch (Exception e){
+        } catch (Exception e) {
             dummyTracker.customUEH.uncaughtException(Thread.currentThread(), e);
         }
 
