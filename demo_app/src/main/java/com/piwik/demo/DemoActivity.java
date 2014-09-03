@@ -97,7 +97,7 @@ public class DemoActivity extends ActionBarActivity {
                             ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
                     );
                 } catch (Exception e) {
-                    ((PiwikApplication) getApplication()).getTracker().trackException("wrong revenue", false);
+                    ((PiwikApplication) getApplication()).getTracker().trackException("DemoActivity", "wrong revenue", false);
                     revenue = 0;
                 }
                 ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
