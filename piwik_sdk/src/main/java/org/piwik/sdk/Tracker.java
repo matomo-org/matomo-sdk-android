@@ -32,7 +32,7 @@ public class Tracker implements Dispatchable<Integer> {
     private static final int piwikDefaultSessionTimeout = 30 * 60;
     private static final int piwikDefaultDispatchTimer = 120;
     private static final int piwikHTTPRequestTimeout = 5;
-    private static final int piwikQueryDefaultCapacity = 12;
+    private static final int piwikQueryDefaultCapacity = 14;
 
     // @todo: doc
     private Piwik piwik;
@@ -43,6 +43,7 @@ public class Tracker implements Dispatchable<Integer> {
     private static String userAgent;
     private static String userLanguage;
     private static String userCountry;
+    private String lastEvent;
 
     private int siteId;
     private URL apiUrl;
@@ -60,6 +61,7 @@ public class Tracker implements Dispatchable<Integer> {
      * Random object used for the request URl.
      */
     private Random randomObject = new Random(new Date().getTime());
+
 
 
     private Tracker(String url, int siteId) throws MalformedURLException {
@@ -524,26 +526,54 @@ public class Tracker implements Dispatchable<Integer> {
      * Caught exceptions are errors in your app for which you've defined exception handling code,
      * such as the occasional timeout of a network connection during a request for data.
      *
-     * @param description description
+     * @param className   $ClassName:$lineNumber
+     * @param description exception message
      * @param isFatal     true if it's RunTimeException
      */
-    public void trackException(String description, boolean isFatal) {
-        String actionName = "exception/" + (isFatal ? "fatal/" : "") + description;
+    public void trackException(String className, String description, boolean isFatal) {
+        className = className != null && className.length() > 0 ? className : "Unknown";
+        String actionName = "exception/" +
+                (isFatal ? "fatal/" : "") +
+                (className + "/") + description;
+
         set(QueryParams.ACTION_NAME, actionName);
-        trackEvent("application", "failed", description, isFatal ? 1 : 0);
+        trackEvent("Exception", className, description, isFatal ? 1 : 0);
     }
 
-    private final Thread.UncaughtExceptionHandler customUEH =
+    protected final Thread.UncaughtExceptionHandler customUEH =
             new Thread.UncaughtExceptionHandler() {
 
                 @Override
                 public void uncaughtException(Thread thread, Throwable ex) {
-                    boolean isFatal = ex.getClass().getName().equals("RuntimeException");
-                    trackException(ex.getMessage(), isFatal);
-                    dispatch();
+                    String className;
 
-                    // re-throw critical exception further to the os (important)
-                    Piwik.defaultUEH.uncaughtException(thread, ex);
+                    try {
+                        try {
+                            StackTraceElement trace = ex.getStackTrace()[0];
+                            className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
+                        } catch (Exception e) {
+                            Log.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
+                            className = ex.getClass().getName();
+                        }
+
+                        boolean isFatal = className.startsWith("RuntimeException");
+                        String excInfo = ex.getClass().getName() + " [" + ex.getMessage() + "]";
+
+                        // track
+                        trackException(className, excInfo, isFatal);
+
+                        // dispatch immediately
+                        dispatch();
+                    } catch (Exception e) {
+                        // fail silently
+                        Log.e(Tracker.LOGGER_TAG, "Couldn't track uncaught exception", e);
+                    } finally {
+                        // re-throw critical exception further to the os (important)
+                        if(Piwik.defaultUEH != null && Piwik.defaultUEH != customUEH) {
+                            Piwik.defaultUEH.uncaughtException(thread, ex);
+                        }
+                    }
+
                 }
             };
 
@@ -593,6 +623,7 @@ public class Tracker implements Dispatchable<Integer> {
 
         String event = getQuery();
         if (piwik.isOptOut()) {
+            lastEvent = event;
             Log.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
         } else {
             Log.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
@@ -683,15 +714,27 @@ public class Tracker implements Dispatchable<Integer> {
         return breadcrumbs.replaceAll("\\s", "");
     }
 
-    private String getQuery() {
+    protected String getQuery() {
         return TrackerBulkURLProcessor.urlEncodeUTF8(queryParams);
+    }
+
+    /**
+     * For testing purposes
+     *
+     * @return query of the event ?r=1&sideId=1..
+     */
+    protected String getLastEvent() {
+        return lastEvent;
     }
 
     protected String getParamUlr() {
         String url = queryParams.get(QueryParams.URL_PATH);
-        url = (url == null) ? "" : url;
-        // todo check if url starts from "/"
-        return String.format("http://%s/%s", piwik.getApplicationDomain(), url);
+        if (url == null) {
+            url = "/";
+        } else if (!url.startsWith("/")) {
+            url = "/" + url;
+        }
+        return String.format("http://%s%s", piwik.getApplicationDomain(), url);
     }
 
     /**
