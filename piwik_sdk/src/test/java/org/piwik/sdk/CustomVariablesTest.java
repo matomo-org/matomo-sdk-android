@@ -27,6 +27,17 @@ public class CustomVariablesTest {
         );
     }
 
+     @Test
+    public void testToStringJSON() throws Exception {
+        CustomVariables cv = new CustomVariables();
+        cv.put(5, "name 1", "\"@<& '");
+
+        assertEquals(
+                "{\"5\":[\"name 1\",\"\\\"@<& '\"]}",
+                cv.toString()
+        );
+    }
+
     @Test
     public void testWrongIndex() throws Exception {
         CustomVariables cv = new CustomVariables();

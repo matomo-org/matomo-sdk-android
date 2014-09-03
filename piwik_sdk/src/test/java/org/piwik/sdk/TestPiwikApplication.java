@@ -17,4 +17,9 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
     @Override
     public void afterTest(Method method) {
     }
+
+    @Override
+    public String getPackageName(){
+        return "org.piwik.sdk.test";
+    }
 }

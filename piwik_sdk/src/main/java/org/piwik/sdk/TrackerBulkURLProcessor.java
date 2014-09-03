@@ -168,11 +168,18 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         }
     }
 
-    public static String urlEncodeUTF8(String s) {
+    /**
+     * http://stackoverflow.com/q/4737841
+     * @param param raw data
+     * @return encoded string
+     */
+    public static String urlEncodeUTF8(String param) {
         try {
-            return URLEncoder.encode(s, "UTF-8");
+            return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
         } catch (UnsupportedEncodingException e) {
-            Log.w(Tracker.LOGGER_TAG, String.format("Cannot encode %s", s), e);
+            Log.w(Tracker.LOGGER_TAG, String.format("Cannot encode %s", param), e);
+            return "";
+        } catch (NullPointerException e) {
             return "";
         }
     }
