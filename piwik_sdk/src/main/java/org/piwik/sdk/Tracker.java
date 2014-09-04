@@ -63,7 +63,6 @@ public class Tracker implements Dispatchable<Integer> {
     private Random randomObject = new Random(new Date().getTime());
 
 
-
     private Tracker(String url, int siteId) throws MalformedURLException {
         clearQueryParams();
         setAPIUrl(url);
@@ -358,9 +357,11 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param activity Current Activity instance
      */
-    public void activityStart(Activity activity) {
-        String breadcrumbs = getBreadcrumbs(activity);
-        trackScreenView(breadcrumbsToPath(breadcrumbs), breadcrumbs);
+    public void activityStart(final Activity activity) {
+        if (activity != null) {
+            String breadcrumbs = getBreadcrumbs(activity);
+            trackScreenView(breadcrumbsToPath(breadcrumbs), breadcrumbs);
+        }
     }
 
     /**
@@ -368,8 +369,8 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param activity Current Activity instance
      */
-    public void activityStop(Activity activity) {
-        if (activity.isTaskRoot()) {
+    public void activityStop(final Activity activity) {
+        if (activity != null && activity.isTaskRoot()) {
             dispatch();
         }
     }
@@ -377,8 +378,8 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * @param activity current activity
      */
-    public void activityPaused(Activity activity) {
-        stopAutoDispatching();
+    public void activityPaused(final Activity activity) {
+        activityStop(activity);
     }
 
     /**
@@ -387,7 +388,8 @@ public class Tracker implements Dispatchable<Integer> {
      *
      * @param activity current activity
      */
-    public void activityResumed(Activity activity) {
+    public void activityResumed(final Activity activity) {
+        activityStart(activity);
     }
 
     /**
@@ -406,10 +408,14 @@ public class Tracker implements Dispatchable<Integer> {
         sessionTimeoutMillis = seconds * 1000;
     }
 
-    private void checkSessionTimeout() {
-        if (System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis) {
+    protected void checkSessionTimeout() {
+        if (isExpired()) {
             setNewSession();
         }
+    }
+
+    protected boolean isExpired() {
+        return System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis;
     }
 
     /**
@@ -479,8 +485,11 @@ public class Tracker implements Dispatchable<Integer> {
      * @param idGoal id of goal as defined in piwik goal settings
      */
     public Tracker trackGoal(Integer idGoal) {
-        set(QueryParams.GOAL_ID, idGoal);
-        return doTrack();
+        if (idGoal != null && idGoal > 0) {
+            set(QueryParams.GOAL_ID, idGoal);
+            return doTrack();
+        }
+        return this;
     }
 
     /**
@@ -490,9 +499,8 @@ public class Tracker implements Dispatchable<Integer> {
      * @param revenue a monetary value that was generated as revenue by this goal conversion.
      */
     public Tracker trackGoal(Integer idGoal, int revenue) {
-        set(QueryParams.GOAL_ID, idGoal);
         set(QueryParams.REVENUE, revenue);
-        return doTrack();
+        return trackGoal(idGoal);
     }
 
     /**
@@ -519,7 +527,7 @@ public class Tracker implements Dispatchable<Integer> {
         set(QueryParams.DOWNLOAD, getParamUlr());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
-        return trackEvent("application", "downloaded");
+        return trackEvent("Application", "downloaded");
     }
 
     /**
@@ -569,7 +577,7 @@ public class Tracker implements Dispatchable<Integer> {
                         Log.e(Tracker.LOGGER_TAG, "Couldn't track uncaught exception", e);
                     } finally {
                         // re-throw critical exception further to the os (important)
-                        if(Piwik.defaultUEH != null && Piwik.defaultUEH != customUEH) {
+                        if (Piwik.defaultUEH != null && Piwik.defaultUEH != customUEH) {
                             Piwik.defaultUEH.uncaughtException(thread, ex);
                         }
                     }
@@ -727,6 +735,10 @@ public class Tracker implements Dispatchable<Integer> {
         return lastEvent;
     }
 
+    protected void clearLastEvent() {
+        lastEvent = null;
+    }
+
     protected String getParamUlr() {
         String url = queryParams.get(QueryParams.URL_PATH);
         if (url == null) {
@@ -735,6 +747,10 @@ public class Tracker implements Dispatchable<Integer> {
             url = "/" + url;
         }
         return String.format("http://%s%s", piwik.getApplicationDomain(), url);
+    }
+
+    protected String getUserId() {
+        return userId;
     }
 
     /**
@@ -748,16 +764,24 @@ public class Tracker implements Dispatchable<Integer> {
      */
     protected final void setAPIUrl(final String APIUrl) throws MalformedURLException {
         if (APIUrl == null) {
-            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org");
+            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org/piwik.php");
         }
 
         URL url = new URL(APIUrl);
+        String path = url.getPath();
 
-        if (url.getPath().endsWith("piwik.php") || url.getPath().endsWith("piwik-proxy.php")) {
+        if (path.endsWith("piwik.php") || path.endsWith("piwik-proxy.php")) {
             this.apiUrl = url;
         } else {
-            this.apiUrl = new URL(url, url.getPath() + "/piwik.php");
+            if (!path.endsWith("/")) {
+                path += "/";
+            }
+            this.apiUrl = new URL(url, path + "piwik.php");
         }
+    }
+
+    protected String getAPIUrl() {
+        return apiUrl.toString();
     }
 
     private String getRandomVisitorId() {
@@ -781,6 +805,23 @@ public class Tracker implements Dispatchable<Integer> {
             Log.w(Tracker.LOGGER_TAG, s, e);
         }
         return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Tracker tracker = (Tracker) o;
+
+        return siteId == tracker.siteId && apiUrl.equals(tracker.apiUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = siteId;
+        result = 31 * result + apiUrl.hashCode();
+        return result;
     }
 
     /**

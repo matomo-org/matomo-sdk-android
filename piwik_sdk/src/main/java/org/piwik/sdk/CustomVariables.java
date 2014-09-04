@@ -23,7 +23,7 @@ public class CustomVariables extends HashMap<String, JSONArray> {
      * }
      */
     private static final int MAX_VARIABLES = 5;
-    private static final int MAX_LENGTH = 200;
+    protected static final int MAX_LENGTH = 200;
 
     public CustomVariables() {
         super(MAX_VARIABLES);

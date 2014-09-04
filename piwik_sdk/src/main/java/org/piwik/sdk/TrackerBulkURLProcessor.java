@@ -170,6 +170,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
     /**
      * http://stackoverflow.com/q/4737841
+     *
      * @param param raw data
      * @return encoded string
      */
@@ -200,6 +201,6 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
             sb.append('&');
         }
 
-        return sb.toString();
+        return sb.substring(0, sb.length() - 1);
     }
 }

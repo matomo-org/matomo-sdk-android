@@ -1,5 +1,6 @@
 package org.piwik.sdk;
 
+import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -8,7 +9,8 @@ import org.robolectric.annotation.Config;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
@@ -27,7 +29,7 @@ public class CustomVariablesTest {
         );
     }
 
-     @Test
+    @Test
     public void testToStringJSON() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(5, "name 1", "\"@<& '");
@@ -36,6 +38,16 @@ public class CustomVariablesTest {
                 "{\"5\":[\"name 1\",\"\\\"@<& '\"]}",
                 cv.toString()
         );
+    }
+
+    @Test
+    public void testTrimLongValue() throws Exception {
+        CustomVariables cv = new CustomVariables();
+
+        cv.put(1, StringUtils.repeat("a", CustomVariables.MAX_LENGTH + 41),
+                StringUtils.repeat("b", CustomVariables.MAX_LENGTH + 100));
+
+        assertEquals(cv.toString().length(), 13 + CustomVariables.MAX_LENGTH * 2); // 13 + 200x2
     }
 
     @Test
