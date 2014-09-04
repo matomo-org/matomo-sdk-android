@@ -80,7 +80,7 @@ public class Piwik {
     /**
      * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId     (required) id of site
-     * @param authToken  (optional) could be null
+     * @param authToken  (optional) could be null or valid auth token
      * @return Tracker object
      * @throws MalformedURLException
      */

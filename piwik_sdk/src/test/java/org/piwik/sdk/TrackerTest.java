@@ -22,23 +22,29 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 public class TrackerTest {
     static Tracker dummyTracker;
-    static Piwik optOutedPiwik;
+    static Piwik dummyPiwik;
+    static TestPiwikApplication dummyApp;
+    final static String testAPIUrl = "http://example.com";
 
     @BeforeClass
     public static void initDummyTracker() throws Exception {
-        optOutedPiwik = Piwik.getInstance(new TestPiwikApplication());
+        dummyApp = new TestPiwikApplication();
+        dummyPiwik = Piwik.getInstance(dummyApp);
         dummyTracker = createNewTracker();
     }
 
     private static Tracker createNewTracker() throws MalformedURLException {
-        return optOutedPiwik.newTracker("http://example.com", 1);
+        return dummyPiwik.newTracker(testAPIUrl, 1);
     }
 
     @Before
     public void clearTracker() throws Exception {
+        dummyApp.clearSharedPreferences();
+        dummyPiwik.setDryRun(true);
+        dummyPiwik.setAppOptOut(true);
         dummyTracker.afterTracking();
-        optOutedPiwik.setDryRun(true);
-        optOutedPiwik.setAppOptOut(true);
+        dummyTracker.clearLastEvent();
+        dummyTracker.setAPIUrl(testAPIUrl);
     }
 
     private static Map<String, String> parseEventUrl(String url) throws Exception {
@@ -60,6 +66,12 @@ public class TrackerTest {
         assertEquals(params.get(Tracker.QueryParams.LANGUAGE), "en");
         assertTrue(params.get(Tracker.QueryParams.URL_PATH).startsWith("http://"));
         assertTrue(Integer.parseInt(params.get(Tracker.QueryParams.RANDOM_NUMBER)) > 0);
+    }
+
+    @Test
+    public void testPiwikApplicationGetTracker() throws Exception {
+        PiwikApplication app = new TestPiwikApplication();
+        assertEquals(app.getTracker(), app.getTracker());
     }
 
     @Test
@@ -194,28 +206,111 @@ public class TrackerTest {
 
     @Test
     public void testTrackScreenView() throws Exception {
+        dummyTracker.trackScreenView("/test/test");
+        Map<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
+        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).endsWith("/test/test"));
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackScreenWithTitleView() throws Exception {
+        dummyTracker.trackScreenView("test/test", "Test title");
+        Map<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
+
+        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).endsWith("/test/test"));
+        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), "Test title");
+        validateDefaultQuery(queryParams);
+    }
+
+    private void checkEvent(Map<String, String> queryParams, String name, String value) {
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_ACTION), "test action");
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), name);
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_VALUE), value);
+        validateDefaultQuery(queryParams);
     }
 
     @Test
     public void testTrackEvent() throws Exception {
+        dummyTracker.trackEvent("category", "test action");
+        checkEvent(parseEventUrl(dummyTracker.getLastEvent()), null, null);
+    }
 
+    @Test
+    public void testTrackEventName() throws Exception {
+        String name = "test name2";
+        dummyTracker.trackEvent("category", "test action", name);
+        checkEvent(parseEventUrl(dummyTracker.getLastEvent()), name, null);
+    }
+
+    @Test
+    public void testTrackEventNameAndValue() throws Exception {
+        String name = "test name3";
+        dummyTracker.trackEvent("category", "test action", name, 1);
+        checkEvent(parseEventUrl(dummyTracker.getLastEvent()), name, "1");
     }
 
     @Test
     public void testTrackGoal() throws Exception {
+        dummyTracker.trackGoal(1);
+        Map<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
+        assertNull(queryParams.get(Tracker.QueryParams.REVENUE));
+        assertEquals(queryParams.get(Tracker.QueryParams.GOAL_ID), "1");
+        validateDefaultQuery(queryParams);
     }
 
     @Test
-    public void testTrackGoal1() throws Exception {
+    public void testTrackGoalRevenue() throws Exception {
+        dummyTracker.trackGoal(1, 100);
+        Map<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
+        assertEquals(queryParams.get(Tracker.QueryParams.GOAL_ID), "1");
+        assertEquals(queryParams.get(Tracker.QueryParams.REVENUE), "100");
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackGoalInvalidId() throws Exception {
+        dummyTracker.trackGoal(-1, 100);
+        assertNull(dummyTracker.getLastEvent());
+    }
+
+    private boolean checkNewAppDownload(Map<String, String> queryParams) {
+        assertTrue(queryParams.get(Tracker.QueryParams.DOWNLOAD).length() > 0);
+        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).length() > 0);
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "Application");
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_ACTION), "downloaded");
+        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), "application/downloaded");
+        validateDefaultQuery(queryParams);
+        return true;
     }
 
     @Test
     public void testTrackAppDownload() throws Exception {
+        dummyTracker.trackAppDownload();
+        checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
+
+        dummyTracker.clearLastEvent();
+
+        // track only once
+        dummyTracker.trackAppDownload();
+        assertNull(dummyTracker.getLastEvent());
 
     }
+
+    @Test
+    public void testTrackNewAppDownload() throws Exception {
+        dummyTracker.trackNewAppDownload();
+        checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
+
+        dummyTracker.clearLastEvent();
+
+        dummyTracker.trackNewAppDownload();
+        checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
+    }
+
 
     @Test
     public void testTrackException() throws Exception {
@@ -249,16 +344,40 @@ public class TrackerTest {
 
     @Test
     public void testGetParamUlr() throws Exception {
+        String[] paths = new String[]{null, "", "/",};
 
+        for (String path : paths) {
+            dummyTracker.trackScreenView(path);
+            assertEquals(dummyTracker.getParamUlr(), "http://org.piwik.sdk.test/");
+        }
     }
 
     @Test
     public void testSetAPIUrl() throws Exception {
+        try {
+            dummyTracker.setAPIUrl(null);
+        } catch (MalformedURLException e) {
+            assertTrue(e.getMessage().contains("provide the Piwik Tracker URL!"));
+        }
 
+        String[] urls = new String[]{
+                "https://demo.org/piwik/piwik.php",
+                "https://demo.org/piwik/",
+                "https://demo.org/piwik",
+        };
+
+        for (String url : urls) {
+            dummyTracker.setAPIUrl(url);
+            assertEquals(dummyTracker.getAPIUrl(), "https://demo.org/piwik/piwik.php");
+        }
+
+        dummyTracker.setAPIUrl("http://demo.org/piwik-proxy.php");
+        assertEquals(dummyTracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
     }
 
     @Test
     public void testMd5() throws Exception {
-
+        assertEquals(Tracker.md5("test"), "098f6bcd4621d373cade4e832627b4f6");
+        assertNull(Tracker.md5(null));
     }
 }

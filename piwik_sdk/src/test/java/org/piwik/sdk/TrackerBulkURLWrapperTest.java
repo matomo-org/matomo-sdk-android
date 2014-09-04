@@ -24,8 +24,8 @@ public class TrackerBulkURLWrapperTest {
             url = "http://example.com/";
         }
         URL _url = new URL(url);
-        TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(_url, Arrays.asList(events), "test_token");
-        return wrapper;
+
+        return new TrackerBulkURLWrapper(_url, Arrays.asList(events), "test_token");
     }
 
     @Test

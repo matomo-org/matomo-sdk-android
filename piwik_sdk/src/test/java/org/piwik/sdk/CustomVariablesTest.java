@@ -41,7 +41,7 @@ public class CustomVariablesTest {
     }
 
     @Test
-    public void testCutLongValue() throws Exception {
+    public void testTrimLongValue() throws Exception {
         CustomVariables cv = new CustomVariables();
 
         cv.put(1, StringUtils.repeat("a", CustomVariables.MAX_LENGTH + 41),

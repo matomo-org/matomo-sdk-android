@@ -49,14 +49,14 @@ public class DispatchingHandler extends Handler {
 
     public void start() {
         if (!isStarted()) {
-            sendEmptyMessage(DispatchingHandler.START_LOOP);
+            sendEmptyMessage(START_LOOP);
         }
     }
 
     public void stop() {
         if (isStarted()) {
             started = false;
-            sendEmptyMessage(DispatchingHandler.STOP_LOOP);
+            sendEmptyMessage(STOP_LOOP);
         }
     }
 
