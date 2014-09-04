@@ -14,12 +14,7 @@ import org.piwik.sdk.PiwikApplication;
 
 public class SettingsActivity extends Activity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
-        final Activity settingsActivity = this;
-
+    private void refreshUI(final Activity settingsActivity) {
         // auto track button
         Button button = (Button) findViewById(R.id.manuallyTrackSettingsScreenViewButton);
         button.setOnClickListener(new View.OnClickListener() {
@@ -31,6 +26,7 @@ public class SettingsActivity extends Activity {
 
         // Dry run
         CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
+        dryRun.setChecked(((PiwikApplication) getApplication()).getGlobalSettings().isDryRun());
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -40,6 +36,7 @@ public class SettingsActivity extends Activity {
 
         // out out
         CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
+        optOut.setChecked(((PiwikApplication) getApplication()).getGlobalSettings().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -76,7 +73,44 @@ public class SettingsActivity extends Activity {
 
         );
 
+        //session Timeout Input
+        input = (EditText) findViewById(R.id.sessionTimeoutInput);
+        input.setText(Integer.toString(
+                ((PiwikApplication) getApplication()).getTracker().getSessionTimeout() / 60
+        ));
+        input.addTextChangedListener(
+                new TextWatcher() {
+                    @Override
+                    public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+                        try {
+                            int timeoutMin = Integer.valueOf(charSequence.toString().trim());
+                            timeoutMin = Math.abs(timeoutMin);
+                            ((PiwikApplication) getApplication()).getTracker()
+                                    .setSessionTimeout(timeoutMin * 60);
+                        } catch (NumberFormatException e) {
+                            ((EditText) settingsActivity.findViewById(R.id.sessionTimeoutInput)).setText("30");
+                            Log.d("not a number", charSequence.toString());
+                        }
+                    }
+
+                    @Override
+                    public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable editable) {
+                    }
+                }
+
+        );
+
     }
 
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_settings);
+        refreshUI(this);
+    }
 
 }

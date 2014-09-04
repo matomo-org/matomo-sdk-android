@@ -13,37 +13,68 @@
             android:layout_height="wrap_content" android:id="@+id/tableLayout">
         <TableRow
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Dispatch Interval"
+                    android:inputType="number"
+                    android:id="@+id/textView2" android:layout_column="0"/>
+            <EditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberSigned"
+                    android:ems="10"
+                    android:id="@+id/dispatchIntervallInput" android:layout_column="1" android:text="5"
+                    android:width="60dip"/>
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="(sec)"
+                    android:id="@+id/textView" android:layout_column="2"/>
+        </TableRow>
+        <TableRow
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="Dispatch Interval "
+                    android:text="Session timeout "
                     android:inputType="number"
-                    android:id="@+id/textView2" android:layout_column="0"/>
+                    android:id="@+id/textView3" android:layout_column="0"/>
             <EditText
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:inputType="numberSigned"
                     android:ems="10"
-                    android:id="@+id/dispatchIntervallInput" android:layout_column="1" android:text="5"/>
+                    android:id="@+id/sessionTimeoutInput" android:layout_column="1" android:text="30"
+                    android:width="60dip"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:textAppearance="?android:attr/textAppearanceMedium" android:text="(min)"
+                      android:id="@+id/textView3" android:layout_column="2"/>
         </TableRow>
         <TableRow
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
             <CheckBox
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Dry Run"
-                    android:id="@+id/dryRunCheckbox" android:checked="false"/>
+                    android:id="@+id/dryRunCheckbox" android:checked="false" android:layout_column="0"
+                    android:layout_span="3"/>
         </TableRow>
-        <TableRow android:layout_width="fill_parent" android:layout_height="fill_parent"
+        <TableRow android:layout_width="fill_parent" android:layout_height="wrap_content"
                   android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin"
                   android:id="@+id/tableRow">
             <CheckBox android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="Opt Out" android:id="@+id/optOutCheckbox" android:checked="false"/>
+                      android:text="Opt Out" android:id="@+id/optOutCheckbox" android:checked="false"
+                      android:layout_column="0" android:layout_span="3"/>
         </TableRow>
     </TableLayout>
     <Button
