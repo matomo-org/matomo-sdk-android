@@ -38,3 +38,20 @@ dependencies {
     testCompile 'org.robolectric:robolectric:2.+'
     testCompile 'com.squareup:fest-android:1.0.+'
 }
+
+/**
+ * JAR
+ */
+
+task clearJar(type: Delete) {
+    delete 'jar/PiwikAndroidSdk.jar'
+}
+
+task makeJar(type: Copy) {
+    from('build/intermediates/bundles/release/')
+    into('jar/')
+    include('classes.jar')
+    rename ('classes.jar', 'PiwikAndroidSdk.jar')
+}
+
+makeJar.dependsOn(clearJar, build)
