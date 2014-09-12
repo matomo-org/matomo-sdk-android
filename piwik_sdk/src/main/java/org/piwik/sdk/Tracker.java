@@ -168,18 +168,18 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     @Override
-    synchronized public void dispatchingCompleted(Integer count) {
+    public void dispatchingCompleted(Integer count) {
         isDispatching = false;
         Log.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
     }
 
     @Override
-    synchronized public void dispatchingStarted() {
+    public void dispatchingStarted() {
         isDispatching = true;
     }
 
     @Override
-    synchronized public boolean isDispatching() {
+    public boolean isDispatching() {
         return isDispatching;
     }
 

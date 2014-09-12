@@ -12,7 +12,7 @@ public abstract class PiwikApplication extends Application {
         return Piwik.getInstance(this);
     }
 
-    public synchronized Tracker getTracker() {
+    public Tracker getTracker() {
         if (piwikTracker != null) {
             return piwikTracker;
         }
