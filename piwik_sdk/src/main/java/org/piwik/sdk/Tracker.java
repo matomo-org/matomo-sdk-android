@@ -192,18 +192,18 @@ public class Tracker implements Dispatchable<Integer> {
      * tracker.set(QueryParams.SECONDS, "30");
      * </pre>
      *
-     * @param key   name
+     * @param key   query params name
      * @param value value
      * @return tracker instance
      */
-    public Tracker set(String key, String value) {
+    public Tracker set(QueryParams key, String value) {
         if (value != null) {
-            queryParams.put(key, value);
+            queryParams.put(key.toString(), value);
         }
         return this;
     }
 
-    public Tracker set(String key, Integer value) {
+    public Tracker set(QueryParams key, Integer value) {
         if (value != null) {
             set(key, Integer.toString(value));
         }
@@ -256,7 +256,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return formatted string: WxH
      */
     public String getResolution() {
-        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION)) {
+        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION.toString())) {
             if (realScreenResolution == null) {
                 try {
                     DisplayMetrics dm = new DisplayMetrics();
@@ -273,7 +273,7 @@ public class Tracker implements Dispatchable<Integer> {
             return realScreenResolution;
         }
 
-        return queryParams.get(QueryParams.SCREEN_RESOLUTION);
+        return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
     }
 
     /**
@@ -678,13 +678,21 @@ public class Tracker implements Dispatchable<Integer> {
         return vars;
     }
 
+    private CustomVariables getCustomVariables(QueryParams namespace) {
+        if (namespace == null) {
+            return null;
+        }
+
+        return getCustomVariables(namespace.toString());
+    }
+
     private void clearAllCustomVariables() {
         getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).clear();
         getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).clear();
     }
 
-    private Tracker setCustomVariable(String namespace, int index, String name, String value) {
-        getCustomVariables(namespace).put(index, name, value);
+    private Tracker setCustomVariable(QueryParams namespace, int index, String name, String value) {
+        getCustomVariables(namespace.toString()).put(index, name, value);
         return this;
     }
 
@@ -744,7 +752,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     protected String getParamURL() {
-        String url = queryParams.get(QueryParams.URL_PATH);
+        String url = queryParams.get(QueryParams.URL_PATH.toString());
 
         if (url == null) {
             url = "/";
@@ -835,50 +843,60 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * CONSTANTS
      */
-    public static class QueryParams {
-        public static final String SITE_ID = "idsite";
-        public static final String AUTHENTICATION_TOKEN = "token_auth";
-        public static final String RECORD = "rec";
-        public static final String API_VERSION = "apiv";
-        public static final String SCREEN_RESOLUTION = "res";
-        public static final String HOURS = "h";
-        public static final String MINUTES = "m";
-        public static final String SECONDS = "s";
-        public static final String ACTION_NAME = "action_name";
-        public static final String URL_PATH = "url";
-        public static final String USER_AGENT = "ua";
-        public static final String VISITOR_ID = "_id";
-        public static final String ENFORCED_VISITOR_ID = "cid";
+    public enum QueryParams {
+        SITE_ID("idsite"),
+        AUTHENTICATION_TOKEN("token_auth"),
+        RECORD("rec"),
+        API_VERSION("apiv"),
+        SCREEN_RESOLUTION("res"),
+        HOURS("h"),
+        MINUTES("m"),
+        SECONDS("s"),
+        ACTION_NAME("action_name"),
+        URL_PATH("url"),
+        USER_AGENT("ua"),
+        VISITOR_ID("_id"),
+        ENFORCED_VISITOR_ID("cid"),
 
-        public static final String VISIT_SCOPE_CUSTOM_VARIABLES = "_cvar";
-        public static final String SCREEN_SCOPE_CUSTOM_VARIABLES = "cvar";
-        public static final String RANDOM_NUMBER = "r";
-        public static final String FIRST_VISIT_TIMESTAMP = "_idts";
-        public static final String PREVIOUS_VISIT_TIMESTAMP = "_viewts";
-        public static final String TOTAL_NUMBER_OF_VISITS = "_idvc";
-        public static final String GOAL_ID = "idgoal";
-        public static final String REVENUE = "revenue";
-        public static final String SESSION_START = "new_visit";
-        public static final String LANGUAGE = "lang";
-        public static final String COUNTRY = "country";
-        public static final String LATITUDE = "lat";
-        public static final String LONGITUDE = "long";
-        public static final String SEARCH_KEYWORD = "search";
-        public static final String SEARCH_CATEGORY = "search_cat";
-        public static final String SEARCH_NUMBER_OF_HITS = "search_count";
-        public static final String REFERRER = "urlref";
-        public static final String DATETIME_OF_REQUEST = "cdt";
-        public static final String DOWNLOAD = "download";
+        VISIT_SCOPE_CUSTOM_VARIABLES("_cvar"),
+        SCREEN_SCOPE_CUSTOM_VARIABLES("cvar"),
+        RANDOM_NUMBER("r"),
+        FIRST_VISIT_TIMESTAMP("_idts"),
+        PREVIOUS_VISIT_TIMESTAMP("_viewts"),
+        TOTAL_NUMBER_OF_VISITS("_idvc"),
+        GOAL_ID("idgoal"),
+        REVENUE("revenue"),
+        SESSION_START("new_visit"),
+        LANGUAGE("lang"),
+        COUNTRY("country"),
+        LATITUDE("lat"),
+        LONGITUDE("long"),
+        SEARCH_KEYWORD("search"),
+        SEARCH_CATEGORY("search_cat"),
+        SEARCH_NUMBER_OF_HITS("search_count"),
+        REFERRER("urlref"),
+        DATETIME_OF_REQUEST("cdt"),
+        DOWNLOAD("download"),
 
         // Campaign
-        static final String CAMPAIGN_NAME = "_rcn";
-        static final String CAMPAIGN_KEYWORD = "_rck";
+        CAMPAIGN_NAME("_rcn"),
+        CAMPAIGN_KEYWORD("_rck"),
 
         // Events
-        static final String EVENT_CATEGORY = "e_c";
-        static final String EVENT_ACTION = "e_a";
-        static final String EVENT_NAME = "e_n";
-        static final String EVENT_VALUE = "e_v";
+        EVENT_CATEGORY("e_c"),
+        EVENT_ACTION("e_a"),
+        EVENT_NAME("e_n"),
+        EVENT_VALUE("e_v");
+
+        private final String value;
+
+        QueryParams(String value) {
+            this.value = value;
+        }
+
+        public String toString() {
+            return value;
+        }
     }
 
 }
