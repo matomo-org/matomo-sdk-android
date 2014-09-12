@@ -524,7 +524,7 @@ public class Tracker implements Dispatchable<Integer> {
      * Make sure to call this method only once per user
      */
     public Tracker trackNewAppDownload() {
-        set(QueryParams.DOWNLOAD, getParamURL());
+        set(QueryParams.DOWNLOAD, getApplicationBaseURL());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
         return trackEvent("Application", "downloaded");
@@ -739,14 +739,22 @@ public class Tracker implements Dispatchable<Integer> {
         lastEvent = null;
     }
 
+    private String getApplicationBaseURL() {
+        return String.format("http://%s", piwik.getApplicationDomain());
+    }
+
     protected String getParamURL() {
         String url = queryParams.get(QueryParams.URL_PATH);
+
         if (url == null) {
             url = "/";
+        } else if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
         } else if (!url.startsWith("/")) {
             url = "/" + url;
         }
-        return String.format("http://%s%s", piwik.getApplicationDomain(), url);
+
+        return getApplicationBaseURL() + url;
     }
 
     protected String getUserId() {
