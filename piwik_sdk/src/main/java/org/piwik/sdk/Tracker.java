@@ -524,7 +524,7 @@ public class Tracker implements Dispatchable<Integer> {
      * Make sure to call this method only once per user
      */
     public Tracker trackNewAppDownload() {
-        set(QueryParams.DOWNLOAD, getParamUlr());
+        set(QueryParams.DOWNLOAD, getParamURL());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
         return trackEvent("Application", "downloaded");
@@ -610,7 +610,7 @@ public class Tracker implements Dispatchable<Integer> {
         set(QueryParams.RECORD, defaultRecordValue);
         set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
         set(QueryParams.SCREEN_RESOLUTION, getResolution());
-        set(QueryParams.URL_PATH, getParamUlr());
+        set(QueryParams.URL_PATH, getParamURL());
         set(QueryParams.USER_AGENT, getUserAgent());
         set(QueryParams.LANGUAGE, getLanguage());
         set(QueryParams.COUNTRY, getCountry());
@@ -739,7 +739,7 @@ public class Tracker implements Dispatchable<Integer> {
         lastEvent = null;
     }
 
-    protected String getParamUlr() {
+    protected String getParamURL() {
         String url = queryParams.get(QueryParams.URL_PATH);
         if (url == null) {
             url = "/";

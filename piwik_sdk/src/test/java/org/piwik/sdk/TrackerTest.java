@@ -348,7 +348,7 @@ public class TrackerTest {
 
         for (String path : paths) {
             dummyTracker.trackScreenView(path);
-            assertEquals(dummyTracker.getParamUlr(), "http://org.piwik.sdk.test/");
+            assertEquals(dummyTracker.getParamURL(), "http://org.piwik.sdk.test/");
         }
     }
 
