@@ -135,20 +135,25 @@ public class TrackerTest {
     @Test
     public void testSetUserId() throws Exception {
         dummyTracker.setUserId("test");
-        assertEquals(dummyTracker.getUserId(), "098f6bcd4621d373");
+        assertEquals(dummyTracker.getUserId(), "test");
 
-        dummyTracker.setUserId("098F6bcd4621d373");
+        dummyTracker.clearUserId();
+        assertNull(dummyTracker.getUserId());
+
+        dummyTracker.setUserId("");
+        assertNull(dummyTracker.getUserId());
+
         dummyTracker.setUserId(null);
-        assertEquals(dummyTracker.getUserId(), "098F6bcd4621d373");
+        assertNull(dummyTracker.getUserId());
 
         dummyTracker.setUserId("X98F6bcd4621d373");
-        assertNotEquals(dummyTracker.getUserId(), "X98F6bcd4621d373");
+        assertEquals(dummyTracker.getUserId(), "X98F6bcd4621d373");
     }
 
     @Test
     public void testSetUserIdLong() throws Exception {
         dummyTracker.setUserId(123456);
-        assertNotEquals(dummyTracker.getUserId(), "123456");
+        assertEquals(dummyTracker.getUserId(), "123456");
     }
 
     @Test
