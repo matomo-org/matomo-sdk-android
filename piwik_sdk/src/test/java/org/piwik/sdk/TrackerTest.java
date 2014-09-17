@@ -376,7 +376,9 @@ public class TrackerTest {
     public void testTrackUncaughtExceptionHandler() throws Exception {
 
         try {
-            int _ = 1 / 0;
+            //noinspection NumericOverflow
+            int i = 1 / 0;
+            assertNotEquals(i, 0);
         } catch (Exception e) {
             dummyTracker.customUEH.uncaughtException(Thread.currentThread(), e);
         }
@@ -424,9 +426,4 @@ public class TrackerTest {
         assertEquals(dummyTracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
     }
 
-    @Test
-    public void testMd5() throws Exception {
-        assertEquals(Tracker.md5("test"), "098f6bcd4621d373cade4e832627b4f6");
-        assertNull(Tracker.md5(null));
-    }
 }

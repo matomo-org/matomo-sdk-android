@@ -8,12 +8,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -827,25 +823,6 @@ public class Tracker implements Dispatchable<Integer> {
 
     private String getRandomVisitorId() {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
-    }
-
-    public static String md5(String s) {
-        if (s == null) {
-            return null;
-        }
-        try {
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(s.getBytes("UTF-8"), 0, s.length());
-            BigInteger i = new BigInteger(1, m.digest());
-
-            return String.format("%1$032x", i);
-
-        } catch (UnsupportedEncodingException e) {
-            Log.w(Tracker.LOGGER_TAG, s, e);
-        } catch (NoSuchAlgorithmException e) {
-            Log.w(Tracker.LOGGER_TAG, s, e);
-        }
-        return null;
     }
 
     @Override
