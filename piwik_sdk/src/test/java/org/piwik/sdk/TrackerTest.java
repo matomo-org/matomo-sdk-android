@@ -1,11 +1,13 @@
 package org.piwik.sdk;
 
+import android.app.Application;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -47,13 +49,13 @@ public class TrackerTest {
         dummyTracker.setAPIUrl(testAPIUrl);
     }
 
-    private static class QueryHashMap<String, V> extends HashMap<String, V>{
+    private static class QueryHashMap<String, V> extends HashMap<String, V> {
 
-        private QueryHashMap(){
+        private QueryHashMap() {
             super(10);
         }
 
-        public V get(Tracker.QueryParams key){
+        public V get(Tracker.QueryParams key) {
             return get(key.toString());
         }
     }
@@ -77,6 +79,24 @@ public class TrackerTest {
         assertEquals(params.get(Tracker.QueryParams.LANGUAGE), "en");
         assertTrue(params.get(Tracker.QueryParams.URL_PATH).startsWith("http://"));
         assertTrue(Integer.parseInt(params.get(Tracker.QueryParams.RANDOM_NUMBER)) > 0);
+    }
+
+    @Test
+    public void testPiwikAutoBindActivities() throws Exception {
+        Application app = Robolectric.application;
+        Piwik piwik = Piwik.getInstance(app);
+        piwik.setDryRun(true);
+        piwik.setAppOptOut(true);
+        Tracker tracker = piwik.newTracker(testAPIUrl, 1);
+        //auto attach tracking screen view
+        piwik.autoBindActivities(tracker);
+
+        // emulate default trackScreenView
+        Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        validateDefaultQuery(queryParams);
+        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), TestActivity.getTestTitle());
     }
 
     @Test
@@ -135,20 +155,25 @@ public class TrackerTest {
     @Test
     public void testSetUserId() throws Exception {
         dummyTracker.setUserId("test");
-        assertEquals(dummyTracker.getUserId(), "098f6bcd4621d373");
+        assertEquals(dummyTracker.getUserId(), "test");
 
-        dummyTracker.setUserId("098F6bcd4621d373");
+        dummyTracker.clearUserId();
+        assertNull(dummyTracker.getUserId());
+
+        dummyTracker.setUserId("");
+        assertNull(dummyTracker.getUserId());
+
         dummyTracker.setUserId(null);
-        assertEquals(dummyTracker.getUserId(), "098F6bcd4621d373");
+        assertNull(dummyTracker.getUserId());
 
         dummyTracker.setUserId("X98F6bcd4621d373");
-        assertNotEquals(dummyTracker.getUserId(), "X98F6bcd4621d373");
+        assertEquals(dummyTracker.getUserId(), "X98F6bcd4621d373");
     }
 
     @Test
     public void testSetUserIdLong() throws Exception {
         dummyTracker.setUserId(123456);
-        assertNotEquals(dummyTracker.getUserId(), "123456");
+        assertEquals(dummyTracker.getUserId(), "123456");
     }
 
     @Test
@@ -351,7 +376,9 @@ public class TrackerTest {
     public void testTrackUncaughtExceptionHandler() throws Exception {
 
         try {
-            int _ = 1 / 0;
+            //noinspection NumericOverflow
+            int i = 1 / 0;
+            assertNotEquals(i, 0);
         } catch (Exception e) {
             dummyTracker.customUEH.uncaughtException(Thread.currentThread(), e);
         }
@@ -399,9 +426,4 @@ public class TrackerTest {
         assertEquals(dummyTracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
     }
 
-    @Test
-    public void testMd5() throws Exception {
-        assertEquals(Tracker.md5("test"), "098f6bcd4621d373cade4e832627b4f6");
-        assertNull(Tracker.md5(null));
-    }
 }
