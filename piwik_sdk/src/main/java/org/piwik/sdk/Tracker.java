@@ -554,6 +554,39 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
+     * Tracking the impressions
+     *
+     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
+     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
+     * @param contentTarget (optional) The target of the content. For instance the URL of a landing page.
+     */
+    public Tracker trackContentImpression(String contentName, String contentPiece, String contentTarget) {
+        if (contentName != null && contentName.length() > 0) {
+            set(QueryParams.CONTENT_NAME, contentName);
+            set(QueryParams.CONTENT_PIECE, contentPiece);
+            set(QueryParams.CONTENT_TARGET, contentTarget);
+            return doTrack();
+        }
+        return this;
+    }
+
+    /**
+     * Builds URL to track a content impression.
+     *
+     * @param interaction   The name of the interaction with the content. For instance a 'click'
+     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
+     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
+     * @param contentTarget (optional) The target the content leading to when an interaction occurs. For instance the URL of a landing page.
+     */
+    public Tracker trackContentInteraction(String interaction, String contentName, String contentPiece, String contentTarget) {
+        if(interaction != null && interaction.length() > 0){
+            set(QueryParams.CONTENT_INTERACTION, interaction);
+            return trackContentImpression(contentName, contentPiece, contentTarget);
+        }
+        return this;
+    }
+
+    /**
      * Caught exceptions are errors in your app for which you've defined exception handling code,
      * such as the occasional timeout of a network connection during a request for data.
      *
@@ -883,6 +916,12 @@ public class Tracker implements Dispatchable<Integer> {
         // Campaign
         CAMPAIGN_NAME("_rcn"),
         CAMPAIGN_KEYWORD("_rck"),
+
+        // Content Tracking
+        CONTENT_INTERACTION("c_i"),
+        CONTENT_NAME("c_n"),
+        CONTENT_PIECE("c_p"),
+        CONTENT_TARGET("c_t"),
 
         // Events
         EVENT_CATEGORY("e_c"),
