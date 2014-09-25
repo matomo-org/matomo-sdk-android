@@ -571,7 +571,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Builds URL to track a content impression.
+     * Tracking the interactions
      *
      * @param interaction   The name of the interaction with the content. For instance a 'click'
      * @param contentName   The name of the content. For instance 'Ad Foo Bar'
