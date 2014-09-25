@@ -360,6 +360,32 @@ public class TrackerTest {
         checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
     }
 
+    @Test
+    public void testTrackContentImpression() throws Exception {
+        String name = "test name2";
+        dummyTracker.trackContentImpression(name, "test", "test2");
+        QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
+
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_NAME), name);
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_PIECE), "test");
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_TARGET), "test2");
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackContentInteraction() throws Exception {
+        String interaction = "interaction";
+        String name = "test name2";
+        dummyTracker.trackContentInteraction(interaction, name, "test", "test2");
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
+
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_INTERACTION), interaction);
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_NAME), name);
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_PIECE), "test");
+        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_TARGET), "test2");
+        validateDefaultQuery(queryParams);
+    }
 
     @Test
     public void testTrackException() throws Exception {
