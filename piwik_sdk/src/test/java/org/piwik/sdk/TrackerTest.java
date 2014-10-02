@@ -47,6 +47,7 @@ public class TrackerTest {
         dummyTracker.afterTracking();
         dummyTracker.clearLastEvent();
         dummyTracker.setAPIUrl(testAPIUrl);
+        dummyTracker.setApplicationDomain(null);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
@@ -150,6 +151,32 @@ public class TrackerTest {
                 .set(Tracker.QueryParams.CAMPAIGN_KEYWORD, (String) null);
 
         assertEquals(dummyTracker.getQuery(), "?h=0");
+    }
+
+    @Test
+    public void testSetURL() throws Exception {
+        dummyTracker.setApplicationDomain("test.com");
+        assertEquals(dummyTracker.getApplicationDomain(), "test.com");
+        assertEquals(dummyTracker.getApplicationBaseURL(), "http://test.com");
+        assertEquals(dummyTracker.getParamURL(), "http://test.com/");
+
+        dummyTracker.set(Tracker.QueryParams.URL_PATH, "me");
+        assertEquals(dummyTracker.getParamURL(), "http://test.com/me");
+
+        // override protocol
+        dummyTracker.set(Tracker.QueryParams.URL_PATH, "https://my.com/secure");
+        assertEquals(dummyTracker.getParamURL(), "https://my.com/secure");
+    }
+
+    @Test
+    public void testSetApplicationDomain() throws Exception {
+        dummyTracker
+                .setApplicationDomain("my-domain.com")
+                .trackScreenView("test/test", "Test title");
+        QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
+
+        validateDefaultQuery(queryParams);
+        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
     @Test

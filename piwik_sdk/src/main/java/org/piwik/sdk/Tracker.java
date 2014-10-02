@@ -74,6 +74,7 @@ public class Tracker implements Dispatchable<Integer> {
     private int dispatchInterval = piwikDefaultDispatchTimer;
     private DispatchingHandler dispatchingHandler;
 
+    private String applicationDomain;
     private static String realScreenResolution;
     private static String userAgent;
     private static String userLanguage;
@@ -255,6 +256,20 @@ public class Tracker implements Dispatchable<Integer> {
     public Tracker clearUserId() {
         userId = null;
         return this;
+    }
+
+    /**
+     * Domain used to build required parameter url (http://developer.piwik.org/api-reference/tracking-api)
+     * If domain wasn't set `Application.getPackageName()` method will be used
+     * @param domain your-domain.com
+     */
+    public Tracker setApplicationDomain(String domain) {
+        applicationDomain = domain;
+        return this;
+    }
+
+    protected String getApplicationDomain(){
+        return applicationDomain != null ? applicationDomain : piwik.getApplicationDomain();
     }
 
     /**
@@ -801,8 +816,8 @@ public class Tracker implements Dispatchable<Integer> {
         lastEvent = null;
     }
 
-    private String getApplicationBaseURL() {
-        return String.format("http://%s", piwik.getApplicationDomain());
+    protected String getApplicationBaseURL() {
+        return String.format("http://%s", getApplicationDomain());
     }
 
     protected String getParamURL() {
