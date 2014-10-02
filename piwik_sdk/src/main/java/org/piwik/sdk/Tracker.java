@@ -16,6 +16,7 @@ import java.util.*;
 
 /**
  * Main tracking class
+ * This class is not Thread safe and should be externally synchronized or multiple instances used.
  */
 public class Tracker implements Dispatchable<Integer> {
 
