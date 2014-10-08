@@ -12,3 +12,8 @@ Here is the initial design document written by Thomas to give a brief overview o
 ## Build status
 
 Master branch [![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android)
+
+## License
+
+Android SDK for Piwik is released under the GPL v3 (or later) license, see [LICENSE](https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE)
+
