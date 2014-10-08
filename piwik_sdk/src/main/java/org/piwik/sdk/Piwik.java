@@ -1,3 +1,10 @@
+/*
+ * Android SDK for Piwik
+ *
+ * @link https://github.com/piwik/piwik-android-sdk
+ * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
+ */
+
 package org.piwik.sdk;
 
 import android.annotation.TargetApi;
@@ -13,6 +20,8 @@ import java.util.HashMap;
 
 
 public class Piwik {
+    protected final static Object lock = new Object();
+
     private static HashMap<Application, Piwik> applications = new HashMap<Application, Piwik>();
 
     private Application application;
@@ -67,14 +76,16 @@ public class Piwik {
         });
     }
 
-    synchronized public static Piwik getInstance(Application application) {
-        Piwik piwik = applications.get(application);
-        if (piwik != null) {
+    public static Piwik getInstance(Application application) {
+        synchronized (lock) {
+            Piwik piwik = applications.get(application);
+            if (piwik != null) {
+                return piwik;
+            }
+            piwik = new Piwik(application);
+            applications.put(application, piwik);
             return piwik;
         }
-        piwik = new Piwik(application);
-        applications.put(application, piwik);
-        return piwik;
     }
 
     /**

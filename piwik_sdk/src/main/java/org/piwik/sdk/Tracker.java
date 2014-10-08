@@ -1,3 +1,10 @@
+/*
+ * Android SDK for Piwik
+ *
+ * @link https://github.com/piwik/piwik-android-sdk
+ * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
+ */
+
 package org.piwik.sdk;
 
 import android.app.Activity;
@@ -8,18 +15,15 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 
 /**
  * Main tracking class
+ * This class is not Thread safe and should be externally synchronized or multiple instances used.
  */
 public class Tracker implements Dispatchable<Integer> {
 
@@ -34,41 +38,71 @@ public class Tracker implements Dispatchable<Integer> {
     private static final int piwikHTTPRequestTimeout = 5;
     private static final int piwikQueryDefaultCapacity = 14;
 
-    // @todo: doc
+    /**
+     * The ID of the website we're tracking a visit/action for.
+     */
+    private int siteId;
+
+    /**
+     * Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     */
+    private URL apiUrl;
+
+    /**
+     * Defines the User ID for this request.
+     * User ID is any non empty unique string identifying the user (such as an email address or a username).
+     * To access this value, users must be logged-in in your system so you can
+     * fetch this user ID from your system, and pass it to Piwik.
+     * <p/>
+     * When specified, the User ID will be "enforced".
+     * This means that if there is no recent visit with this User ID, a new one will be created.
+     * If a visit is found in the last 30 minutes with your specified User ID,
+     * then the new action will be recorded to this existing visit.
+     */
+    private String userId;
+
+    /**
+     * The unique visitor ID, must be a 16 characters hexadecimal string.
+     * Every unique visitor must be assigned a different ID and this ID must not change after it is assigned.
+     * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
+     */
+    private String visitorId;
+
+    /**
+     * 32 character authorization key used to authenticate the API request.
+     * Should be equals `token_auth` value of the Super User
+     * or a user with admin access to the website visits are being tracked for.
+     */
+    private String authToken;
+
+
     private Piwik piwik;
+    private String lastEvent;
     private boolean isDispatching = false;
     private int dispatchInterval = piwikDefaultDispatchTimer;
     private DispatchingHandler dispatchingHandler;
+
+    private String applicationDomain;
     private static String realScreenResolution;
     private static String userAgent;
     private static String userLanguage;
     private static String userCountry;
-    private String lastEvent;
-
-    private int siteId;
-    private URL apiUrl;
-    private String userId;
-    private String authToken;
     private long sessionTimeoutMillis;
     private long sessionStartedMillis;
 
-    private ArrayList<String> queue = new ArrayList<String>();
-    private HashMap<String, String> queryParams;
-    private HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
-    protected static final String LOGGER_TAG = Piwik.class.getName().toUpperCase();
+    private final ArrayList<String> queue = new ArrayList<String>(20);
+    private final HashMap<String, String> queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
+    private final HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
 
-    /**
-     * Random object used for the request URl.
-     */
-    private Random randomObject = new Random(new Date().getTime());
+    protected static final String LOGGER_TAG = Piwik.class.getName().toUpperCase();
+    private final Random randomObject = new Random(new Date().getTime());
 
 
     private Tracker(String url, int siteId) throws MalformedURLException {
-        clearQueryParams();
         setAPIUrl(url);
         setNewSession();
         setSessionTimeout(piwikDefaultSessionTimeout);
-        setUserId(getRandomVisitorId());
+        visitorId = getRandomVisitorId();
         reportUncaughtExceptions(true);
         this.siteId = siteId;
     }
@@ -168,18 +202,18 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     @Override
-    synchronized public void dispatchingCompleted(Integer count) {
+    public void dispatchingCompleted(Integer count) {
         isDispatching = false;
         Log.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
     }
 
     @Override
-    synchronized public void dispatchingStarted() {
+    public void dispatchingStarted() {
         isDispatching = true;
     }
 
     @Override
-    synchronized public boolean isDispatching() {
+    public boolean isDispatching() {
         return isDispatching;
     }
 
@@ -192,18 +226,18 @@ public class Tracker implements Dispatchable<Integer> {
      * tracker.set(QueryParams.SECONDS, "30");
      * </pre>
      *
-     * @param key   name
+     * @param key   query params name
      * @param value value
      * @return tracker instance
      */
-    public Tracker set(String key, String value) {
-        if (value != null) {
-            queryParams.put(key, value);
+    public Tracker set(QueryParams key, String value) {
+        if (value != null && value.length() > 0) {
+            queryParams.put(key.toString(), value);
         }
         return this;
     }
 
-    public Tracker set(String key, Integer value) {
+    public Tracker set(QueryParams key, Integer value) {
         if (value != null) {
             set(key, Integer.toString(value));
         }
@@ -211,27 +245,39 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Defines the visitor ID for this request. You must set this value to exactly a 16 character
-     * hexadecimal string (containing only characters 01234567890abcdefABCDEF).
-     * When specified, the Visitor ID will be "enforced". This means that if there is no recent visit with
-     * this visitor ID, a new one will be created. If a visit is found in the last 30 minutes with your
-     * specified Visitor Id, then the new action will be recorded to this existing visit.
+     * Sets a User ID to this user (such as an email address or a username)
      *
-     * @param userId any not 16 character hexadecimal string will be converted to md5 hash
+     * @param userId this parameter can be set to any string.
+     *               The string will be hashed, and used as "User ID".
      */
     public Tracker setUserId(String userId) {
-        if (userId != null) {
-            if (userId.length() == 16 && userId.matches("^[0-9a-fA-F]{16}$")) {
-                this.userId = userId;
-            } else {
-                this.userId = md5(userId).substring(0, 16);
-            }
+        if (userId != null && userId.length() > 0) {
+            this.userId = userId;
         }
         return this;
     }
 
     public Tracker setUserId(long userId) {
         return setUserId(Long.toString(userId));
+    }
+
+    public Tracker clearUserId() {
+        userId = null;
+        return this;
+    }
+
+    /**
+     * Domain used to build required parameter url (http://developer.piwik.org/api-reference/tracking-api)
+     * If domain wasn't set `Application.getPackageName()` method will be used
+     * @param domain your-domain.com
+     */
+    public Tracker setApplicationDomain(String domain) {
+        applicationDomain = domain;
+        return this;
+    }
+
+    protected String getApplicationDomain(){
+        return applicationDomain != null ? applicationDomain : piwik.getApplicationDomain();
     }
 
     /**
@@ -256,7 +302,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @return formatted string: WxH
      */
     public String getResolution() {
-        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION)) {
+        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION.toString())) {
             if (realScreenResolution == null) {
                 try {
                     DisplayMetrics dm = new DisplayMetrics();
@@ -273,7 +319,7 @@ public class Tracker implements Dispatchable<Integer> {
             return realScreenResolution;
         }
 
-        return queryParams.get(QueryParams.SCREEN_RESOLUTION);
+        return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
     }
 
     /**
@@ -528,10 +574,43 @@ public class Tracker implements Dispatchable<Integer> {
      * Make sure to call this method only once per user
      */
     public Tracker trackNewAppDownload() {
-        set(QueryParams.DOWNLOAD, getParamUlr());
+        set(QueryParams.DOWNLOAD, getApplicationBaseURL());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
         return trackEvent("Application", "downloaded");
+    }
+
+    /**
+     * Tracking the impressions
+     *
+     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
+     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
+     * @param contentTarget (optional) The target of the content. For instance the URL of a landing page.
+     */
+    public Tracker trackContentImpression(String contentName, String contentPiece, String contentTarget) {
+        if (contentName != null && contentName.length() > 0) {
+            set(QueryParams.CONTENT_NAME, contentName);
+            set(QueryParams.CONTENT_PIECE, contentPiece);
+            set(QueryParams.CONTENT_TARGET, contentTarget);
+            return doTrack();
+        }
+        return this;
+    }
+
+    /**
+     * Tracking the interactions
+     *
+     * @param interaction   The name of the interaction with the content. For instance a 'click'
+     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
+     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
+     * @param contentTarget (optional) The target the content leading to when an interaction occurs. For instance the URL of a landing page.
+     */
+    public Tracker trackContentInteraction(String interaction, String contentName, String contentPiece, String contentTarget) {
+        if(interaction != null && interaction.length() > 0){
+            set(QueryParams.CONTENT_INTERACTION, interaction);
+            return trackContentImpression(contentName, contentPiece, contentTarget);
+        }
+        return this;
     }
 
     /**
@@ -614,12 +693,12 @@ public class Tracker implements Dispatchable<Integer> {
         set(QueryParams.RECORD, defaultRecordValue);
         set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
         set(QueryParams.SCREEN_RESOLUTION, getResolution());
-        set(QueryParams.URL_PATH, getParamUlr());
+        set(QueryParams.URL_PATH, getParamURL());
         set(QueryParams.USER_AGENT, getUserAgent());
         set(QueryParams.LANGUAGE, getLanguage());
         set(QueryParams.COUNTRY, getCountry());
-        set(QueryParams.VISITOR_ID, userId);
-        set(QueryParams.ENFORCED_VISITOR_ID, userId);
+        set(QueryParams.VISITOR_ID, visitorId);
+        set(QueryParams.USER_ID, getUserId());
         set(QueryParams.DATETIME_OF_REQUEST, getCurrentDatetime());
         set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
         set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).toString());
@@ -682,22 +761,28 @@ public class Tracker implements Dispatchable<Integer> {
         return vars;
     }
 
+    private CustomVariables getCustomVariables(QueryParams namespace) {
+        if (namespace == null) {
+            return null;
+        }
+
+        return getCustomVariables(namespace.toString());
+    }
+
     private void clearAllCustomVariables() {
         getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).clear();
         getCustomVariables(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES).clear();
     }
 
-    private Tracker setCustomVariable(String namespace, int index, String name, String value) {
-        getCustomVariables(namespace).put(index, name, value);
+    private Tracker setCustomVariable(QueryParams namespace, int index, String name, String value) {
+        getCustomVariables(namespace.toString()).put(index, name, value);
         return this;
     }
 
     private void clearQueryParams() {
-        if (queryParams != null) {
-            queryParams.clear();
-        }
-        queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
-
+        // To avoid useless shrinking and resizing of the Map
+        // the capacity is held the same when clear() is called.
+        queryParams.clear();
     }
 
     private String getCurrentDatetime() {
@@ -743,14 +828,22 @@ public class Tracker implements Dispatchable<Integer> {
         lastEvent = null;
     }
 
-    protected String getParamUlr() {
-        String url = queryParams.get(QueryParams.URL_PATH);
+    protected String getApplicationBaseURL() {
+        return String.format("http://%s", getApplicationDomain());
+    }
+
+    protected String getParamURL() {
+        String url = queryParams.get(QueryParams.URL_PATH.toString());
+
         if (url == null) {
             url = "/";
+        } else if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
         } else if (!url.startsWith("/")) {
             url = "/" + url;
         }
-        return String.format("http://%s%s", piwik.getApplicationDomain(), url);
+
+        return getApplicationBaseURL() + url;
     }
 
     protected String getUserId() {
@@ -792,25 +885,6 @@ public class Tracker implements Dispatchable<Integer> {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
-    public static String md5(String s) {
-        if (s == null) {
-            return null;
-        }
-        try {
-            MessageDigest m = MessageDigest.getInstance("MD5");
-            m.update(s.getBytes("UTF-8"), 0, s.length());
-            BigInteger i = new BigInteger(1, m.digest());
-
-            return String.format("%1$032x", i);
-
-        } catch (UnsupportedEncodingException e) {
-            Log.w(Tracker.LOGGER_TAG, s, e);
-        } catch (NoSuchAlgorithmException e) {
-            Log.w(Tracker.LOGGER_TAG, s, e);
-        }
-        return null;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -831,50 +905,66 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * CONSTANTS
      */
-    public static class QueryParams {
-        public static final String SITE_ID = "idsite";
-        public static final String AUTHENTICATION_TOKEN = "token_auth";
-        public static final String RECORD = "rec";
-        public static final String API_VERSION = "apiv";
-        public static final String SCREEN_RESOLUTION = "res";
-        public static final String HOURS = "h";
-        public static final String MINUTES = "m";
-        public static final String SECONDS = "s";
-        public static final String ACTION_NAME = "action_name";
-        public static final String URL_PATH = "url";
-        public static final String USER_AGENT = "ua";
-        public static final String VISITOR_ID = "_id";
-        public static final String ENFORCED_VISITOR_ID = "cid";
+    public enum QueryParams {
+        SITE_ID("idsite"),
+        AUTHENTICATION_TOKEN("token_auth"),
+        RECORD("rec"),
+        API_VERSION("apiv"),
+        SCREEN_RESOLUTION("res"),
+        HOURS("h"),
+        MINUTES("m"),
+        SECONDS("s"),
+        ACTION_NAME("action_name"),
+        URL_PATH("url"),
+        USER_AGENT("ua"),
+        VISITOR_ID("_id"),
+        USER_ID("uid"),
 
-        public static final String VISIT_SCOPE_CUSTOM_VARIABLES = "_cvar";
-        public static final String SCREEN_SCOPE_CUSTOM_VARIABLES = "cvar";
-        public static final String RANDOM_NUMBER = "r";
-        public static final String FIRST_VISIT_TIMESTAMP = "_idts";
-        public static final String PREVIOUS_VISIT_TIMESTAMP = "_viewts";
-        public static final String TOTAL_NUMBER_OF_VISITS = "_idvc";
-        public static final String GOAL_ID = "idgoal";
-        public static final String REVENUE = "revenue";
-        public static final String SESSION_START = "new_visit";
-        public static final String LANGUAGE = "lang";
-        public static final String COUNTRY = "country";
-        public static final String LATITUDE = "lat";
-        public static final String LONGITUDE = "long";
-        public static final String SEARCH_KEYWORD = "search";
-        public static final String SEARCH_CATEGORY = "search_cat";
-        public static final String SEARCH_NUMBER_OF_HITS = "search_count";
-        public static final String REFERRER = "urlref";
-        public static final String DATETIME_OF_REQUEST = "cdt";
-        public static final String DOWNLOAD = "download";
+        VISIT_SCOPE_CUSTOM_VARIABLES("_cvar"),
+        SCREEN_SCOPE_CUSTOM_VARIABLES("cvar"),
+        RANDOM_NUMBER("r"),
+        FIRST_VISIT_TIMESTAMP("_idts"),
+        PREVIOUS_VISIT_TIMESTAMP("_viewts"),
+        TOTAL_NUMBER_OF_VISITS("_idvc"),
+        GOAL_ID("idgoal"),
+        REVENUE("revenue"),
+        SESSION_START("new_visit"),
+        LANGUAGE("lang"),
+        COUNTRY("country"),
+        LATITUDE("lat"),
+        LONGITUDE("long"),
+        SEARCH_KEYWORD("search"),
+        SEARCH_CATEGORY("search_cat"),
+        SEARCH_NUMBER_OF_HITS("search_count"),
+        REFERRER("urlref"),
+        DATETIME_OF_REQUEST("cdt"),
+        DOWNLOAD("download"),
 
         // Campaign
-        static final String CAMPAIGN_NAME = "_rcn";
-        static final String CAMPAIGN_KEYWORD = "_rck";
+        CAMPAIGN_NAME("_rcn"),
+        CAMPAIGN_KEYWORD("_rck"),
+
+        // Content Tracking
+        CONTENT_INTERACTION("c_i"),
+        CONTENT_NAME("c_n"),
+        CONTENT_PIECE("c_p"),
+        CONTENT_TARGET("c_t"),
 
         // Events
-        static final String EVENT_CATEGORY = "e_c";
-        static final String EVENT_ACTION = "e_a";
-        static final String EVENT_NAME = "e_n";
-        static final String EVENT_VALUE = "e_v";
+        EVENT_CATEGORY("e_c"),
+        EVENT_ACTION("e_a"),
+        EVENT_NAME("e_n"),
+        EVENT_VALUE("e_v");
+
+        private final String value;
+
+        QueryParams(String value) {
+            this.value = value;
+        }
+
+        public String toString() {
+            return value;
+        }
     }
 
 }

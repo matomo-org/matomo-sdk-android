@@ -1,3 +1,10 @@
+/*
+ * Android SDK for Piwik
+ *
+ * @link https://github.com/piwik/piwik-android-sdk
+ * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
+ */
+
 package org.piwik.sdk;
 
 import android.util.Log;
@@ -25,7 +32,7 @@ public class CustomVariables extends HashMap<String, JSONArray> {
     private static final int MAX_VARIABLES = 5;
     protected static final int MAX_LENGTH = 200;
 
-    public CustomVariables() {
+    protected CustomVariables() {
         super(MAX_VARIABLES);
     }
 
@@ -44,9 +51,15 @@ public class CustomVariables extends HashMap<String, JSONArray> {
     public JSONArray put(int index, String name, String value) {
         if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
 
-            if (name.length() > MAX_LENGTH) name = name.substring(0, MAX_LENGTH);
+            if (name.length() > MAX_LENGTH) {
+                Log.w(Tracker.LOGGER_TAG, String.format("Name is too long %s", name));
+                name = name.substring(0, MAX_LENGTH);
+            }
 
-            if (value.length() > MAX_LENGTH) value = value.substring(0, MAX_LENGTH);
+            if (value.length() > MAX_LENGTH) {
+                Log.w(Tracker.LOGGER_TAG, String.format("Value is too long %s", value));
+                value = value.substring(0, MAX_LENGTH);
+            }
 
             return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
         }
