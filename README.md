@@ -15,5 +15,5 @@ Master branch [![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg
 
 ## License
 
-Android SDK for Piwik is released under the BSD 3-Clause license, see [LICENSE](https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE)
+Android SDK for Piwik is released under the BSD-3 Clause license, see [LICENSE](https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE)
 
