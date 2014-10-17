@@ -1,6 +1,5 @@
 .gradle
 gradle.properties
-gradlew*
 /local.properties
 /.idea/workspace.xml
 /.idea/libraries

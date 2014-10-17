@@ -464,6 +464,10 @@ public class Tracker implements Dispatchable<Integer> {
         return System.currentTimeMillis() - sessionStartedMillis > sessionTimeoutMillis;
     }
 
+    public int getSessionTimeout() {
+        return (int) sessionTimeoutMillis / 1000;
+    }
+
     /**
      * Tracking methods
      *
