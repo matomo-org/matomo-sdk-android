@@ -1,0 +1,57 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.12.2'
+        classpath 'com.github.jcandksolutions.gradle:android-unit-test:1.5.0'
+    }
+}
+
+apply plugin: 'com.android.library'
+
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion '19.1.0'
+
+    defaultConfig {
+        applicationId 'org.piwik.sdk'
+        minSdkVersion 7
+        targetSdkVersion 19
+        versionCode 1
+        versionName '0.0.1'
+    }
+}
+
+apply plugin: 'android-unit-test'
+
+dependencies {
+    repositories {
+        mavenCentral()
+    }
+
+    compile 'com.android.support:support-v4:20.0.0'
+    testCompile 'com.android.support:support-v4:20.0.0'
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.robolectric:robolectric:2.+'
+    testCompile 'com.squareup:fest-android:1.0.+'
+}
+
+/**
+ * JAR
+ */
+
+task clearJar(type: Delete) {
+    delete 'jar/PiwikAndroidSdk.jar'
+}
+
+task makeJar(type: Copy) {
+    from('build/intermediates/bundles/release/')
+    into('jar/')
+    include('classes.jar')
+    rename ('classes.jar', 'PiwikAndroidSdk.jar')
+}
+
+makeJar.dependsOn(clearJar, build)
