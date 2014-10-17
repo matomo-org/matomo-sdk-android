@@ -16,9 +16,13 @@ public class DemoApp extends PiwikApplication {
         return "http://beacons.testing.piwik.pro/piwik.php";
     }
 
+    /**
+     * AuthToken is deprecated in Piwik >= 2.8.0 due to security reasons.
+     * @return token or null
+     */
     @Override
     public String getAuthToken() {
-        return "2f0e4cf3431b6b4ed8614c4649496aaf";
+        return null;
     }
 
     @Override

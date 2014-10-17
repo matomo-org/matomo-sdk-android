@@ -26,17 +26,17 @@ If You want to run application:
 
 ![Settings page](http://i.imgur.com/HQWSyfEl.png)
     
-## FAQ
+## Piwik dashboard 
 
-__Why no Maven?__
-It's planned for the next release
+Statistic of demo application usage could be found [here](http://beacons.testing.piwik.pro/).
 
 ## Changelog
 
-### Version 0.1
+### Version 0.0.1
 
 Application supports tracking of screen views, goals and unhandled exceptions.
 There's also simple settings activity with customizable "dry run", "opt out" and "session timeout" params.
+Auth token has been deprecated to use in application due to security reasons.
 
 ## Support
 
