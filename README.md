@@ -13,7 +13,7 @@ Integrating Piwik into your Android app
 0. [Create a new website in the Piwik web interface](http://piwik.org/docs/installation/). Copy the Website ID from "Settings > Websites".
 1. [Update AndroidManifest.xml](#update-manifest).
 2. Download [latest JAR](https://github.com/piwik/piwik-sdk-android/raw/master/piwik_sdk/jar/PiwikAndroidSdk.jar) and put it into your `lib` folder.
-3. [Initialize Tracker](#Initialize-tracker).
+3. [Initialize Tracker](#initialize-tracker).
 4. [Track screen views, exceptions, goals and more](#tracker-usage).
 5. [Advanced tracker usage](#advanced-tracker-usage)
 
