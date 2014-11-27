@@ -689,6 +689,7 @@ public class Tracker implements Dispatchable<Integer> {
      */
     protected void beforeTracking() {
         set(QueryParams.API_VERSION, defaultAPIVersionValue);
+        set(QueryParams.SEND_IMAGE, "0");
         set(QueryParams.SITE_ID, siteId);
         set(QueryParams.RECORD, defaultRecordValue);
         set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
@@ -907,8 +908,9 @@ public class Tracker implements Dispatchable<Integer> {
      */
     public enum QueryParams {
         SITE_ID("idsite"),
-        AUTHENTICATION_TOKEN("token_auth"),
+        @Deprecated AUTHENTICATION_TOKEN("token_auth"),
         RECORD("rec"),
+        SEND_IMAGE("send_image"),
         API_VERSION("apiv"),
         SCREEN_RESOLUTION("res"),
         HOURS("h"),

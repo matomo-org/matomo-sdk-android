@@ -76,6 +76,7 @@ public class TrackerTest {
     private static void validateDefaultQuery(QueryHashMap<String, String> params) {
         assertEquals(params.get(Tracker.QueryParams.SITE_ID), "1");
         assertEquals(params.get(Tracker.QueryParams.RECORD), "1");
+        assertEquals(params.get(Tracker.QueryParams.SEND_IMAGE), "0");
         assertEquals(params.get(Tracker.QueryParams.VISITOR_ID).length(), 16);
         assertEquals(params.get(Tracker.QueryParams.LANGUAGE), "en");
         assertTrue(params.get(Tracker.QueryParams.URL_PATH).startsWith("http://"));

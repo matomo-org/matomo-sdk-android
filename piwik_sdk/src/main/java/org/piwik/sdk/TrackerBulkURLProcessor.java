@@ -154,7 +154,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
                 response = client.execute(requestBase);
                 int statusCode = response.getStatusLine().getStatusCode();
                 Log.d(Tracker.LOGGER_TAG, String.format("status code %s", statusCode));
-                return statusCode == HttpStatus.SC_OK;
+                return statusCode == HttpStatus.SC_NO_CONTENT || statusCode == HttpStatus.SC_OK;
 
             } catch (ClientProtocolException e) {
                 Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
