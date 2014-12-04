@@ -10,12 +10,13 @@ your marketing campaigns and much more, so you can optimize your strategy and ex
 
 Integrating Piwik into your Android app
  
-0. [Create a new website in the Piwik web interface](http://piwik.org/docs/installation/). Copy the Website ID from "Settings > Websites".
-1. [Update AndroidManifest.xml](#update-manifest).
-2. Download [latest JAR](https://github.com/piwik/piwik-sdk-android/raw/master/piwik_sdk/jar/PiwikAndroidSdk.jar) and put it into your `lib` folder.
-3. [Initialize Tracker](#initialize-tracker).
-4. [Track screen views, exceptions, goals and more](#tracker-usage).
-5. [Advanced tracker usage](#advanced-tracker-usage)
+1. [Install Piwik](http://piwik.org/docs/installation/)
+2. [Create a new website in the Piwik web interface](http://piwik.org/docs/manage-websites/). Copy the Website ID from "Settings > Websites".
+3. [Update AndroidManifest.xml](#update-manifest).
+4. Put [JAR file](#jar) into your `lib` folder.
+5. [Initialize Tracker](#initialize-tracker).
+6. [Track screen views, exceptions, goals and more](#tracker-usage).
+7. [Advanced tracker usage](#advanced-tracker-usage)
 
 
 ### Update Manifest
@@ -28,11 +29,23 @@ Update your `AndroidManifest.xml` file by adding the following permissions:
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 ```
 
+### Jar
+
+Download [latest JAR](https://github.com/piwik/piwik-sdk-android/raw/master/piwik_sdk/jar/PiwikAndroidSdk.jar)
+or build it by yourself from the sources by only gradle command.
+
+```
+
+./gradlew :piwik_sdk:makeJar
+```
+
+The _.jar_ will be saved in **piwik_sdk/jar/PiwikAndroidSdk.jar**
+
 ### Initialize Tracker
 
 #### Basic
 
-You can simply extends your application with a 
+You can simply extend your application with a 
 [``PiwikApplication``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/PiwikApplication.java) class. 
 [This approach is used](https://github.com/piwik/piwik-sdk-android/blob/master/demo_app/src/main/java/com/piwik/demo/DemoApp.java) in our demo app.
 
@@ -95,14 +108,44 @@ public class YourActivity extends Activity {
 }
 ```
 
-#### Track goals, [events](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#trackEvent(java.lang.String, java.lang.String, java.lang.String, java.lang.Integer)) and custom vars
+#### Track events
+
+To collect data about user's interaction with interactive components of your app, like button presses or the use of a particular item in a game 
+use [trackEvent](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#trackEvent(java.lang.String, java.lang.String, java.lang.String, java.lang.Integer)) 
+method.
 
 ```java
 
-((YourApplication) getApplication()).getTracker()
-    .setScreenCustomVariable(1, "first", "var")
-    .trackEvent("category", "action", "label", 1000)
-    .trackGoal(1, revenue);
+((YourApplication) getApplication()).getTracker().trackEvent("category", "action", "label", 1000)
+```
+
+#### Track goals
+
+If you want to trigger a conversion manually or track some user interaction simply call the method 
+[trackGoal](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#trackGoal(java.lang.Integer)).
+Read more about what is a [Goal in Piwik](http://piwik.org/docs/tracking-goals-web-analytics/).
+
+```java
+
+((YourApplication) getApplication()).getTracker().trackGoal(1, revenue);
+```
+
+#### Track custom vars
+
+To track a custom name-value pair assigned to your users or screen views use 
+[setUserCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setUserCustomVariable(int, java.lang.String, java.lang.String))
+and
+[setScreenCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setScreenCustomVariable(int, java.lang.String, java.lang.String))
+methods. Those methods have to be called before a call to [trackScreenView](#track-screen-views).
+More about [custom variables on piwik.org](http://piwik.org/docs/custom-variables/).
+
+
+```java
+
+Tracker tracker = ((YourApplication) getApplication()).getTracker();
+tracker.setUserCustomVariable(2, 'Age', '99');
+tracker.setScreenCustomVariable(2, 'Price', '0.99');
+tracker.trackScreenView('/path');
 ```
 
 #### Track application downloads
@@ -143,8 +186,8 @@ If a negative value is used the dispatch timer will never run, a manual dispatch
 #### User ID
 
 Providing the tracker with a user ID lets you connect data collected from multiple devices and multiple browsers for the same user. 
-
-A user ID is typically a non empty string such as username, email address or UUID that uniquely identify the user. The User ID must be the same for a given user across all her devices and browsers.
+A user ID is typically a non empty string such as username, email address or UUID that uniquely identifies the user. 
+The User ID must be the same for a given user across all her devices and browsers.
 
 ```java
 
