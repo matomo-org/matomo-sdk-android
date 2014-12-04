@@ -176,7 +176,7 @@ If a negative value is used the dispatch timer will never run, a manual dispatch
     try {
         revenue = getRevenue();
     } catch (Exception e) {
-        tracker.trackException(e.getClass().getName(), "wrong revenue", false);
+        tracker.trackException(e, e.getMessage(), false);
         tracker.dispatch();
         revenue = 0;
     }
