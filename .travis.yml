@@ -9,3 +9,5 @@ android:
     - extra-android-m2repository
 
 script: ./gradlew :piwik_sdk:test
+
+after_success: ./gradlew :piwik_sdk:jacocoTestReport coveralls

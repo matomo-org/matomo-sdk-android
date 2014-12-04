@@ -55,3 +55,51 @@ task makeJar(type: Copy) {
 }
 
 makeJar.dependsOn(clearJar, build)
+
+/**
+ * Coverage
+ */
+
+
+apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:1.0.2'
+    }
+}
+
+def coverageSourceDirs = [
+    'src/main/java',
+]
+
+task jacocoTestReport(type: JacocoReport) {
+    reports {
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = false
+    }
+    classDirectories = fileTree(
+        dir: './build/intermediates/classes/release',
+        excludes: ['org/piwik/R*.class',
+                   '**/*BuildConfig.java',
+                   '**/*$InjectAdapter.class',
+                   '**/*$ModuleAdapter.class',
+                   '**/*$ViewInjector*.class'
+        ])
+    sourceDirectories = files(coverageSourceDirs)
+    executionData = files('build/jacoco/testDebug.exec')
+    // Bit hacky but fixes https://code.google.com/p/android/issues/detail?id=69174.
+    // We iterate through the compiled .class tree and rename $$ to $.
+    doFirst {
+        new File('piwik_sdk/build/intermediates/classes/').eachFileRecurse { file ->
+            if (file.name.contains('$$')) {
+                file.renameTo(file.path.replace('$$', '$'))
+            }
+        }
+    }
+}
