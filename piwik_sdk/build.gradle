@@ -35,7 +35,7 @@ dependencies {
     compile 'com.android.support:support-v4:20.0.0'
     testCompile 'com.android.support:support-v4:20.0.0'
     testCompile 'junit:junit:4.11'
-    testCompile 'org.robolectric:robolectric:2.+'
+    testCompile 'org.robolectric:robolectric:2.4'
     testCompile 'com.squareup:fest-android:1.0.+'
 }
 
@@ -77,7 +77,7 @@ buildscript {
 task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
     reports {
         xml.enabled = true
-        html.enabled = false
+        html.enabled = true
     }
     classDirectories = fileTree(
         dir: './build/intermediates/classes/debug',

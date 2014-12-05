@@ -2,7 +2,6 @@ Piwik SDK for Android
 ========================
 
 [![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android)
-[![Coverage Status](http://img.shields.io/coveralls/piwik/piwik-sdk-android/11_readme.svg)](https://coveralls.io/r/piwik/piwik-sdk-android?branch=11_readme)
 
 This document describes how to get started using the Piwik Tracking SDK for Android. 
 [Piwik](http://piwik.org) is the leading open source web analytics platform 
