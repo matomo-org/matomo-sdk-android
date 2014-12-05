@@ -10,4 +10,4 @@ android:
 
 script: ./gradlew :piwik_sdk:test
 
-after_success: ./gradlew :piwik_sdk:travisJacocoTestReport coveralls
+after_success: ./gradlew :piwik_sdk:jacocoTestReport coveralls

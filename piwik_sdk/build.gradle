@@ -93,10 +93,7 @@ task jacocoTestReport(type: JacocoReport) {
     executionData = files('build/jacoco/testDebug.exec')
 }
 
-task travisJacocoTestReport(type: Copy) {
-    from 'build/reports/jacoco/jacocoTestReport/'
-    into 'build/reports/jacoco/test/'
-    include '**/*.xml'
+coveralls {
+    jacocoReportPath = 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
+    sourceDirs = ['src/main/java']
 }
-
-travisJacocoTestReport.dependsOn(jacocoTestReport)
