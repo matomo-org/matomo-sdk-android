@@ -74,32 +74,29 @@ buildscript {
     }
 }
 
-def coverageSourceDirs = [
-    'src/main/java',
-]
-
 task jacocoTestReport(type: JacocoReport) {
     reports {
-        xml.enabled = true // coveralls plugin depends on xml format report
+        xml.enabled = true
         html.enabled = false
     }
     classDirectories = fileTree(
         dir: './build/intermediates/classes/release',
         excludes: ['org/piwik/R*.class',
-                   '**/*BuildConfig.java',
+                   '**/BuildConfig.class',
                    '**/*$InjectAdapter.class',
                    '**/*$ModuleAdapter.class',
                    '**/*$ViewInjector*.class'
         ])
-    sourceDirectories = files(coverageSourceDirs)
+    sourceDirectories = files([
+        'src/main/java',
+    ])
     executionData = files('build/jacoco/testDebug.exec')
-    // Bit hacky but fixes https://code.google.com/p/android/issues/detail?id=69174.
-    // We iterate through the compiled .class tree and rename $$ to $.
-    doFirst {
-        new File('piwik_sdk/build/intermediates/classes/').eachFileRecurse { file ->
-            if (file.name.contains('$$')) {
-                file.renameTo(file.path.replace('$$', '$'))
-            }
-        }
-    }
 }
+
+task travisJacocoTestReport(type: Copy) {
+    from 'build/reports/jacoco/jacocoTestReport/'
+    into 'build/reports/jacoco/test/'
+    include '**/*.xml'
+}
+
+travisJacocoTestReport.dependsOn(jacocoTestReport)
