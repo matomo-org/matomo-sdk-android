@@ -443,8 +443,8 @@ public class TrackerTest {
         assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "Exception");
         assertTrue(queryParams.get(Tracker.QueryParams.EVENT_ACTION)
                 .startsWith("org.piwik.sdk.TrackerTest/testTrackUncaughtExceptionHandler"));
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), "java.lang.ArithmeticException [/ by zero]");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_VALUE), "0");
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), "/ by zero");
+        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_VALUE), "1");
     }
 
     @Test

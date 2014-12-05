@@ -35,7 +35,7 @@ dependencies {
     compile 'com.android.support:support-v4:20.0.0'
     testCompile 'com.android.support:support-v4:20.0.0'
     testCompile 'junit:junit:4.11'
-    testCompile 'org.robolectric:robolectric:2.+'
+    testCompile 'org.robolectric:robolectric:2.4'
     testCompile 'com.squareup:fest-android:1.0.+'
 }
 
@@ -55,3 +55,45 @@ task makeJar(type: Copy) {
 }
 
 makeJar.dependsOn(clearJar, build)
+
+/**
+ * Coverage
+ */
+
+
+apply plugin: 'jacoco'
+apply plugin: 'com.github.kt3k.coveralls'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:1.0.2'
+    }
+}
+
+task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+    classDirectories = fileTree(
+        dir: './build/intermediates/classes/debug',
+        excludes: ['org/piwik/R*.class',
+                   '**/BuildConfig.class',
+                   '**/*$InjectAdapter.class',
+                   '**/*$ModuleAdapter.class',
+                   '**/*$ViewInjector*.class'
+        ])
+    sourceDirectories = files([
+        'src/main/java',
+    ])
+    executionData = files('build/jacoco/testDebug.exec')
+}
+
+coveralls {
+    jacocoReportPath = 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
+    sourceDirs = ['src/main/java']
+}

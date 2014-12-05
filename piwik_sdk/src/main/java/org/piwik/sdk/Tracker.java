@@ -631,27 +631,37 @@ public class Tracker implements Dispatchable<Integer> {
         trackEvent("Exception", className, description, isFatal ? 1 : 0);
     }
 
+    /**
+     * Caught exceptions are errors in your app for which you've defined exception handling code,
+     * such as the occasional timeout of a network connection during a request for data.
+     *
+     * @param ex   exception instance
+     * @param description exception message
+     * @param isFatal     true if it's fatal exeption
+     */
+    public void trackException(Throwable ex, String description, boolean isFatal) {
+        String className;
+        try {
+            StackTraceElement trace = ex.getStackTrace()[0];
+            className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
+        } catch (Exception e) {
+            Log.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
+            className = ex.getClass().getName();
+        }
+
+        trackException(className, description, isFatal);
+    }
+
     protected final Thread.UncaughtExceptionHandler customUEH =
             new Thread.UncaughtExceptionHandler() {
 
                 @Override
                 public void uncaughtException(Thread thread, Throwable ex) {
-                    String className;
-
                     try {
-                        try {
-                            StackTraceElement trace = ex.getStackTrace()[0];
-                            className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
-                        } catch (Exception e) {
-                            Log.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
-                            className = ex.getClass().getName();
-                        }
-
-                        boolean isFatal = className.startsWith("RuntimeException");
-                        String excInfo = ex.getClass().getName() + " [" + ex.getMessage() + "]";
+                        String excInfo = ex.getMessage();
 
                         // track
-                        trackException(className, excInfo, isFatal);
+                        trackException(ex, excInfo, true);
 
                         // dispatch immediately
                         dispatch();
