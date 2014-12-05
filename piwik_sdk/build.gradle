@@ -74,13 +74,13 @@ buildscript {
     }
 }
 
-task jacocoTestReport(type: JacocoReport) {
+task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
     reports {
         xml.enabled = true
         html.enabled = false
     }
     classDirectories = fileTree(
-        dir: './build/intermediates/classes/release',
+        dir: './build/intermediates/classes/debug',
         excludes: ['org/piwik/R*.class',
                    '**/BuildConfig.class',
                    '**/*$InjectAdapter.class',
