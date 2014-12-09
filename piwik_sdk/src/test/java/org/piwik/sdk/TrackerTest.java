@@ -180,6 +180,36 @@ public class TrackerTest {
         assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
+    @Test(expected=IllegalArgumentException.class) 
+    public void testSetTooShortVistorId() {
+        String tooShortVisitorId = "0123456789ab";
+        dummyTracker.setVisitorId(tooShortVisitorId);
+        assertNotEquals(tooShortVisitorId, dummyTracker.getVisitorId());
+    }
+
+    @Test(expected=IllegalArgumentException.class) 
+    public void testSetTooLongVistorId() {
+        String tooLongVisitorId = "0123456789abcdefghi";
+        dummyTracker.setVisitorId(tooLongVisitorId);
+        assertNotEquals(tooLongVisitorId, dummyTracker.getVisitorId());
+    }
+
+    @Test(expected=IllegalArgumentException.class) 
+    public void testSetVistorIdWithInvalidCharacters() {
+        String invalidCharacterVisitorId = "01234-6789-ghief";
+        dummyTracker.setVisitorId(invalidCharacterVisitorId);
+        assertNotEquals(invalidCharacterVisitorId, dummyTracker.getVisitorId());
+    }
+
+    @Test
+    public void testSetVistorId() throws Exception {
+        String visitorId = "0123456789abcdef";
+        dummyTracker.setVisitorId(visitorId);
+        assertEquals(visitorId, dummyTracker.getVisitorId());
+        dummyTracker.beforeTracking();
+        assertTrue(dummyTracker.getQuery().contains("_id=" + visitorId));
+    }
+
     @Test
     public void testSetUserId() throws Exception {
         dummyTracker.setUserId("test");

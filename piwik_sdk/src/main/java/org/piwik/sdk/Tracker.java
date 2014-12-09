@@ -19,7 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
-
+import java.util.regex.*;
 
 /**
  * Main tracking class
@@ -264,6 +264,24 @@ public class Tracker implements Dispatchable<Integer> {
     public Tracker clearUserId() {
         userId = null;
         return this;
+    }
+
+    public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
+        if (confirmVisitorIdFormat(visitorId)) {
+            this.visitorId = visitorId;
+        }
+        return this;
+    }
+
+    private boolean confirmVisitorIdFormat(String visitorId) throws IllegalArgumentException {
+        String visitorIdRegexPattern = "^[0-9a-f]{16}$";
+        Pattern visitorIdPattern = Pattern.compile(visitorIdRegexPattern);
+        Matcher visitorIdMatcher = visitorIdPattern.matcher(visitorId);
+        if (visitorIdMatcher.find()) {
+            return true;
+        }
+        throw new IllegalArgumentException("VisitorId: " + visitorId + " is not of valid format, " +
+            " the format must match the regular expression: " + visitorIdRegexPattern);
     }
 
     /**
@@ -859,6 +877,10 @@ public class Tracker implements Dispatchable<Integer> {
 
     protected String getUserId() {
         return userId;
+    }
+
+    protected String getVisitorId() {
+        return visitorId;
     }
 
     /**
