@@ -973,6 +973,7 @@ public class Tracker implements Dispatchable<Integer> {
         REFERRER("urlref"),
         DATETIME_OF_REQUEST("cdt"),
         DOWNLOAD("download"),
+        LINK("link"),
 
         // Campaign
         CAMPAIGN_NAME("_rcn"),
