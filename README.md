@@ -213,6 +213,18 @@ Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blo
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
 
+### Tests and coverage
+
+Following command will run unit-tests, generate java documentation and coverage reports.
+
+```
+$ ./gradlew :piwik_sdk:clean jacocoTestReport generateReleaseJavadoc coveralls --info
+```
+
+* Coverage output _./piwik_sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
+* Tests report _./piwik_sdk/build/test-report/debug/index.html_
+* Javadoc _./piwik_sdk/build/docs/javadoc/index.html_
+
 ## Demo application
 
 Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/demo_app) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/demo_app/demo_app-debug.apk).
