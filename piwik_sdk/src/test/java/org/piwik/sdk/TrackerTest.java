@@ -510,4 +510,19 @@ public class TrackerTest {
         assertEquals(dummyTracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
     }
 
+    @Test
+    public void testSetUserAgent() {
+        String defaultUserAgent = "aUserAgent";
+        String customUserAgent = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0";
+        System.setProperty("http.agent", "aUserAgent");
+
+        assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
+        
+        dummyTracker.setUserAgent(customUserAgent);
+        assertEquals(dummyTracker.getUserAgent(), customUserAgent);
+
+        dummyTracker.setUserAgent(null);
+        assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
+    }
+
 }
