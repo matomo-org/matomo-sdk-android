@@ -393,6 +393,15 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
+     * Sets custom UserAgent
+     * 
+     * @param userAgent your custom UserAgent String
+     */
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
+    /**
      * Returns user language
      *
      * @return language
