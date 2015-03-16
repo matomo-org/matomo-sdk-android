@@ -56,7 +56,7 @@ public class TrackerTest {
             super(10);
         }
 
-        public V get(Tracker.QueryParams key) {
+        public V get(QueryParams key) {
             return get(key.toString());
         }
     }
@@ -74,13 +74,13 @@ public class TrackerTest {
     }
 
     private static void validateDefaultQuery(QueryHashMap<String, String> params) {
-        assertEquals(params.get(Tracker.QueryParams.SITE_ID), "1");
-        assertEquals(params.get(Tracker.QueryParams.RECORD), "1");
-        assertEquals(params.get(Tracker.QueryParams.SEND_IMAGE), "0");
-        assertEquals(params.get(Tracker.QueryParams.VISITOR_ID).length(), 16);
-        assertEquals(params.get(Tracker.QueryParams.LANGUAGE), "en");
-        assertTrue(params.get(Tracker.QueryParams.URL_PATH).startsWith("http://"));
-        assertTrue(Integer.parseInt(params.get(Tracker.QueryParams.RANDOM_NUMBER)) > 0);
+        assertEquals(params.get(QueryParams.SITE_ID), "1");
+        assertEquals(params.get(QueryParams.RECORD), "1");
+        assertEquals(params.get(QueryParams.SEND_IMAGE), "0");
+        assertEquals(params.get(QueryParams.VISITOR_ID).length(), 16);
+        assertEquals(params.get(QueryParams.LANGUAGE), "en");
+        assertTrue(params.get(QueryParams.URL_PATH).startsWith("http://"));
+        assertTrue(Integer.parseInt(params.get(QueryParams.RANDOM_NUMBER)) > 0);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class TrackerTest {
 
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), TestActivity.getTestTitle());
+        assertEquals(queryParams.get(QueryParams.ACTION_NAME), TestActivity.getTestTitle());
     }
 
     @Test
@@ -135,21 +135,21 @@ public class TrackerTest {
 
     @Test
     public void testSet() throws Exception {
-        dummyTracker.set(Tracker.QueryParams.HOURS, "0")
-                .set(Tracker.QueryParams.MINUTES, (Integer) null)
-                .set(Tracker.QueryParams.SECONDS, (String) null)
-                .set(Tracker.QueryParams.FIRST_VISIT_TIMESTAMP, (String) null)
-                .set(Tracker.QueryParams.PREVIOUS_VISIT_TIMESTAMP, (String) null)
-                .set(Tracker.QueryParams.TOTAL_NUMBER_OF_VISITS, (String) null)
-                .set(Tracker.QueryParams.GOAL_ID, (String) null)
-                .set(Tracker.QueryParams.LATITUDE, (String) null)
-                .set(Tracker.QueryParams.LONGITUDE, (String) null)
-                .set(Tracker.QueryParams.SEARCH_KEYWORD, (String) null)
-                .set(Tracker.QueryParams.SEARCH_CATEGORY, (String) null)
-                .set(Tracker.QueryParams.SEARCH_NUMBER_OF_HITS, (String) null)
-                .set(Tracker.QueryParams.REFERRER, (String) null)
-                .set(Tracker.QueryParams.CAMPAIGN_NAME, (String) null)
-                .set(Tracker.QueryParams.CAMPAIGN_KEYWORD, (String) null);
+        dummyTracker.set(QueryParams.HOURS, "0")
+                .set(QueryParams.MINUTES, (Integer) null)
+                .set(QueryParams.SECONDS, (String) null)
+                .set(QueryParams.FIRST_VISIT_TIMESTAMP, (String) null)
+                .set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, (String) null)
+                .set(QueryParams.TOTAL_NUMBER_OF_VISITS, (String) null)
+                .set(QueryParams.GOAL_ID, (String) null)
+                .set(QueryParams.LATITUDE, (String) null)
+                .set(QueryParams.LONGITUDE, (String) null)
+                .set(QueryParams.SEARCH_KEYWORD, (String) null)
+                .set(QueryParams.SEARCH_CATEGORY, (String) null)
+                .set(QueryParams.SEARCH_NUMBER_OF_HITS, (String) null)
+                .set(QueryParams.REFERRER, (String) null)
+                .set(QueryParams.CAMPAIGN_NAME, (String) null)
+                .set(QueryParams.CAMPAIGN_KEYWORD, (String) null);
 
         assertEquals(dummyTracker.getQuery(), "?h=0");
     }
@@ -161,11 +161,11 @@ public class TrackerTest {
         assertEquals(dummyTracker.getApplicationBaseURL(), "http://test.com");
         assertEquals(dummyTracker.getParamURL(), "http://test.com/");
 
-        dummyTracker.set(Tracker.QueryParams.URL_PATH, "me");
+        dummyTracker.set(QueryParams.URL_PATH, "me");
         assertEquals(dummyTracker.getParamURL(), "http://test.com/me");
 
         // override protocol
-        dummyTracker.set(Tracker.QueryParams.URL_PATH, "https://my.com/secure");
+        dummyTracker.set(QueryParams.URL_PATH, "https://my.com/secure");
         assertEquals(dummyTracker.getParamURL(), "https://my.com/secure");
     }
 
@@ -177,7 +177,7 @@ public class TrackerTest {
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
         validateDefaultQuery(queryParams);
-        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
+        assertTrue(queryParams.get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
     @Test(expected=IllegalArgumentException.class) 
@@ -316,7 +316,7 @@ public class TrackerTest {
         dummyTracker.trackScreenView("/test/test");
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).endsWith("/test/test"));
+        assertTrue(queryParams.get(QueryParams.URL_PATH).endsWith("/test/test"));
         validateDefaultQuery(queryParams);
     }
 
@@ -325,16 +325,16 @@ public class TrackerTest {
         dummyTracker.trackScreenView("test/test", "Test title");
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).endsWith("/test/test"));
-        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), "Test title");
+        assertTrue(queryParams.get(QueryParams.URL_PATH).endsWith("/test/test"));
+        assertEquals(queryParams.get(QueryParams.ACTION_NAME), "Test title");
         validateDefaultQuery(queryParams);
     }
 
     private void checkEvent(QueryHashMap<String, String> queryParams, String name, String value) {
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "category");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_ACTION), "test action");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), name);
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_VALUE), value);
+        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "test action");
+        assertEquals(queryParams.get(QueryParams.EVENT_NAME), name);
+        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), value);
         validateDefaultQuery(queryParams);
     }
 
@@ -363,8 +363,8 @@ public class TrackerTest {
         dummyTracker.trackGoal(1);
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertNull(queryParams.get(Tracker.QueryParams.REVENUE));
-        assertEquals(queryParams.get(Tracker.QueryParams.GOAL_ID), "1");
+        assertNull(queryParams.get(QueryParams.REVENUE));
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "1");
         validateDefaultQuery(queryParams);
     }
 
@@ -373,8 +373,8 @@ public class TrackerTest {
         dummyTracker.trackGoal(1, 100);
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertEquals(queryParams.get(Tracker.QueryParams.GOAL_ID), "1");
-        assertEquals(queryParams.get(Tracker.QueryParams.REVENUE), "100");
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "1");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "100");
         validateDefaultQuery(queryParams);
     }
 
@@ -385,11 +385,11 @@ public class TrackerTest {
     }
 
     private boolean checkNewAppDownload(QueryHashMap<String, String> queryParams) {
-        assertTrue(queryParams.get(Tracker.QueryParams.DOWNLOAD).length() > 0);
-        assertTrue(queryParams.get(Tracker.QueryParams.URL_PATH).length() > 0);
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "Application");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_ACTION), "downloaded");
-        assertEquals(queryParams.get(Tracker.QueryParams.ACTION_NAME), "application/downloaded");
+        assertTrue(queryParams.get(QueryParams.DOWNLOAD).length() > 0);
+        assertTrue(queryParams.get(QueryParams.URL_PATH).length() > 0);
+        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Application");
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "downloaded");
+        assertEquals(queryParams.get(QueryParams.ACTION_NAME), "application/downloaded");
         validateDefaultQuery(queryParams);
         return true;
     }
@@ -424,9 +424,9 @@ public class TrackerTest {
         dummyTracker.trackContentImpression(name, "test", "test2");
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_NAME), name);
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_PIECE), "test");
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_TARGET), "test2");
+        assertEquals(queryParams.get(QueryParams.CONTENT_NAME), name);
+        assertEquals(queryParams.get(QueryParams.CONTENT_PIECE), "test");
+        assertEquals(queryParams.get(QueryParams.CONTENT_TARGET), "test2");
         validateDefaultQuery(queryParams);
     }
 
@@ -438,10 +438,10 @@ public class TrackerTest {
 
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_INTERACTION), interaction);
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_NAME), name);
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_PIECE), "test");
-        assertEquals(queryParams.get(Tracker.QueryParams.CONTENT_TARGET), "test2");
+        assertEquals(queryParams.get(QueryParams.CONTENT_INTERACTION), interaction);
+        assertEquals(queryParams.get(QueryParams.CONTENT_NAME), name);
+        assertEquals(queryParams.get(QueryParams.CONTENT_PIECE), "test");
+        assertEquals(queryParams.get(QueryParams.CONTENT_TARGET), "test2");
         validateDefaultQuery(queryParams);
     }
 
@@ -450,9 +450,9 @@ public class TrackerTest {
         dummyTracker.trackException("ClassName:10+2 2", "<Null> exception", false);
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "Exception");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_ACTION), "ClassName:10+2 2");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), "<Null> exception");
+        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "ClassName:10+2 2");
+        assertEquals(queryParams.get(QueryParams.EVENT_NAME), "<Null> exception");
         validateDefaultQuery(queryParams);
     }
 
@@ -470,11 +470,11 @@ public class TrackerTest {
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
 
         validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_CATEGORY), "Exception");
-        assertTrue(queryParams.get(Tracker.QueryParams.EVENT_ACTION)
+        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
+        assertTrue(queryParams.get(QueryParams.EVENT_ACTION)
                 .startsWith("org.piwik.sdk.TrackerTest/testTrackUncaughtExceptionHandler"));
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_NAME), "/ by zero");
-        assertEquals(queryParams.get(Tracker.QueryParams.EVENT_VALUE), "1");
+        assertEquals(queryParams.get(QueryParams.EVENT_NAME), "/ by zero");
+        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), "1");
     }
 
     @Test
