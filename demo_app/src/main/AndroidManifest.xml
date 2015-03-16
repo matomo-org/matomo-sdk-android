@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.piwik.demo">
+<manifest
+    package="com.piwik.demo"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
     <application
-            android:name=".DemoApp"
-            android:allowBackup="true"
-            android:debuggable="true"
-            android:icon="@drawable/ic_launcher"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme">
+        android:name=".DemoApp"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme">
         <activity
-                android:name=".DemoActivity"
-                android:alwaysRetainTaskState="true"
-                android:launchMode="singleInstance"
-                android:label="@string/app_name">
+            android:name=".DemoActivity"
+            android:alwaysRetainTaskState="true"
+            android:label="@string/app_name"
+            android:launchMode="singleInstance">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -25,14 +25,14 @@
             </intent-filter>
         </activity>
         <activity
-                android:name=".SettingsActivity"
-                android:label="@string/title_activity_settings"
-                android:alwaysRetainTaskState="true"
-                android:launchMode="singleInstance"
-                android:parentActivityName=".DemoActivity">
+            android:name=".SettingsActivity"
+            android:alwaysRetainTaskState="true"
+            android:label="@string/title_activity_settings"
+            android:launchMode="singleInstance"
+            android:parentActivityName=".DemoActivity">
             <meta-data
-                    android:name="android.support.PARENT_ACTIVITY"
-                    android:value="com.piwik.demo.DemoActivity"/>
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.piwik.demo.DemoActivity"/>
         </activity>
     </application>
 
