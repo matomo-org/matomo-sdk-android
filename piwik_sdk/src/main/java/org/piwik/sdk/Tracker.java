@@ -965,7 +965,7 @@ public class Tracker implements Dispatchable<Integer> {
 
         VISIT_SCOPE_CUSTOM_VARIABLES("_cvar"),
         SCREEN_SCOPE_CUSTOM_VARIABLES("cvar"),
-        RANDOM_NUMBER("r"),
+        RANDOM_NUMBER("rand"),
         FIRST_VISIT_TIMESTAMP("_idts"),
         PREVIOUS_VISIT_TIMESTAMP("_viewts"),
         TOTAL_NUMBER_OF_VISITS("_idvc"),
