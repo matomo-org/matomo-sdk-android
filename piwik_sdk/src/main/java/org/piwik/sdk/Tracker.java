@@ -273,15 +273,15 @@ public class Tracker implements Dispatchable<Integer> {
         return this;
     }
 
+    private static final Pattern PATTERN_VISITOR_ID = Pattern.compile("^[0-9a-f]{16}$");
+
     private boolean confirmVisitorIdFormat(String visitorId) throws IllegalArgumentException {
-        String visitorIdRegexPattern = "^[0-9a-f]{16}$";
-        Pattern visitorIdPattern = Pattern.compile(visitorIdRegexPattern);
-        Matcher visitorIdMatcher = visitorIdPattern.matcher(visitorId);
-        if (visitorIdMatcher.find()) {
+        Matcher visitorIdMatcher = PATTERN_VISITOR_ID.matcher(visitorId);
+        if (visitorIdMatcher.matches()) {
             return true;
         }
         throw new IllegalArgumentException("VisitorId: " + visitorId + " is not of valid format, " +
-            " the format must match the regular expression: " + visitorIdRegexPattern);
+                " the format must match the regular expression: " + PATTERN_VISITOR_ID.pattern());
     }
 
     /**
