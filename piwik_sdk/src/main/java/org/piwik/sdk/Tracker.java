@@ -18,8 +18,15 @@ import android.view.WindowManager;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Main tracking class
@@ -942,73 +949,6 @@ public class Tracker implements Dispatchable<Integer> {
         int result = siteId;
         result = 31 * result + apiUrl.hashCode();
         return result;
-    }
-
-    /**
-     * CONSTANTS
-     */
-    public enum QueryParams {
-        SITE_ID("idsite"),
-        @Deprecated AUTHENTICATION_TOKEN("token_auth"),
-        RECORD("rec"),
-        SEND_IMAGE("send_image"),
-        API_VERSION("apiv"),
-        SCREEN_RESOLUTION("res"),
-        HOURS("h"),
-        MINUTES("m"),
-        SECONDS("s"),
-        ACTION_NAME("action_name"),
-        URL_PATH("url"),
-        USER_AGENT("ua"),
-        VISITOR_ID("_id"),
-        USER_ID("uid"),
-
-        VISIT_SCOPE_CUSTOM_VARIABLES("_cvar"),
-        SCREEN_SCOPE_CUSTOM_VARIABLES("cvar"),
-        RANDOM_NUMBER("r"),
-        FIRST_VISIT_TIMESTAMP("_idts"),
-        PREVIOUS_VISIT_TIMESTAMP("_viewts"),
-        TOTAL_NUMBER_OF_VISITS("_idvc"),
-        GOAL_ID("idgoal"),
-        REVENUE("revenue"),
-        SESSION_START("new_visit"),
-        LANGUAGE("lang"),
-        COUNTRY("country"),
-        LATITUDE("lat"),
-        LONGITUDE("long"),
-        SEARCH_KEYWORD("search"),
-        SEARCH_CATEGORY("search_cat"),
-        SEARCH_NUMBER_OF_HITS("search_count"),
-        REFERRER("urlref"),
-        DATETIME_OF_REQUEST("cdt"),
-        DOWNLOAD("download"),
-        LINK("link"),
-
-        // Campaign
-        CAMPAIGN_NAME("_rcn"),
-        CAMPAIGN_KEYWORD("_rck"),
-
-        // Content Tracking
-        CONTENT_INTERACTION("c_i"),
-        CONTENT_NAME("c_n"),
-        CONTENT_PIECE("c_p"),
-        CONTENT_TARGET("c_t"),
-
-        // Events
-        EVENT_CATEGORY("e_c"),
-        EVENT_ACTION("e_a"),
-        EVENT_NAME("e_n"),
-        EVENT_VALUE("e_v");
-
-        private final String value;
-
-        QueryParams(String value) {
-            this.value = value;
-        }
-
-        public String toString() {
-            return value;
-        }
     }
 
 }
