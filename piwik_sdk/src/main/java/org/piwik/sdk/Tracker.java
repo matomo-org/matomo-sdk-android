@@ -11,9 +11,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
+
+import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 public class Tracker implements Dispatchable<Integer> {
 
     // Piwik default parameter values
+    private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
     private static final String defaultTrueValue = "1";
     private static final String defaultRecordValue = defaultTrueValue;
     private static final String defaultAPIVersionValue = "1";
@@ -90,7 +91,7 @@ public class Tracker implements Dispatchable<Integer> {
     private DispatchingHandler dispatchingHandler;
 
     private String applicationDomain;
-    private static String realScreenResolution;
+    private static String mScreenResolution;
     private static String userAgent;
     private static String userLanguage;
     private static String userCountry;
@@ -301,7 +302,7 @@ public class Tracker implements Dispatchable<Integer> {
         return this;
     }
 
-    protected String getApplicationDomain(){
+    protected String getApplicationDomain() {
         return applicationDomain != null ? applicationDomain : piwik.getApplicationDomain();
     }
 
@@ -327,24 +328,19 @@ public class Tracker implements Dispatchable<Integer> {
      * @return formatted string: WxH
      */
     public String getResolution() {
-        if (!queryParams.containsKey(QueryParams.SCREEN_RESOLUTION.toString())) {
-            if (realScreenResolution == null) {
-                try {
-                    DisplayMetrics dm = new DisplayMetrics();
-                    WindowManager wm = (WindowManager) piwik.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-                    wm.getDefaultDisplay().getMetrics(dm);
-
-                    realScreenResolution = formatResolution(dm.widthPixels, dm.heightPixels);
-                } catch (Exception e) {
-                    Log.w(Tracker.LOGGER_TAG, "Cannot grab resolution", e);
-
-                    realScreenResolution = "unknown";
+        if (queryParams.containsKey(QueryParams.SCREEN_RESOLUTION.toString())) {
+            return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
+        } else {
+            if (mScreenResolution == null) {
+                int[] resolution = DeviceHelper.getResolution(piwik.getApplicationContext());
+                if (resolution != null) {
+                    mScreenResolution = formatResolution(resolution[0], resolution[1]);
+                } else {
+                    mScreenResolution = DEFAULT_UNKNOWN_VALUE;
                 }
             }
-            return realScreenResolution;
+            return mScreenResolution;
         }
-
-        return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
     }
 
     /**
@@ -401,7 +397,7 @@ public class Tracker implements Dispatchable<Integer> {
 
     /**
      * Sets custom UserAgent
-     * 
+     *
      * @param userAgent your custom UserAgent String
      */
     public void setUserAgent(String userAgent) {
@@ -640,7 +636,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @param contentTarget (optional) The target the content leading to when an interaction occurs. For instance the URL of a landing page.
      */
     public Tracker trackContentInteraction(String interaction, String contentName, String contentPiece, String contentTarget) {
-        if(interaction != null && interaction.length() > 0){
+        if (interaction != null && interaction.length() > 0) {
             set(QueryParams.CONTENT_INTERACTION, interaction);
             return trackContentImpression(contentName, contentPiece, contentTarget);
         }
@@ -656,7 +652,7 @@ public class Tracker implements Dispatchable<Integer> {
      * @param isFatal     true if it's RunTimeException
      */
     public void trackException(String className, String description, boolean isFatal) {
-        className = className != null && className.length() > 0 ? className : "Unknown";
+        className = className != null && className.length() > 0 ? className : DEFAULT_UNKNOWN_VALUE;
         String actionName = "exception/" +
                 (isFatal ? "fatal/" : "") +
                 (className + "/") + description;
@@ -669,7 +665,7 @@ public class Tracker implements Dispatchable<Integer> {
      * Caught exceptions are errors in your app for which you've defined exception handling code,
      * such as the occasional timeout of a network connection during a request for data.
      *
-     * @param ex   exception instance
+     * @param ex          exception instance
      * @param description exception message
      * @param isFatal     true if it's fatal exeption
      */
