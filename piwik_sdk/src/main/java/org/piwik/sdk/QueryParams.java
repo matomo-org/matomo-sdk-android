@@ -56,7 +56,7 @@ public enum QueryParams {
      * <p/>
      * (recommended)
      */
-    RANDOM_NUMBER("r"),
+    RANDOM_NUMBER("rand"),
     /**
      * The parameter &apiv=1 defines the api version to use (currently always set to 1)
      * <p/>
