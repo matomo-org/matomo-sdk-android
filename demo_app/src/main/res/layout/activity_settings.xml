@@ -2,88 +2,122 @@
                 xmlns:tools="http://schemas.android.com/tools"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:paddingBottom="@dimen/activity_vertical_margin"
                 android:paddingLeft="@dimen/activity_horizontal_margin"
                 android:paddingRight="@dimen/activity_horizontal_margin"
                 android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
                 tools:context="com.piwik.demo.SettingsActivity">
 
     <TableLayout
+        android:id="@+id/tableLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TableRow
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content" android:id="@+id/tableLayout">
-        <TableRow
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp">
+
             <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="Dispatch Interval"
-                    android:inputType="number"
-                    android:id="@+id/textView2" android:layout_column="0"/>
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:inputType="number"
+                android:text="Dispatch Interval"
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
+
             <EditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberSigned"
-                    android:ems="10"
-                    android:id="@+id/dispatchIntervallInput" android:layout_column="1" android:text="5"
-                    android:width="60dip"/>
-            <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="(sec)"
-                    android:id="@+id/textView" android:layout_column="2"/>
-        </TableRow>
-        <TableRow
-                android:layout_width="fill_parent"
+                android:id="@+id/dispatchIntervallInput"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
+                android:layout_column="1"
+                android:width="60dip"
+                android:ems="10"
+                android:inputType="numberSigned"
+                android:text="5"/>
+
             <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?android:attr/textAppearanceMedium"
-                    android:text="Session timeout "
-                    android:inputType="number"
-                    android:id="@+id/textView3" android:layout_column="0"/>
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:text="(sec)"
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:inputType="number"
+                android:text="Session timeout "
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
+
             <EditText
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberSigned"
-                    android:ems="10"
-                    android:id="@+id/sessionTimeoutInput" android:layout_column="1" android:text="30"
-                    android:width="60dip"/>
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:textAppearance="?android:attr/textAppearanceMedium" android:text="(min)"
-                      android:id="@+id/textView3" android:layout_column="2"/>
-        </TableRow>
-        <TableRow
-                android:layout_width="fill_parent"
+                android:id="@+id/sessionTimeoutInput"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin">
+                android:layout_column="1"
+                android:width="60dip"
+                android:ems="10"
+                android:inputType="numberSigned"
+                android:text="30"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="2"
+                android:text="(min)"
+                android:textAppearance="?android:attr/textAppearanceMedium"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp">
+
             <CheckBox
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dry Run"
-                    android:id="@+id/dryRunCheckbox" android:checked="false" android:layout_column="0"
-                    android:layout_span="3"/>
+                android:id="@+id/dryRunCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_span="3"
+                android:checked="false"
+                android:text="Dry Run"/>
         </TableRow>
-        <TableRow android:layout_width="fill_parent" android:layout_height="wrap_content"
-                  android:layout_marginBottom="@dimen/abc_action_bar_subtitle_bottom_margin"
-                  android:id="@+id/tableRow">
-            <CheckBox android:layout_width="wrap_content" android:layout_height="wrap_content"
-                      android:text="Opt Out" android:id="@+id/optOutCheckbox" android:checked="false"
-                      android:layout_column="0" android:layout_span="3"/>
+
+        <TableRow
+            android:id="@+id/tableRow"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp">
+
+            <CheckBox
+                android:id="@+id/optOutCheckbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_span="3"
+                android:checked="false"
+                android:text="Opt Out"/>
         </TableRow>
     </TableLayout>
+
     <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Track Settings Screen View"
-            android:id="@+id/manuallyTrackSettingsScreenViewButton" android:layout_column="0"
-            android:layout_gravity="bottom" android:layout_below="@+id/tableLayout"
-            android:layout_alignRight="@+id/tableLayout" android:layout_alignEnd="@+id/tableLayout"
-            android:layout_alignParentLeft="true" android:layout_alignParentStart="true"
-            />
+        android:id="@+id/manuallyTrackSettingsScreenViewButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignEnd="@+id/tableLayout"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignRight="@+id/tableLayout"
+        android:layout_below="@+id/tableLayout"
+        android:layout_column="0"
+        android:layout_gravity="bottom"
+        android:text="Track Settings Screen View"
+        />
 </RelativeLayout>
