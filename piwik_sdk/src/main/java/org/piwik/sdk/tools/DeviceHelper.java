@@ -35,8 +35,14 @@ public class DeviceHelper {
     public static int[] getResolution(Context context) {
         int width = -1, height = -1;
 
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Display display = wm.getDefaultDisplay();
+        Display display;
+        try {
+            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            display = wm.getDefaultDisplay();
+        } catch (NullPointerException e) {
+            Log.e(LOGGER_TAG, "Window service was not available from this context");
+            return null;
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             // Recommended way to get the resolution but only available since API17
