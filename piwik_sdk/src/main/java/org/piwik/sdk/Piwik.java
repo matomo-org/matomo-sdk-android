@@ -20,6 +20,8 @@ import java.util.HashMap;
 
 
 public class Piwik {
+    public static final String LOGGER_PREFIX = "PIWIK:";
+
     protected final static Object lock = new Object();
 
     private static HashMap<Application, Piwik> applications = new HashMap<Application, Piwik>();
