@@ -91,7 +91,7 @@ public class TrackerTest {
         piwik.setAppOptOut(true);
         Tracker tracker = piwik.newTracker(testAPIUrl, 1);
         //auto attach tracking screen view
-        piwik.autoBindActivities(tracker);
+        QuickTrack.bindToApp(app, tracker);
 
         // emulate default trackScreenView
         Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();

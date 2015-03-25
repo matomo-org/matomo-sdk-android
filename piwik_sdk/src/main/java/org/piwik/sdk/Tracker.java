@@ -7,10 +7,8 @@
 
 package org.piwik.sdk;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 import android.util.Log;
 
 import org.piwik.sdk.tools.DeviceHelper;
@@ -21,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
@@ -428,46 +425,6 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Set action_name param from activity's title and track view
-     *
-     * @param activity Current Activity instance
-     */
-    public void activityStart(final Activity activity) {
-        if (activity != null) {
-            String breadcrumbs = getBreadcrumbs(activity);
-            trackScreenView(breadcrumbsToPath(breadcrumbs), breadcrumbs);
-        }
-    }
-
-    /**
-     * Force dispatching events if main activity is about to stop
-     *
-     * @param activity Current Activity instance
-     */
-    public void activityStop(final Activity activity) {
-        if (activity != null && activity.isTaskRoot()) {
-            dispatch();
-        }
-    }
-
-    /**
-     * @param activity current activity
-     */
-    public void activityPaused(final Activity activity) {
-        activityStop(activity);
-    }
-
-    /**
-     * Don't need to start auto dispatching
-     * due this will be started when any track event occurred
-     *
-     * @param activity current activity
-     */
-    public void activityResumed(final Activity activity) {
-        activityStart(activity);
-    }
-
-    /**
      * Session handling
      */
     public void setNewSession() {
@@ -775,28 +732,6 @@ public class Tracker implements Dispatchable<Integer> {
 
     private String getCurrentDatetime() {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date());
-    }
-
-    private String getBreadcrumbs(final Activity activity) {
-        Activity currentActivity = activity;
-        ArrayList<String> breadcrumbs = new ArrayList<String>();
-
-        while (currentActivity != null) {
-            breadcrumbs.add(currentActivity.getTitle().toString());
-            currentActivity = currentActivity.getParent();
-        }
-        return joinSlash(breadcrumbs);
-    }
-
-    private String joinSlash(List<String> sequence) {
-        if (sequence != null && sequence.size() > 0) {
-            return TextUtils.join("/", sequence);
-        }
-        return "";
-    }
-
-    private String breadcrumbsToPath(String breadcrumbs) {
-        return breadcrumbs.replaceAll("\\s", "");
     }
 
     protected String getQuery() {

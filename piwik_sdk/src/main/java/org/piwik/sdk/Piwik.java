@@ -7,13 +7,9 @@
 
 package org.piwik.sdk;
 
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
-import android.os.Bundle;
 
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -22,7 +18,7 @@ import java.util.HashMap;
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
 
-    protected final static Object lock = new Object();
+    private final static Object lock = new Object();
 
     private static HashMap<Application, Piwik> applications = new HashMap<Application, Piwik>();
 
@@ -34,46 +30,6 @@ public class Piwik {
 
     private Piwik(Application application) {
         this.application = application;
-    }
-
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    public void autoBindActivities(final Tracker tracker) {
-        this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-            @Override
-            public void onActivityCreated(Activity activity, Bundle bundle) {
-
-            }
-
-            @Override
-            public void onActivityStarted(Activity activity) {
-                tracker.activityStart(activity);
-            }
-
-            @Override
-            public void onActivityResumed(Activity activity) {
-                tracker.activityResumed(activity);
-            }
-
-            @Override
-            public void onActivityPaused(Activity activity) {
-                tracker.activityPaused(activity);
-            }
-
-            @Override
-            public void onActivityStopped(Activity activity) {
-                tracker.activityStop(activity);
-            }
-
-            @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-
-            }
-
-            @Override
-            public void onActivityDestroyed(Activity activity) {
-
-            }
-        });
     }
 
     public static Piwik getInstance(Application application) {
