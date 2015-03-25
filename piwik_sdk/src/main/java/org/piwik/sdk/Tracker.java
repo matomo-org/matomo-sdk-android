@@ -651,7 +651,7 @@ public class Tracker implements Dispatchable<Integer> {
      * <p/>
      * For this to be useful you should ensure that proguard does not remove all classnames and line numbers.
      * Also note that if this is used across different app versions and obfuscation is used, the same exception might be mapped to different obfuscated names by proguard.
-     * This would be the same exception is tracked as different events by Piwik.
+     * This would mean the same exception (event) is tracked as different events by Piwik.
      *
      * @param ex          exception instance
      * @param description exception message
