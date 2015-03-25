@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import org.piwik.sdk.PiwikApplication;
+import org.piwik.sdk.QuickTrack;
 
 
 public class SettingsActivity extends Activity {
@@ -27,7 +28,7 @@ public class SettingsActivity extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker().activityStart(settingsActivity);
+                QuickTrack.track((PiwikApplication) getApplication(),settingsActivity);
             }
         });
 
