@@ -1,7 +1,6 @@
 package org.piwik.sdk;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -12,7 +11,6 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowPreferenceManager;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -21,7 +19,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
