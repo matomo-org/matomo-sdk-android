@@ -94,8 +94,7 @@ public class DemoActivity extends ActionBarActivity {
         ((PiwikApplication) getApplication()).getTracker()
                 .setDispatchInterval(5)
                 .trackAppDownload()
-                .setUserId(getUserId())
-                .reportUncaughtExceptions(true);
+                .setUserId(getUserId());
 
         initTrackViewListeners();
     }
@@ -127,7 +126,7 @@ public class DemoActivity extends ActionBarActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int a = 1 / 0;
+                ((PiwikApplication) getApplication()).getTracker().trackException(new Exception("OnPurposeException"), "Crash button", false);
             }
         });
 
@@ -142,7 +141,7 @@ public class DemoActivity extends ActionBarActivity {
                             ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
                     );
                 } catch (Exception e) {
-                    ((PiwikApplication) getApplication()).getTracker().trackException("DemoActivity", "wrong revenue", false);
+                    ((PiwikApplication) getApplication()).getTracker().trackException(e, "wrong revenue", false);
                     revenue = 0;
                 }
                 ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);

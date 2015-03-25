@@ -447,34 +447,21 @@ public class TrackerTest {
 
     @Test
     public void testTrackException() throws Exception {
-        dummyTracker.trackException("ClassName:10+2 2", "<Null> exception", false);
+        Exception catchedException;
+        try {
+            throw new Exception("Test");
+        } catch (Exception e) {
+            catchedException = e;
+        }
+        assertNotNull(catchedException);
+        dummyTracker.trackException(catchedException, "<Null> exception", false);
         QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
-
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "ClassName:10+2 2");
+        StackTraceElement traceElement = catchedException.getStackTrace()[0];
+        assertNotNull(traceElement);
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "org.piwik.sdk.TrackerTest" + "/" + "testTrackException" + ":" + traceElement.getLineNumber());
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), "<Null> exception");
         validateDefaultQuery(queryParams);
-    }
-
-    @Test
-    public void testTrackUncaughtExceptionHandler() throws Exception {
-
-        try {
-            //noinspection NumericOverflow
-            int i = 1 / 0;
-            assertNotEquals(i, 0);
-        } catch (Exception e) {
-            dummyTracker.customUEH.uncaughtException(Thread.currentThread(), e);
-        }
-
-        QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
-
-        validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertTrue(queryParams.get(QueryParams.EVENT_ACTION)
-                .startsWith("org.piwik.sdk.TrackerTest/testTrackUncaughtExceptionHandler"));
-        assertEquals(queryParams.get(QueryParams.EVENT_NAME), "/ by zero");
-        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), "1");
     }
 
     @Test
