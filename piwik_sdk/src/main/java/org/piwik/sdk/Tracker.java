@@ -863,6 +863,10 @@ public class Tracker implements Dispatchable<Integer> {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
+    public SharedPreferences getSharedPreferences() {
+        return piwik.getSharedPreferences(this);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

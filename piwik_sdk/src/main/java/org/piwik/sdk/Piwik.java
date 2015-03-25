@@ -90,8 +90,7 @@ public class Piwik {
 
     protected SharedPreferences getSharedPreferences(Tracker tracker) {
         String preferenceName = tracker.getAPIUrl().toString();
-        preferenceName.replace("//:","_");
-        preferenceName.replace("/","_");
+        preferenceName = preferenceName.replace("https://","").replace("http://","").replace("/","_");
         return getContext().getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
     }
 }
