@@ -13,6 +13,7 @@ import org.robolectric.annotation.Config;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,21 +181,21 @@ public class TrackerTest {
         assertTrue(queryParams.get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetTooShortVistorId() {
         String tooShortVisitorId = "0123456789ab";
         dummyTracker.setVisitorId(tooShortVisitorId);
         assertNotEquals(tooShortVisitorId, dummyTracker.getVisitorId());
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetTooLongVistorId() {
         String tooLongVisitorId = "0123456789abcdefghi";
         dummyTracker.setVisitorId(tooLongVisitorId);
         assertNotEquals(tooLongVisitorId, dummyTracker.getVisitorId());
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetVistorIdWithInvalidCharacters() {
         String invalidCharacterVisitorId = "01234-6789-ghief";
         dummyTracker.setVisitorId(invalidCharacterVisitorId);
@@ -503,11 +504,11 @@ public class TrackerTest {
 
         for (String url : urls) {
             dummyTracker.setAPIUrl(url);
-            assertEquals(dummyTracker.getAPIUrl(), "https://demo.org/piwik/piwik.php");
+            assertEquals(dummyTracker.getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
         }
 
         dummyTracker.setAPIUrl("http://demo.org/piwik-proxy.php");
-        assertEquals(dummyTracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
+        assertEquals(dummyTracker.getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
     }
 
     @Test
@@ -517,7 +518,7 @@ public class TrackerTest {
         System.setProperty("http.agent", "aUserAgent");
 
         assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
-        
+
         dummyTracker.setUserAgent(customUserAgent);
         assertEquals(dummyTracker.getUserAgent(), customUserAgent);
 
