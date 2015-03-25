@@ -18,8 +18,6 @@ import java.util.HashMap;
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
 
-    private final static Object lock = new Object();
-
     private static HashMap<Application, Piwik> applications = new HashMap<Application, Piwik>();
 
     private Application application;
@@ -34,16 +32,14 @@ public class Piwik {
         this.application = application;
     }
 
-    public static Piwik getInstance(Application application) {
-        synchronized (lock) {
-            Piwik piwik = applications.get(application);
-            if (piwik != null) {
-                return piwik;
-            }
-            piwik = new Piwik(application);
-            applications.put(application, piwik);
+    public static synchronized Piwik getInstance(Application application) {
+        Piwik piwik = applications.get(application);
+        if (piwik != null) {
             return piwik;
         }
+        piwik = new Piwik(application);
+        applications.put(application, piwik);
+        return piwik;
     }
 
     /**
