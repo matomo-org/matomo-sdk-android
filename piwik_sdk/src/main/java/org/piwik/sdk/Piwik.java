@@ -38,14 +38,12 @@ public class Piwik {
     }
 
     /**
-     * @deprecated
-     * Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
-     *
      * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId     (required) id of site
      * @param authToken  (optional) could be null or valid auth token.
      * @return Tracker object
      * @throws MalformedURLException
+     * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
      */
     @Deprecated
     public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException {
@@ -78,6 +76,7 @@ public class Piwik {
      * The dryRun flag set to true prevents any data from being sent to Piwik.
      * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
      * test data to appear in your Piwik reports. To set the dry run flag, use:
+     *
      * @param dryRun true if you don't want to send any data to piwik
      */
     public void setDryRun(boolean dryRun) {
@@ -90,7 +89,7 @@ public class Piwik {
 
     protected SharedPreferences getSharedPreferences(Tracker tracker) {
         String preferenceName = tracker.getAPIUrl().toString();
-        preferenceName = preferenceName.replace("https://","").replace("http://","").replace("/","_");
-        return getContext().getSharedPreferences(preferenceName, Context.MODE_PRIVATE);
+        preferenceName = preferenceName.replace("https://", "").replace("http://", "").replace("/", "_");
+        return getContext().getSharedPreferences(preferenceName + "id" + tracker.getSiteId(), Context.MODE_PRIVATE);
     }
 }

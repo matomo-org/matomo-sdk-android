@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.piwik.sdk.tools.DeviceHelper;
@@ -45,12 +46,12 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * The ID of the website we're tracking a visit/action for.
      */
-    private int siteId;
+    private final int mSiteId;
 
     /**
      * Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      */
-    private URL mApiUrl;
+    private final URL mApiUrl;
 
     /**
      * Defines the User ID for this request.
@@ -63,24 +64,25 @@ public class Tracker implements Dispatchable<Integer> {
      * If a visit is found in the last 30 minutes with your specified User ID,
      * then the new action will be recorded to this existing visit.
      */
-    private String userId;
+    private String mUserId;
 
     /**
      * The unique visitor ID, must be a 16 characters hexadecimal string.
      * Every unique visitor must be assigned a different ID and this ID must not change after it is assigned.
      * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
      */
-    private String visitorId;
+    private String mVisitorId;
 
     /**
      * 32 character authorization key used to authenticate the API request.
      * Should be equals `token_auth` value of the Super User
      * or a user with admin access to the website visits are being tracked for.
      */
-    private String authToken;
+    private final String mAuthToken;
 
 
-    private Piwik piwik;
+    private final Piwik mPiwik;
+
     private String lastEvent;
     private boolean isDispatching = false;
     private int dispatchInterval = piwikDefaultDispatchTimer;
@@ -102,15 +104,6 @@ public class Tracker implements Dispatchable<Integer> {
     private final Random randomObject = new Random(new Date().getTime());
 
 
-    private Tracker(String url, int siteId) throws MalformedURLException {
-        setAPIUrl(url);
-        setNewSession();
-        setSessionTimeout(piwikDefaultSessionTimeout);
-        visitorId = getRandomVisitorId();
-        reportUncaughtExceptions(true);
-        this.siteId = siteId;
-    }
-
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
@@ -120,10 +113,34 @@ public class Tracker implements Dispatchable<Integer> {
      * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
      * @throws MalformedURLException
      */
-    protected Tracker(String url, int siteId, String authToken, Piwik piwik) throws MalformedURLException {
-        this(url, siteId);
-        this.authToken = authToken;
-        this.piwik = piwik;
+    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
+        if (url == null)
+            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org/piwik.php");
+
+        String checkUrl = url;
+        if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
+            mApiUrl = new URL(checkUrl);
+        } else {
+            if (!checkUrl.endsWith("/")) {
+                checkUrl += "/";
+            }
+            mApiUrl = new URL(checkUrl + "piwik.php");
+        }
+        mSiteId = siteId;
+
+        setNewSession();
+        setSessionTimeout(piwikDefaultSessionTimeout);
+        reportUncaughtExceptions(true);
+        mAuthToken = authToken;
+        mPiwik = piwik;
+    }
+
+    protected URL getAPIUrl() {
+        return mApiUrl;
+    }
+
+    protected int getSiteId() {
+        return mSiteId;
     }
 
     /**
@@ -132,14 +149,14 @@ public class Tracker implements Dispatchable<Integer> {
      * @return true if there are any queued events and opt out is inactive
      */
     public boolean dispatch() {
-        if (!piwik.isOptOut() && queue.size() > 0) {
+        if (!mPiwik.isOptOut() && queue.size() > 0) {
 
             ArrayList<String> events = new ArrayList<String>(queue);
             queue.clear();
 
             TrackerBulkURLProcessor worker =
-                    new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout, piwik.isDryRun());
-            worker.processBulkURLs(mApiUrl, events, authToken);
+                    new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout, mPiwik.isDryRun());
+            worker.processBulkURLs(mApiUrl, events, mAuthToken);
 
             return true;
         }
@@ -256,7 +273,7 @@ public class Tracker implements Dispatchable<Integer> {
      */
     public Tracker setUserId(String userId) {
         if (userId != null && userId.length() > 0) {
-            this.userId = userId;
+            this.mUserId = userId;
         }
         return this;
     }
@@ -266,13 +283,13 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     public Tracker clearUserId() {
-        userId = null;
+        mUserId = null;
         return this;
     }
 
     public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
         if (confirmVisitorIdFormat(visitorId)) {
-            this.visitorId = visitorId;
+            this.mVisitorId = visitorId;
         }
         return this;
     }
@@ -291,6 +308,7 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Domain used to build required parameter url (http://developer.piwik.org/api-reference/tracking-api)
      * If domain wasn't set `Application.getPackageName()` method will be used
+     *
      * @param domain your-domain.com
      */
     public Tracker setApplicationDomain(String domain) {
@@ -299,7 +317,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     protected String getApplicationDomain() {
-        return applicationDomain != null ? applicationDomain : piwik.getApplicationDomain();
+        return applicationDomain != null ? applicationDomain : mPiwik.getApplicationDomain();
     }
 
     /**
@@ -328,7 +346,7 @@ public class Tracker implements Dispatchable<Integer> {
             return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
         } else {
             if (mScreenResolution == null) {
-                int[] resolution = DeviceHelper.getResolution(piwik.getContext());
+                int[] resolution = DeviceHelper.getResolution(mPiwik.getContext());
                 if (resolution != null) {
                     mScreenResolution = formatResolution(resolution[0], resolution[1]);
                 } else {
@@ -544,7 +562,7 @@ public class Tracker implements Dispatchable<Integer> {
      * by using SharedPreferences as flag storage
      */
     public Tracker trackAppDownload() {
-        SharedPreferences prefs = piwik.getSharedPreferences(this);
+        SharedPreferences prefs = mPiwik.getSharedPreferences(this);
 
         if (!prefs.getBoolean("downloaded", false)) {
             SharedPreferences.Editor editor = prefs.edit();
@@ -685,7 +703,7 @@ public class Tracker implements Dispatchable<Integer> {
     protected void beforeTracking() {
         set(QueryParams.API_VERSION, defaultAPIVersionValue);
         set(QueryParams.SEND_IMAGE, "0");
-        set(QueryParams.SITE_ID, siteId);
+        set(QueryParams.SITE_ID, mSiteId);
         set(QueryParams.RECORD, defaultRecordValue);
         set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
         set(QueryParams.SCREEN_RESOLUTION, getResolution());
@@ -693,7 +711,7 @@ public class Tracker implements Dispatchable<Integer> {
         set(QueryParams.USER_AGENT, getUserAgent());
         set(QueryParams.LANGUAGE, getLanguage());
         set(QueryParams.COUNTRY, getCountry());
-        set(QueryParams.VISITOR_ID, visitorId);
+        set(QueryParams.VISITOR_ID, getVisitorId());
         set(QueryParams.USER_ID, getUserId());
         set(QueryParams.DATETIME_OF_REQUEST, getCurrentDatetime());
         set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, getCustomVariables(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES).toString());
@@ -709,7 +727,7 @@ public class Tracker implements Dispatchable<Integer> {
         beforeTracking();
 
         String event = getQuery();
-        if (piwik.isOptOut()) {
+        if (mPiwik.isOptOut()) {
             lastEvent = event;
             Log.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
         } else {
@@ -821,42 +839,13 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     protected String getUserId() {
-        return userId;
+        return mUserId;
     }
 
     protected String getVisitorId() {
-        return visitorId;
-    }
-
-    /**
-     * Sets the url of the piwik installation the dispatchable will track to.
-     * <p/>
-     * The given string should be in the format of RFC2396. The string will be converted to an url with no other url as
-     * its context.
-     *
-     * @param APIUrl as a string object
-     * @throws MalformedURLException
-     */
-    protected final void setAPIUrl(final String APIUrl) throws MalformedURLException {
-        if (APIUrl == null) {
-            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org/piwik.php");
-        }
-
-        URL url = new URL(APIUrl);
-        String path = url.getPath();
-
-        if (path.endsWith("piwik.php") || path.endsWith("piwik-proxy.php")) {
-            this.mApiUrl = url;
-        } else {
-            if (!path.endsWith("/")) {
-                path += "/";
-            }
-            this.mApiUrl = new URL(url, path + "piwik.php");
-        }
-    }
-
-    protected URL getAPIUrl() {
-        return mApiUrl;
+        if(mVisitorId == null)
+            mVisitorId = getRandomVisitorId();
+        return mVisitorId;
     }
 
     private String getRandomVisitorId() {
@@ -864,7 +853,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     public SharedPreferences getSharedPreferences() {
-        return piwik.getSharedPreferences(this);
+        return mPiwik.getSharedPreferences(this);
     }
 
     @Override
@@ -874,12 +863,12 @@ public class Tracker implements Dispatchable<Integer> {
 
         Tracker tracker = (Tracker) o;
 
-        return siteId == tracker.siteId && mApiUrl.equals(tracker.mApiUrl);
+        return mSiteId == tracker.mSiteId && mApiUrl.equals(tracker.mApiUrl);
     }
 
     @Override
     public int hashCode() {
-        int result = siteId;
+        int result = mSiteId;
         result = 31 * result + mApiUrl.hashCode();
         return result;
     }

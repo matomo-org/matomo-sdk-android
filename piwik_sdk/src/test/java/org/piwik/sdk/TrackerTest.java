@@ -48,9 +48,9 @@ public class TrackerTest {
         dummyApp.clearSharedPreferences();
         dummyPiwik.setDryRun(true);
         dummyPiwik.setAppOptOut(true);
+        dummyTracker = createNewTracker();
         dummyTracker.afterTracking();
         dummyTracker.clearLastEvent();
-        dummyTracker.setAPIUrl(testAPIUrl);
         dummyTracker.setApplicationDomain(null);
     }
 
@@ -494,7 +494,8 @@ public class TrackerTest {
     @Test
     public void testSetAPIUrl() throws Exception {
         try {
-            dummyTracker.setAPIUrl(null);
+            dummyPiwik.newTracker(null, 1);
+            assert false;
         } catch (MalformedURLException e) {
             assertTrue(e.getMessage().contains("provide the Piwik Tracker URL!"));
         }
@@ -506,12 +507,10 @@ public class TrackerTest {
         };
 
         for (String url : urls) {
-            dummyTracker.setAPIUrl(url);
-            assertEquals(dummyTracker.getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
+            assertEquals(dummyPiwik.newTracker(url, 1).getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
         }
 
-        dummyTracker.setAPIUrl("http://demo.org/piwik-proxy.php");
-        assertEquals(dummyTracker.getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
+        assertEquals(dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 1).getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
     }
 
     @Test
@@ -533,15 +532,22 @@ public class TrackerTest {
     public void testTrackerIndividualSharedPreferences() throws Exception {
         Tracker same1 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
         Tracker same2 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
-        Tracker diff  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 1);
+        Tracker diff1  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 1);
+        Tracker diff2  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 2);
         assertFalse(same1.getSharedPreferences().contains("testkey"));
         assertFalse(same2.getSharedPreferences().contains("testkey"));
-        assertFalse(diff.getSharedPreferences().contains("testkey"));
+        assertFalse(diff1.getSharedPreferences().contains("testkey"));
+        assertFalse(diff2.getSharedPreferences().contains("testkey"));
         same1.getSharedPreferences().edit().putString("testkey","1234").commit();
         assertTrue(same1.getSharedPreferences().contains("testkey"));
         assertTrue(same2.getSharedPreferences().contains("testkey"));
         assertEquals(same1.getSharedPreferences().getString("testkey", "a"), same2.getSharedPreferences().getString("testkey", "b"));
-        assertFalse(diff.getSharedPreferences().contains("testkey"));
+        assertFalse(diff1.getSharedPreferences().contains("testkey"));
+        assertFalse(diff2.getSharedPreferences().contains("testkey"));
+
+        diff1.getSharedPreferences().edit().putString("testkey","5678").commit();
+        assertTrue(diff1.getSharedPreferences().contains("testkey"));
+        assertFalse(diff2.getSharedPreferences().contains("testkey"));
     }
 
 }
