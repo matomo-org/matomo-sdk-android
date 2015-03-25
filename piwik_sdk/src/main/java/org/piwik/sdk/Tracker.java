@@ -7,7 +7,6 @@
 
 package org.piwik.sdk;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -51,7 +50,7 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      */
-    private URL apiUrl;
+    private URL mApiUrl;
 
     /**
      * Defines the User ID for this request.
@@ -140,7 +139,7 @@ public class Tracker implements Dispatchable<Integer> {
 
             TrackerBulkURLProcessor worker =
                     new TrackerBulkURLProcessor(this, piwikHTTPRequestTimeout, piwik.isDryRun());
-            worker.processBulkURLs(apiUrl, events, authToken);
+            worker.processBulkURLs(mApiUrl, events, authToken);
 
             return true;
         }
@@ -329,7 +328,7 @@ public class Tracker implements Dispatchable<Integer> {
             return queryParams.get(QueryParams.SCREEN_RESOLUTION.toString());
         } else {
             if (mScreenResolution == null) {
-                int[] resolution = DeviceHelper.getResolution(piwik.getApplicationContext());
+                int[] resolution = DeviceHelper.getResolution(piwik.getContext());
                 if (resolution != null) {
                     mScreenResolution = formatResolution(resolution[0], resolution[1]);
                 } else {
@@ -545,8 +544,7 @@ public class Tracker implements Dispatchable<Integer> {
      * by using SharedPreferences as flag storage
      */
     public Tracker trackAppDownload() {
-        SharedPreferences prefs = piwik.getSharedPreferences(
-                Piwik.class.getPackage().getName(), Context.MODE_PRIVATE);
+        SharedPreferences prefs = piwik.getSharedPreferences(this);
 
         if (!prefs.getBoolean("downloaded", false)) {
             SharedPreferences.Editor editor = prefs.edit();
@@ -848,17 +846,17 @@ public class Tracker implements Dispatchable<Integer> {
         String path = url.getPath();
 
         if (path.endsWith("piwik.php") || path.endsWith("piwik-proxy.php")) {
-            this.apiUrl = url;
+            this.mApiUrl = url;
         } else {
             if (!path.endsWith("/")) {
                 path += "/";
             }
-            this.apiUrl = new URL(url, path + "piwik.php");
+            this.mApiUrl = new URL(url, path + "piwik.php");
         }
     }
 
-    protected String getAPIUrl() {
-        return apiUrl.toString();
+    protected URL getAPIUrl() {
+        return mApiUrl;
     }
 
     private String getRandomVisitorId() {
@@ -872,13 +870,13 @@ public class Tracker implements Dispatchable<Integer> {
 
         Tracker tracker = (Tracker) o;
 
-        return siteId == tracker.siteId && apiUrl.equals(tracker.apiUrl);
+        return siteId == tracker.siteId && mApiUrl.equals(tracker.mApiUrl);
     }
 
     @Override
     public int hashCode() {
         int result = siteId;
-        result = 31 * result + apiUrl.hashCode();
+        result = 31 * result + mApiUrl.hashCode();
         return result;
     }
 
