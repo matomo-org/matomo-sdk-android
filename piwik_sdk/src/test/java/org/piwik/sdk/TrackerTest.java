@@ -1,6 +1,8 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.content.SharedPreferences;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Before;
@@ -10,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowPreferenceManager;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -524,6 +527,21 @@ public class TrackerTest {
 
         dummyTracker.setUserAgent(null);
         assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
+    }
+
+    @Test
+    public void testTrackerIndividualSharedPreferences() throws Exception {
+        Tracker same1 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
+        Tracker same2 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
+        Tracker diff  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 1);
+        assertFalse(same1.getSharedPreferences().contains("testkey"));
+        assertFalse(same2.getSharedPreferences().contains("testkey"));
+        assertFalse(diff.getSharedPreferences().contains("testkey"));
+        same1.getSharedPreferences().edit().putString("testkey","1234").commit();
+        assertTrue(same1.getSharedPreferences().contains("testkey"));
+        assertTrue(same2.getSharedPreferences().contains("testkey"));
+        assertEquals(same1.getSharedPreferences().getString("testkey", "a"), same2.getSharedPreferences().getString("testkey", "b"));
+        assertFalse(diff.getSharedPreferences().contains("testkey"));
     }
 
 }
