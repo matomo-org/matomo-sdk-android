@@ -32,8 +32,6 @@ public class Piwik {
 
     private boolean dryRun = false;
 
-    protected final static Thread.UncaughtExceptionHandler defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
-
     private Piwik(Application application) {
         this.application = application;
     }
