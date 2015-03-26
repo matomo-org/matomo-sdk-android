@@ -180,21 +180,21 @@ public class TrackerTest {
         assertTrue(queryParams.get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetTooShortVistorId() {
         String tooShortVisitorId = "0123456789ab";
         dummyTracker.setVisitorId(tooShortVisitorId);
         assertNotEquals(tooShortVisitorId, dummyTracker.getVisitorId());
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetTooLongVistorId() {
         String tooLongVisitorId = "0123456789abcdefghi";
         dummyTracker.setVisitorId(tooLongVisitorId);
         assertNotEquals(tooLongVisitorId, dummyTracker.getVisitorId());
     }
 
-    @Test(expected=IllegalArgumentException.class) 
+    @Test(expected=IllegalArgumentException.class)
     public void testSetVistorIdWithInvalidCharacters() {
         String invalidCharacterVisitorId = "01234-6789-ghief";
         dummyTracker.setVisitorId(invalidCharacterVisitorId);
@@ -409,12 +409,12 @@ public class TrackerTest {
 
     @Test
     public void testTrackNewAppDownload() throws Exception {
-        dummyTracker.trackNewAppDownload();
+        dummyTracker.trackNewAppDownload(dummyApp);
         checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
 
         dummyTracker.clearLastEvent();
 
-        dummyTracker.trackNewAppDownload();
+        dummyTracker.trackNewAppDownload(dummyApp);
         checkNewAppDownload(parseEventUrl(dummyTracker.getLastEvent()));
     }
 
@@ -517,7 +517,7 @@ public class TrackerTest {
         System.setProperty("http.agent", "aUserAgent");
 
         assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
-        
+
         dummyTracker.setUserAgent(customUserAgent);
         assertEquals(dummyTracker.getUserAgent(), customUserAgent);
 
