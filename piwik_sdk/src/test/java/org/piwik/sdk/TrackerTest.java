@@ -12,6 +12,7 @@ import org.robolectric.annotation.Config;
 
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,10 @@ public class TrackerTest {
 
     public Tracker createTracker() throws MalformedURLException {
         return Piwik.getInstance(Robolectric.application).newTracker(testAPIUrl, 1);
+    }
+    
+    public Piwik getPiwik() {
+        return Piwik.getInstance(Robolectric.application);
     }
 
     @Before
@@ -475,9 +480,9 @@ public class TrackerTest {
 
     @Test
     public void testSetAPIUrl() throws Exception {
-        Tracker tracker = createTracker();
         try {
-            tracker.setAPIUrl(null);
+            getPiwik().newTracker(null, 1);
+            assert false;
         } catch (MalformedURLException e) {
             assertTrue(e.getMessage().contains("provide the Piwik Tracker URL!"));
         }
@@ -489,12 +494,10 @@ public class TrackerTest {
         };
 
         for (String url : urls) {
-            tracker.setAPIUrl(url);
-            assertEquals(tracker.getAPIUrl(), "https://demo.org/piwik/piwik.php");
+            assertEquals(getPiwik().newTracker(url, 1).getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
         }
 
-        tracker.setAPIUrl("http://demo.org/piwik-proxy.php");
-        assertEquals(tracker.getAPIUrl(), "http://demo.org/piwik-proxy.php");
+        assertEquals(getPiwik().newTracker("http://demo.org/piwik-proxy.php", 1).getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
     }
 
     @Test
@@ -545,5 +548,4 @@ public class TrackerTest {
         assertTrue(params.get(QueryParams.URL_PATH).startsWith("http://"));
         assertTrue(Integer.parseInt(params.get(QueryParams.RANDOM_NUMBER)) > 0);
     }
-
 }
