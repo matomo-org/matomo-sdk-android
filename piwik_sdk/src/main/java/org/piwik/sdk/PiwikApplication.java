@@ -40,12 +40,13 @@ public abstract class PiwikApplication extends Application {
         return "";
     }
 
-    public String getAuthToken() {
-        return "";
-    }
-
     public Integer getSiteId() {
         return 1;
+    }
+
+    @Deprecated
+    public String getAuthToken() {
+        return null;
     }
 
 }
