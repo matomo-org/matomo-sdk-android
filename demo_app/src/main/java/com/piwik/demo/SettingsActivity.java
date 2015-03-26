@@ -34,21 +34,21 @@ public class SettingsActivity extends Activity {
 
         // Dry run
         CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
-        dryRun.setChecked(((PiwikApplication) getApplication()).getGlobalSettings().isDryRun());
+        dryRun.setChecked(((PiwikApplication) getApplication()).getPiwik().isDryRun());
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getGlobalSettings().setDryRun(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getPiwik().setDryRun(((CheckBox) v).isChecked());
             }
         });
 
         // out out
         CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
-        optOut.setChecked(((PiwikApplication) getApplication()).getGlobalSettings().isOptOut());
+        optOut.setChecked(((PiwikApplication) getApplication()).getPiwik().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getGlobalSettings().setAppOptOut(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getPiwik().setAppOptOut(((CheckBox) v).isChecked());
             }
         });
 
