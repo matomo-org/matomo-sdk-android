@@ -36,13 +36,9 @@ public abstract class PiwikApplication extends Application {
 
     }
 
-    public String getTrackerUrl() {
-        return "";
-    }
+    public abstract String getTrackerUrl();
 
-    public Integer getSiteId() {
-        return 1;
-    }
+    public abstract Integer getSiteId();
 
     @Deprecated
     public String getAuthToken() {
