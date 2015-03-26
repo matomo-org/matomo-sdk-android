@@ -7,6 +7,7 @@
 
 package org.piwik.sdk;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.content.pm.ApplicationInfo;
@@ -572,10 +573,10 @@ public class Tracker implements Dispatchable<Integer> {
         SharedPreferences prefs = mPiwik.getSharedPreferences();
 
         try {
-            PackageInfo pkgInfo = piwik.getApplicationContext().getPackageManager().getPackageInfo(piwik.getApplicationContext().getPackageName(), 0);
+            PackageInfo pkgInfo = mPiwik.getContext().getPackageManager().getPackageInfo(mPiwik.getContext().getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
             if (!prefs.getBoolean(firedKey, false)) {
-                trackNewAppDownload(piwik.getApplicationContext());
+                trackNewAppDownload(mPiwik.getContext());
                 prefs.edit().putBoolean(firedKey, true).commit();
             }
         } catch (PackageManager.NameNotFoundException e) {
