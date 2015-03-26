@@ -63,13 +63,30 @@ public class TrackerTest {
 
     @Test
     public void testPiwikApplicationGetTracker() throws Exception {
-        PiwikApplication app = new TestPiwikApplication();
-        assertEquals(app.getTracker(), app.getTracker());
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
+    }
+
+    @Test
+    public void testPiwikApplicationNewTracker() throws Exception {
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
+        assertEquals(piwikApplication.getTracker(), piwikApplication.newTracker());
+        Tracker manual = Piwik.getInstance(Robolectric.application).newTracker(piwikApplication.getTrackerUrl(), piwikApplication.getSiteId());
+        Tracker simplified = piwikApplication.newTracker();
+        assertEquals(manual.getAPIUrl(), simplified.getAPIUrl());
+        assertEquals(manual.getSiteId(), simplified.getSiteId());
+    }
+
+    @Test
+    public void testPiwikApplicationgetPiwik() throws Exception {
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
     }
 
     @Test
     public void testEmptyQueueDispatch() throws Exception {
-        assertFalse(Piwik.getInstance(new TestPiwikApplication()).newTracker("http://example.com", 1).dispatch());
+        assertFalse(createTracker().dispatch());
     }
 
     @Test
@@ -77,7 +94,6 @@ public class TrackerTest {
         Tracker tracker = createTracker();
         tracker.setDispatchInterval(1);
         assertEquals(tracker.getDispatchInterval(), 1);
-
     }
 
     @Test
