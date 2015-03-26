@@ -9,10 +9,15 @@ package org.piwik.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
+import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.DeviceHelper;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -543,25 +548,64 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Ensures that tracking application downloading will be fired only once
      * by using SharedPreferences as flag storage
+     *
+     * @return
      */
     public Tracker trackAppDownload() {
         SharedPreferences prefs = piwik.getSharedPreferences(
                 Piwik.class.getPackage().getName(), Context.MODE_PRIVATE);
 
-        if (!prefs.getBoolean("downloaded", false)) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putBoolean("downloaded", true);
-            editor.commit();
-            trackNewAppDownload();
+        try {
+            PackageInfo pkgInfo = piwik.getApplicationContext().getPackageManager().getPackageInfo(piwik.getApplicationContext().getPackageName(), 0);
+            String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
+            if (!prefs.getBoolean(firedKey, false)) {
+                trackNewAppDownload(piwik.getApplicationContext());
+                prefs.edit().putBoolean(firedKey, true).commit();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
         return this;
     }
 
     /**
-     * Make sure to call this method only once per user
+     * Track a download for a specific app
+     * <p/>
+     * Resulting download url: http://packagename:versionCode/apk-md5-checksum
+     *
+     * @param downloadedApp usually the host app, but you can also track other apps.
+     *                      See {@link Context#createPackageContext(String, int)}
+     * @return
      */
-    public Tracker trackNewAppDownload() {
-        set(QueryParams.DOWNLOAD, getApplicationBaseURL());
+    public Tracker trackNewAppDownload(Context downloadedApp) {
+        StringBuilder installIdentifier = new StringBuilder();
+        try {
+            // This is not necesarrily the pkgname of our host app,
+            // we can track other app download as long as we can get their context.
+            String pkg = downloadedApp.getPackageName();
+            installIdentifier.append("http://" + pkg); // Identifies the app
+
+            PackageInfo pkgInfo = downloadedApp.getPackageManager().getPackageInfo(pkg, 0);
+            installIdentifier.append(":" + pkgInfo.versionCode);
+
+            ApplicationInfo appInfo = downloadedApp.getPackageManager().getApplicationInfo(pkg, 0);
+            String apkChecksum = null;
+            if (appInfo.sourceDir != null) {
+                File apk = new File(appInfo.sourceDir);
+                try {
+                    apkChecksum = Checksum.getMD5Checksum(apk);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            installIdentifier.append("/" + (apkChecksum != null ? apkChecksum : DEFAULT_UNKNOWN_VALUE));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return this;
+        }
+
+        set(QueryParams.DOWNLOAD, installIdentifier.toString());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
         return trackEvent("Application", "downloaded");
