@@ -1,6 +1,8 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.pm.PackageInfo;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -390,12 +392,12 @@ public class TrackerTest {
     @Test
     public void testTrackNewAppDownload() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackNewAppDownload();
+        tracker.trackNewAppDownload(Robolectric.application);
         checkNewAppDownload(parseEventUrl(tracker.getLastEvent()));
 
         tracker.clearLastEvent();
 
-        tracker.trackNewAppDownload();
+        tracker.trackNewAppDownload(Robolectric.application);
         checkNewAppDownload(parseEventUrl(tracker.getLastEvent()));
     }
 
