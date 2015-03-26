@@ -21,6 +21,28 @@ import java.util.List;
  * Methods to do tracking easier/quicker
  */
 public class QuickTrack {
+
+    /**
+     * This will create an exception handler that wraps any existing exception handler.
+     * Exceptions will be caught, tracked, dispatched and then rethrown to the previous exception handler.
+     * <p/>
+     * Be wary of relying on this for complete crash tracking..
+     * Think about how to deal with older app versions still throwing already fixed exceptions.
+     * <p/>
+     * See discussion here: https://github.com/piwik/piwik-sdk-android/issues/28
+     *
+     * @param tracker the tracker that should receive the exception events.
+     * @return returns the new (but already active) exception handler.
+     */
+    public static Thread.UncaughtExceptionHandler trackUncaughtExceptions(Tracker tracker) {
+        if (Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler) {
+            throw new RuntimeException("Trying to wrap an existing PiwikExceptionHandler.");
+        }
+        Thread.UncaughtExceptionHandler handler = new PiwikExceptionHandler(tracker);
+        Thread.setDefaultUncaughtExceptionHandler(handler);
+        return handler;
+    }
+
     /**
      * This method will bind a tracker to your application,
      * causing it to automatically track Activities within your app.
@@ -44,7 +66,7 @@ public class QuickTrack {
 
             @Override
             public void onActivityResumed(Activity activity) {
-                track(tracker,activity);
+                track(tracker, activity);
             }
 
             @Override
@@ -76,6 +98,7 @@ public class QuickTrack {
     /**
      * Calls {@link Tracker#trackScreenView(String, String)} for an activity.
      * Uses the activity-stack as path and activity title as names.
+     *
      * @param piwikApplication
      * @param activity
      */
@@ -86,6 +109,7 @@ public class QuickTrack {
     /**
      * Calls {@link Tracker#trackScreenView(String, String)} for an activity.
      * Uses the activity-stack as path and activity title as names.
+     *
      * @param tracker
      * @param activity
      */

@@ -20,6 +20,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -436,35 +437,21 @@ public class TrackerTest {
     @Test
     public void testTrackException() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackException("ClassName:10+2 2", "<Null> exception", false);
+        Exception catchedException;
+        try {
+            throw new Exception("Test");
+        } catch (Exception e) {
+            catchedException = e;
+        }
+        assertNotNull(catchedException);
+        tracker.trackException(catchedException, "<Null> exception", false);
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "ClassName:10+2 2");
+        StackTraceElement traceElement = catchedException.getStackTrace()[0];
+        assertNotNull(traceElement);
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "org.piwik.sdk.TrackerTest" + "/" + "testTrackException" + ":" + traceElement.getLineNumber());
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), "<Null> exception");
         validateDefaultQuery(queryParams);
-    }
-
-    @Test
-    public void testTrackUncaughtExceptionHandler() throws Exception {
-        Tracker tracker = createTracker();
-
-        try {
-            //noinspection NumericOverflow
-            int i = 1 / 0;
-            assertNotEquals(i, 0);
-        } catch (Exception e) {
-            tracker.customUEH.uncaughtException(Thread.currentThread(), e);
-        }
-
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-
-        validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertTrue(queryParams.get(QueryParams.EVENT_ACTION)
-                .startsWith("org.piwik.sdk.TrackerTest/testTrackUncaughtExceptionHandler"));
-        assertEquals(queryParams.get(QueryParams.EVENT_NAME), "/ by zero");
-        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), "1");
     }
 
     @Test

@@ -20,8 +20,6 @@ public class Piwik {
     private boolean mOptOut = false;
     private boolean mDryRun = false;
 
-    protected final static Thread.UncaughtExceptionHandler defaultUEH = Thread.getDefaultUncaughtExceptionHandler();
-
     private static Piwik sInstance;
 
     public static synchronized Piwik getInstance(Context context) {
