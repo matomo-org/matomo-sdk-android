@@ -16,7 +16,7 @@ dependencies {
     repositories {
         mavenCentral()
     }
-
+    compile 'com.android.support:support-annotations:21.0.0'
     // Espresso
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.0')
     androidTestCompile('com.android.support.test:testing-support-lib:0.1')
