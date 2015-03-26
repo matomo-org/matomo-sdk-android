@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * This class is not Thread safe and should be externally synchronized or multiple instances used.
  */
 public class Tracker implements Dispatchable<Integer> {
-    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
+    protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
 
     // Piwik default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
