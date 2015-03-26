@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -28,33 +29,18 @@ import static org.junit.Assert.assertTrue;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(FullEnvTestRunner.class)
 public class QuickTrackTest {
-    static Tracker dummyTracker;
-    static Piwik dummyPiwik;
-    static TestPiwikApplication dummyApp;
     final static String testAPIUrl = "http://example.com";
 
-    @BeforeClass
-    public static void initDummyTracker() throws Exception {
-        dummyApp = new TestPiwikApplication();
-        dummyPiwik = Piwik.getInstance(dummyApp);
-        dummyTracker = createNewTracker();
-    }
-
-    private static Tracker createNewTracker() throws MalformedURLException {
-        return dummyPiwik.newTracker(testAPIUrl, 1);
+    public Tracker createTracker() throws MalformedURLException {
+        return Piwik.getInstance(Robolectric.application).newTracker(testAPIUrl, 1);
     }
 
     @Before
-    public void clearTracker() throws Exception {
-        dummyApp.clearSharedPreferences();
-        dummyPiwik.setDryRun(true);
-        dummyPiwik.setAppOptOut(true);
-        dummyTracker.afterTracking();
-        dummyTracker.clearLastEvent();
-        dummyTracker.setAPIUrl(testAPIUrl);
-        dummyTracker.setApplicationDomain(null);
+    public void setup() {
+        Piwik.getInstance(Robolectric.application).setDryRun(true);
+        Piwik.getInstance(Robolectric.application).setAppOptOut(true);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
@@ -92,8 +78,9 @@ public class QuickTrackTest {
 
     @Test
     public void testPiwikExceptionHandler() throws Exception {
+        Tracker tracker = createTracker();
         assertFalse(Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler);
-        QuickTrack.trackUncaughtExceptions(dummyTracker);
+        QuickTrack.trackUncaughtExceptions(tracker);
         assertTrue(Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler);
         try {
             int i = 1 / 0;
@@ -101,7 +88,7 @@ public class QuickTrackTest {
         } catch (Exception e) {
             (Thread.getDefaultUncaughtExceptionHandler()).uncaughtException(Thread.currentThread(), e);
         }
-        QueryHashMap<String, String> queryParams = parseEventUrl(dummyTracker.getLastEvent());
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         validateDefaultQuery(queryParams);
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
         assertTrue(queryParams.get(QueryParams.EVENT_ACTION)
