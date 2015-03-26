@@ -1,22 +1,56 @@
 package org.piwik.sdk;
 
 
-import android.content.SharedPreferences;
-import org.robolectric.TestLifecycleApplication;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.os.Environment;
 
+import org.robolectric.Robolectric;
+import org.robolectric.TestLifecycleApplication;
+import org.robolectric.res.builder.RobolectricPackageManager;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class TestPiwikApplication extends PiwikApplication implements TestLifecycleApplication {
 
-    private final List<SharedPreferences> mActivePreferences = new ArrayList<>();
+    private File mFakeApk;
+
+    @Override
+    public void onCreate() {
+        // Setup a fake PackageInfo for this app within the packagemanager
+        RobolectricPackageManager rpm = (RobolectricPackageManager) Robolectric.application.getPackageManager();
+        PackageInfo packageInfo = new PackageInfo();
+        packageInfo.packageName = getPackageName();
+        packageInfo.versionCode = 1;
+
+        ApplicationInfo applicationInfo = new ApplicationInfo();
+        mFakeApk = new File(Environment.getExternalStorageDirectory(), "base.apk");
+        applicationInfo.sourceDir = mFakeApk.getAbsolutePath();
+        try {
+            FileOutputStream out = new FileOutputStream(applicationInfo.sourceDir);
+            byte dataToWrite[] = "somedata".getBytes();
+            out.write(dataToWrite);
+            out.close();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+
+        packageInfo.applicationInfo = applicationInfo;
+        rpm.addPackage(packageInfo);
+        super.onCreate();
+    }
+
+    @Override
+    public void onTerminate() {
+        mFakeApk.delete();
+        super.onTerminate();
+    }
 
     @Override
     public void beforeTest(Method method) {
+
     }
 
     @Override
@@ -25,6 +59,7 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
 
     @Override
     public void afterTest(Method method) {
+
     }
 
     @Override
@@ -32,16 +67,4 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
         return "org.piwik.sdk.test";
     }
 
-    protected void clearSharedPreferences() {
-        for(SharedPreferences pref : mActivePreferences)
-            pref.edit().clear().commit();
-    }
-
-    @Override
-    public SharedPreferences getSharedPreferences(String namespace, int modePrivate) {
-        SharedPreferences pref = super.getSharedPreferences(namespace,modePrivate);
-        if(!mActivePreferences.contains(pref))
-            mActivePreferences.add(pref);
-        return pref;
-    }
 }
