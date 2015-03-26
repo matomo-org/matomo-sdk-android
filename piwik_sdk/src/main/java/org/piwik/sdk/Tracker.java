@@ -562,7 +562,7 @@ public class Tracker implements Dispatchable<Integer> {
      * by using SharedPreferences as flag storage
      */
     public Tracker trackAppDownload() {
-        SharedPreferences prefs = mPiwik.getSharedPreferences(this);
+        SharedPreferences prefs = mPiwik.getSharedPreferences();
 
         if (!prefs.getBoolean("downloaded", false)) {
             SharedPreferences.Editor editor = prefs.edit();
@@ -853,7 +853,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     public SharedPreferences getSharedPreferences() {
-        return mPiwik.getSharedPreferences(this);
+        return mPiwik.getSharedPreferences();
     }
 
     @Override

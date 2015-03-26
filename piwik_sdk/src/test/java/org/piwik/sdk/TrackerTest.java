@@ -529,27 +529,4 @@ public class TrackerTest {
         dummyTracker.setUserAgent(null);
         assertEquals(dummyTracker.getUserAgent(), defaultUserAgent);
     }
-
-    @Test
-    public void testTrackerIndividualSharedPreferences() throws Exception {
-        Tracker same1 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
-        Tracker same2 = dummyPiwik.newTracker("http://demo.org/piwik-proxy.php", 0);
-        Tracker diff1  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 1);
-        Tracker diff2  = dummyPiwik.newTracker("http://example.org/piwik-proxy.php", 2);
-        assertFalse(same1.getSharedPreferences().contains("testkey"));
-        assertFalse(same2.getSharedPreferences().contains("testkey"));
-        assertFalse(diff1.getSharedPreferences().contains("testkey"));
-        assertFalse(diff2.getSharedPreferences().contains("testkey"));
-        same1.getSharedPreferences().edit().putString("testkey","1234").commit();
-        assertTrue(same1.getSharedPreferences().contains("testkey"));
-        assertTrue(same2.getSharedPreferences().contains("testkey"));
-        assertEquals(same1.getSharedPreferences().getString("testkey", "a"), same2.getSharedPreferences().getString("testkey", "b"));
-        assertFalse(diff1.getSharedPreferences().contains("testkey"));
-        assertFalse(diff2.getSharedPreferences().contains("testkey"));
-
-        diff1.getSharedPreferences().edit().putString("testkey","5678").commit();
-        assertTrue(diff1.getSharedPreferences().contains("testkey"));
-        assertFalse(diff2.getSharedPreferences().contains("testkey"));
-    }
-
 }

@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
+    public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
     private final Context mContext;
     private boolean mOptOut = false;
     private boolean mDryRun = false;
@@ -87,9 +88,7 @@ public class Piwik {
         return getContext().getPackageName();
     }
 
-    protected SharedPreferences getSharedPreferences(Tracker tracker) {
-        String preferenceName = tracker.getAPIUrl().toString();
-        preferenceName = preferenceName.replace("https://", "").replace("http://", "").replace("/", "_");
-        return getContext().getSharedPreferences(preferenceName + "id" + tracker.getSiteId(), Context.MODE_PRIVATE);
+    protected SharedPreferences getSharedPreferences() {
+        return getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
     }
 }
