@@ -1,8 +1,6 @@
 package org.piwik.sdk;
 
 import android.app.Application;
-import android.content.Context;
-import android.content.pm.PackageInfo;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -18,6 +16,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,12 +30,12 @@ import static org.junit.Assert.assertTrue;
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
 public class TrackerTest {
-    final static String testAPIUrl = "http://example.com";
 
     public Tracker createTracker() throws MalformedURLException {
-        return Piwik.getInstance(Robolectric.application).newTracker(testAPIUrl, 1);
+        TestPiwikApplication app = (TestPiwikApplication) Robolectric.application;
+        return Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
     }
-    
+
     public Piwik getPiwik() {
         return Piwik.getInstance(Robolectric.application);
     }
@@ -52,7 +52,7 @@ public class TrackerTest {
         Piwik piwik = Piwik.getInstance(app);
         piwik.setDryRun(true);
         piwik.setAppOptOut(true);
-        Tracker tracker = piwik.newTracker(testAPIUrl, 1);
+        Tracker tracker = createTracker();
         //auto attach tracking screen view
         QuickTrack.bindToApp(app, tracker);
 
@@ -411,16 +411,30 @@ public class TrackerTest {
 
     }
 
+    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:\\/)([\\W\\w]+)");
+
     @Test
     public void testTrackNewAppDownload() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackNewAppDownload(Robolectric.application);
-        checkNewAppDownload(parseEventUrl(tracker.getLastEvent()));
+        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.APK_CHECKSUM);
+        QueryHashMap queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        Matcher m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        assertTrue(m.matches());
+        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
+        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(TestPiwikApplication.FAKE_APK_DATA_MD5, m.group(3));
 
         tracker.clearLastEvent();
 
-        tracker.trackNewAppDownload(Robolectric.application);
-        checkNewAppDownload(parseEventUrl(tracker.getLastEvent()));
+        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        assertTrue(m.matches());
+        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
+        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, m.group(3));
     }
 
     @Test
