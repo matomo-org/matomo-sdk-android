@@ -9,10 +9,10 @@ package org.piwik.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.piwik.sdk.tools.Checksum;
@@ -107,7 +107,7 @@ public class Tracker implements Dispatchable<Integer> {
     private final HashMap<String, String> queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
     private final HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
 
-     private final Random randomObject = new Random(new Date().getTime());
+    private final Random randomObject = new Random(new Date().getTime());
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -564,17 +564,20 @@ public class Tracker implements Dispatchable<Integer> {
     /**
      * Ensures that tracking application downloading will be fired only once
      * by using SharedPreferences as flag storage
+     * The install will be tracked as:<p/>
+     * 'http://packageName:versionCode/installerPackagename'
+     * <p/>
+     * Also see {@link #trackNewAppDownload(android.content.Context, org.piwik.sdk.Tracker.ExtraIdentifier)}
      *
-     * @return
+     * @return this tracker again for chaining
      */
     public Tracker trackAppDownload() {
         SharedPreferences prefs = mPiwik.getSharedPreferences();
-
         try {
             PackageInfo pkgInfo = mPiwik.getContext().getPackageManager().getPackageInfo(mPiwik.getContext().getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
             if (!prefs.getBoolean(firedKey, false)) {
-                trackNewAppDownload(mPiwik.getContext());
+                trackNewAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
                 prefs.edit().putBoolean(firedKey, true).commit();
             }
         } catch (PackageManager.NameNotFoundException e) {
@@ -583,43 +586,52 @@ public class Tracker implements Dispatchable<Integer> {
         return this;
     }
 
+    public enum ExtraIdentifier {
+        APK_CHECKSUM, INSTALLER_PACKAGENAME
+    }
+
     /**
      * Track a download for a specific app
      * <p/>
-     * Resulting download url: http://packagename:versionCode/apk-md5-checksum
+     * Resulting download url:<p/>
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM}: http://packageName:versionCode/apk-md5-checksum <p/>
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}: http://packageName:versionCode/installerPackageName <p/>
+     * Note: Usually the installer-packagename is something like "com.android.vending" (Google Play),
+     * but users can modify this value, don't be surprised by some random values.
      *
-     * @param downloadedApp usually the host app, but you can also track other apps.
-     *                      See {@link Context#createPackageContext(String, int)}
-     * @return
+     * @param app   the app you want to fire a download event for
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @return this tracker again, so you can chain calls
      */
-    public Tracker trackNewAppDownload(Context downloadedApp) {
+    public Tracker trackNewAppDownload(Context app, ExtraIdentifier extra) {
         StringBuilder installIdentifier = new StringBuilder();
         try {
-            // This is not necesarrily the pkgname of our host app,
-            // we can track other app download as long as we can get their context.
-            String pkg = downloadedApp.getPackageName();
-            installIdentifier.append("http://" + pkg); // Identifies the app
+            String pkg = app.getPackageName();
+            installIdentifier.append("http://").append(pkg); // Identifies the app
 
-            PackageInfo pkgInfo = downloadedApp.getPackageManager().getPackageInfo(pkg, 0);
-            installIdentifier.append(":" + pkgInfo.versionCode);
-
-            ApplicationInfo appInfo = downloadedApp.getPackageManager().getApplicationInfo(pkg, 0);
-            String apkChecksum = null;
-            if (appInfo.sourceDir != null) {
-                File apk = new File(appInfo.sourceDir);
-                try {
-                    apkChecksum = Checksum.getMD5Checksum(apk);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            PackageManager packMan = app.getPackageManager();
+            PackageInfo pkgInfo = packMan.getPackageInfo(pkg, 0);
+            installIdentifier.append(":").append(pkgInfo.versionCode);
+            String extraIdentifier = null;
+            if (extra == ExtraIdentifier.APK_CHECKSUM) {
+                ApplicationInfo appInfo = packMan.getApplicationInfo(pkg, 0);
+                if (appInfo.sourceDir != null) {
+                    try {
+                        extraIdentifier = Checksum.getMD5Checksum(new File(appInfo.sourceDir));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+            } else if (extra == ExtraIdentifier.INSTALLER_PACKAGENAME) {
+                String installer = packMan.getInstallerPackageName(pkg);
+                if (installer.length() < 200)
+                    extraIdentifier = packMan.getInstallerPackageName(pkg);
             }
-
-            installIdentifier.append("/" + (apkChecksum != null ? apkChecksum : DEFAULT_UNKNOWN_VALUE));
+            installIdentifier.append("/").append(extraIdentifier == null ? DEFAULT_UNKNOWN_VALUE : extraIdentifier);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             return this;
         }
-
         set(QueryParams.DOWNLOAD, installIdentifier.toString());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
@@ -834,7 +846,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     protected String getVisitorId() {
-        if(mVisitorId == null)
+        if (mVisitorId == null)
             mVisitorId = getRandomVisitorId();
         return mVisitorId;
     }
