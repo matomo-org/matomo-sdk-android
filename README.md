@@ -229,6 +229,18 @@ $ ./gradlew :piwik_sdk:clean jacocoTestReport generateReleaseJavadoc coveralls -
 
 Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/demo_app) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/demo_app/demo_app-debug.apk).
 
+## Contribute
+
+* Fork the project
+* Create a feature branch based on the 'dev' branch
+* Drink coffee and develop an awesome new feature
+* Add tests for your new feature
+* Make sure that everything still works by running "./gradlew clean assemble test".
+* Commit & push the changes to your repo
+* Create a pullrequest from your feature branch against the dev branch of the original repo
+* Explain your changes, we can see what changed, but tell us why.
+* If your PR passes the travis-ci build and has no merge conflicts, just wait, otherwise fix the code first.
+
 ## License
 
 Android SDK for Piwik is released under the BSD-3 Clause license, see [LICENSE](https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE).

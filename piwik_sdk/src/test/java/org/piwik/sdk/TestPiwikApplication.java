@@ -67,4 +67,13 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
         return "org.piwik.sdk.test";
     }
 
+    @Override
+    public String getTrackerUrl() {
+        return "http://example.com";
+    }
+
+    @Override
+    public Integer getSiteId() {
+        return 1;
+    }
 }

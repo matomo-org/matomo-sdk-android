@@ -22,6 +22,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -65,13 +66,30 @@ public class TrackerTest {
 
     @Test
     public void testPiwikApplicationGetTracker() throws Exception {
-        PiwikApplication app = new TestPiwikApplication();
-        assertEquals(app.getTracker(), app.getTracker());
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
+    }
+
+    @Test
+    public void testPiwikApplicationNewTracker() throws Exception {
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
+        assertEquals(piwikApplication.getTracker(), piwikApplication.newTracker());
+        Tracker manual = Piwik.getInstance(Robolectric.application).newTracker(piwikApplication.getTrackerUrl(), piwikApplication.getSiteId());
+        Tracker simplified = piwikApplication.newTracker();
+        assertEquals(manual.getAPIUrl(), simplified.getAPIUrl());
+        assertEquals(manual.getSiteId(), simplified.getSiteId());
+    }
+
+    @Test
+    public void testPiwikApplicationgetPiwik() throws Exception {
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
     }
 
     @Test
     public void testEmptyQueueDispatch() throws Exception {
-        assertFalse(Piwik.getInstance(new TestPiwikApplication()).newTracker("http://example.com", 1).dispatch());
+        assertFalse(createTracker().dispatch());
     }
 
     @Test
@@ -79,7 +97,6 @@ public class TrackerTest {
         Tracker tracker = createTracker();
         tracker.setDispatchInterval(1);
         assertEquals(tracker.getDispatchInterval(), 1);
-
     }
 
     @Test
@@ -438,35 +455,21 @@ public class TrackerTest {
     @Test
     public void testTrackException() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackException("ClassName:10+2 2", "<Null> exception", false);
+        Exception catchedException;
+        try {
+            throw new Exception("Test");
+        } catch (Exception e) {
+            catchedException = e;
+        }
+        assertNotNull(catchedException);
+        tracker.trackException(catchedException, "<Null> exception", false);
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "ClassName:10+2 2");
+        StackTraceElement traceElement = catchedException.getStackTrace()[0];
+        assertNotNull(traceElement);
+        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "org.piwik.sdk.TrackerTest" + "/" + "testTrackException" + ":" + traceElement.getLineNumber());
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), "<Null> exception");
         validateDefaultQuery(queryParams);
-    }
-
-    @Test
-    public void testTrackUncaughtExceptionHandler() throws Exception {
-        Tracker tracker = createTracker();
-
-        try {
-            //noinspection NumericOverflow
-            int i = 1 / 0;
-            assertNotEquals(i, 0);
-        } catch (Exception e) {
-            tracker.customUEH.uncaughtException(Thread.currentThread(), e);
-        }
-
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-
-        validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertTrue(queryParams.get(QueryParams.EVENT_ACTION)
-                .startsWith("org.piwik.sdk.TrackerTest/testTrackUncaughtExceptionHandler"));
-        assertEquals(queryParams.get(QueryParams.EVENT_NAME), "/ by zero");
-        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), "1");
     }
 
     @Test
