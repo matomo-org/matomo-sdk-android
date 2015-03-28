@@ -628,7 +628,7 @@ public class Tracker implements Dispatchable<Integer> {
                 }
             } else if (extra == ExtraIdentifier.INSTALLER_PACKAGENAME) {
                 String installer = packMan.getInstallerPackageName(pkg);
-                if (installer.length() < 200)
+                if (installer != null && installer.length() < 200)
                     extraIdentifier = packMan.getInstallerPackageName(pkg);
             }
             installIdentifier.append("/").append(extraIdentifier == null ? DEFAULT_UNKNOWN_VALUE : extraIdentifier);

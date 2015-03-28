@@ -23,6 +23,7 @@ import org.robolectric.res.builder.RobolectricPackageManager;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Because we need to fake things that RobolectricPackageManager does not offer.
@@ -91,5 +92,9 @@ public class FullEnvPackageManager extends RobolectricPackageManager {
     @Override
     public PackageInstaller getPackageInstaller() {
         return null;
+    }
+
+    public Map<String, String> getInstallerMap() {
+        return mInstallerPackageNames;
     }
 }

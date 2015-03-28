@@ -1,6 +1,7 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.content.Context;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -9,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import org.robolectric.res.builder.RobolectricPackageManager;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -435,6 +437,19 @@ public class TrackerTest {
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, m.group(3));
+
+        tracker.clearLastEvent();
+
+        FullEnvPackageManager pm = (FullEnvPackageManager) Robolectric.packageManager;
+        pm.getInstallerMap().clear();
+        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        assertTrue(m.matches());
+        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
+        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals("unknown", m.group(3));
     }
 
     @Test
