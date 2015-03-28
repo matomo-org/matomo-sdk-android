@@ -562,8 +562,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Ensures that tracking application downloading will be fired only once
-     * by using SharedPreferences as flag storage
+     * Fires a download for this app once per update.
      * The install will be tracked as:<p/>
      * 'http://packageName:versionCode/installerPackagename'
      * <p/>
@@ -572,16 +571,22 @@ public class Tracker implements Dispatchable<Integer> {
      * @return this tracker again for chaining
      */
     public Tracker trackAppDownload() {
-        return trackAppDownload(ExtraIdentifier.INSTALLER_PACKAGENAME);
+        return trackAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
     }
 
-    public Tracker trackAppDownload(ExtraIdentifier extra) {
+    /**
+     * Fires a download for an arbitrary app once per update.
+     * @param app the app to track
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @return this tracker for chaining
+     */
+    public Tracker trackAppDownload(Context app, ExtraIdentifier extra) {
         SharedPreferences prefs = mPiwik.getSharedPreferences();
         try {
-            PackageInfo pkgInfo = mPiwik.getContext().getPackageManager().getPackageInfo(mPiwik.getContext().getPackageName(), 0);
+            PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
             if (!prefs.getBoolean(firedKey, false)) {
-                trackNewAppDownload(mPiwik.getContext(), extra);
+                trackNewAppDownload(app, extra);
                 prefs.edit().putBoolean(firedKey, true).commit();
             }
         } catch (PackageManager.NameNotFoundException e) {
