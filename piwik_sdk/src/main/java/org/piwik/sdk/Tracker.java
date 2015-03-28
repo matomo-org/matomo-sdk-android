@@ -9,9 +9,9 @@ package org.piwik.sdk;
 
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import org.piwik.sdk.tools.DeviceHelper;
+import org.piwik.sdk.tools.Logy;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -223,7 +223,7 @@ public class Tracker implements Dispatchable<Integer> {
     @Override
     public void dispatchingCompleted(Integer count) {
         isDispatching = false;
-        Log.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
+        Logy.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
     }
 
     @Override
@@ -635,7 +635,7 @@ public class Tracker implements Dispatchable<Integer> {
             StackTraceElement trace = ex.getStackTrace()[0];
             className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
         } catch (Exception e) {
-            Log.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
+            Logy.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
             className = ex.getClass().getName();
         }
         String actionName = "exception/" + (isFatal ? "fatal/" : "") + (className + "/") + description;
@@ -675,9 +675,9 @@ public class Tracker implements Dispatchable<Integer> {
         String event = getQuery();
         if (mPiwik.isOptOut()) {
             lastEvent = event;
-            Log.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
+            Logy.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
         } else {
-            Log.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
+            Logy.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
             queue.add(event);
 
             tryDispatch();
