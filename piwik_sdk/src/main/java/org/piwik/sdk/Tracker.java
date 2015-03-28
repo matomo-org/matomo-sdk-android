@@ -572,12 +572,16 @@ public class Tracker implements Dispatchable<Integer> {
      * @return this tracker again for chaining
      */
     public Tracker trackAppDownload() {
+        return trackAppDownload(ExtraIdentifier.INSTALLER_PACKAGENAME);
+    }
+
+    public Tracker trackAppDownload(ExtraIdentifier extra) {
         SharedPreferences prefs = mPiwik.getSharedPreferences();
         try {
             PackageInfo pkgInfo = mPiwik.getContext().getPackageManager().getPackageInfo(mPiwik.getContext().getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
             if (!prefs.getBoolean(firedKey, false)) {
-                trackNewAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
+                trackNewAppDownload(mPiwik.getContext(), extra);
                 prefs.edit().putBoolean(firedKey, true).commit();
             }
         } catch (PackageManager.NameNotFoundException e) {
