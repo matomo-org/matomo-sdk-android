@@ -10,6 +10,8 @@ package org.piwik.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.piwik.sdk.tools.Logy;
+
 import java.net.MalformedURLException;
 
 
@@ -21,6 +23,7 @@ public class Piwik {
     private boolean mDryRun = false;
 
     private static Piwik sInstance;
+    private boolean mDebug = BuildConfig.DEBUG;
 
     public static synchronized Piwik getInstance(Context context) {
         if (sInstance == null)
@@ -69,6 +72,15 @@ public class Piwik {
 
     public boolean isDryRun() {
         return mDryRun;
+    }
+    
+    public boolean isDebug() {
+        return mDebug;
+    }
+
+    public void setDebug(boolean debug) {
+        mDebug = debug;
+        Logy.sLoglevel = debug ? Logy.VERBOSE : Logy.NORMAL;
     }
 
     /**

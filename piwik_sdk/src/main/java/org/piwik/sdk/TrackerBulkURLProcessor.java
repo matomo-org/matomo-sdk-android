@@ -11,7 +11,7 @@ package org.piwik.sdk;
 import android.annotation.TargetApi;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.util.Log;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -25,6 +25,7 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
+import org.piwik.sdk.tools.Logy;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -133,9 +134,9 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
 
             return doRequest(post, jsonBody);
         } catch (URISyntaxException e) {
-            Log.w(Tracker.LOGGER_TAG, String.format("URI Syntax Error %s", url.toString()), e);
+            Logy.w(Tracker.LOGGER_TAG, String.format("URI Syntax Error %s", url.toString()), e);
         } catch (UnsupportedEncodingException e) {
-            Log.w(Tracker.LOGGER_TAG, String.format("Unsupported Encoding %s", jsonBody), e);
+            Logy.w(Tracker.LOGGER_TAG, String.format("Unsupported Encoding %s", jsonBody), e);
         }
 
         return false;
@@ -147,19 +148,19 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         HttpResponse response;
 
         if (dryRun) {
-            Log.i(Tracker.LOGGER_TAG, "Request wasn't send due to dry run is on");
+            Logy.i(Tracker.LOGGER_TAG, "Request wasn't send due to dry run is on");
             logRequest(requestBase, body);
         } else {
             try {
                 response = client.execute(requestBase);
                 int statusCode = response.getStatusLine().getStatusCode();
-                Log.d(Tracker.LOGGER_TAG, String.format("status code %s", statusCode));
+                Logy.d(Tracker.LOGGER_TAG, String.format("status code %s", statusCode));
                 return statusCode == HttpStatus.SC_NO_CONTENT || statusCode == HttpStatus.SC_OK;
 
             } catch (ClientProtocolException e) {
-                Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
+                Logy.w(Tracker.LOGGER_TAG, "Cannot send request", e);
             } catch (IOException e) {
-                Log.w(Tracker.LOGGER_TAG, "Cannot send request", e);
+                Logy.w(Tracker.LOGGER_TAG, "Cannot send request", e);
             }
 
             logRequest(requestBase, body);
@@ -169,9 +170,9 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
     }
 
     private void logRequest(HttpRequestBase requestBase, String body) {
-        Log.i(Tracker.LOGGER_TAG, "\tURI: " + requestBase.getURI().toString());
+        Logy.i(Tracker.LOGGER_TAG, "\tURI: " + requestBase.getURI().toString());
         if (body != null) {
-            Log.i(Tracker.LOGGER_TAG, "\tBODY: " + body);
+            Logy.i(Tracker.LOGGER_TAG, "\tBODY: " + body);
         }
     }
 
@@ -185,7 +186,7 @@ public class TrackerBulkURLProcessor extends AsyncTask<TrackerBulkURLWrapper, In
         try {
             return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
         } catch (UnsupportedEncodingException e) {
-            Log.w(Tracker.LOGGER_TAG, String.format("Cannot encode %s", param), e);
+            Logy.w(Tracker.LOGGER_TAG, String.format("Cannot encode %s", param), e);
             return "";
         } catch (NullPointerException e) {
             return "";

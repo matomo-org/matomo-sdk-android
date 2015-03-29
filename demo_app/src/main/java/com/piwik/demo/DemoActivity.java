@@ -13,13 +13,14 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
 import org.piwik.sdk.PiwikApplication;
+import org.piwik.sdk.tools.Logy;
 
 
 public class DemoActivity extends ActionBarActivity {
@@ -61,9 +62,9 @@ public class DemoActivity extends ActionBarActivity {
         try {
             WifiManager wm = (WifiManager) getSystemService(Context.WIFI_SERVICE);
             userId = wm.getConnectionInfo().getMacAddress();
-            Log.i("user_id", "wifi mac " + userId);
+            Logy.i("user_id", "wifi mac " + userId);
         } catch (Exception e) {
-            Log.e("user_id", "wifi is not available", e);
+            Logy.e("user_id", "wifi is not available", e);
             userId = null;
         }
 
@@ -81,7 +82,7 @@ public class DemoActivity extends ActionBarActivity {
             result = 31 * result + Build.BOOTLOADER.hashCode();
 
             userId = Long.toString(result);
-            Log.i("user_id", "android.os.Build used " + userId);
+            Logy.i("user_id", "android.os.Build used " + userId);
         }
 
         return userId;

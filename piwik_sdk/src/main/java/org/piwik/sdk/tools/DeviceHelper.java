@@ -10,7 +10,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -40,7 +39,7 @@ public class DeviceHelper {
             WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             display = wm.getDefaultDisplay();
         } catch (NullPointerException e) {
-            Log.e(LOGGER_TAG, "Window service was not available from this context");
+            Logy.e(LOGGER_TAG, "Window service was not available from this context");
             return null;
         }
 
@@ -58,7 +57,7 @@ public class DeviceHelper {
                 width = (int) getRawWidth.invoke(display);
                 height = (int) getRawHeight.invoke(display);
             } catch (Exception e) {
-                Log.w(LOGGER_TAG, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
+                Logy.w(LOGGER_TAG, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
             }
         }
 
