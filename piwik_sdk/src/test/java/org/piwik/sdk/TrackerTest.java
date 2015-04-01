@@ -209,6 +209,9 @@ public class TrackerTest {
         tracker.setUserId("test");
         assertEquals(tracker.getUserId(), "test");
 
+        tracker.setUserId("");
+        assertEquals(tracker.getUserId(), "test");
+
         tracker.setUserId(null);
         assertNotEquals("test", tracker.getUserId());
         assertNotNull(tracker.getUserId());

@@ -278,8 +278,10 @@ public class Tracker implements Dispatchable<Integer> {
      *               Note that if the user-id is NULL, the tracker will automatically generate a new one.
      */
     public Tracker setUserId(String userId) {
-        mUserId = userId;
-        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
+        if (!"".equals(userId)) {
+            mUserId = userId;
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
+        }
         return this;
     }
 
@@ -581,7 +583,8 @@ public class Tracker implements Dispatchable<Integer> {
 
     /**
      * Fires a download for an arbitrary app once per update.
-     * @param app the app to track
+     *
+     * @param app   the app to track
      * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
      * @return this tracker for chaining
      */
