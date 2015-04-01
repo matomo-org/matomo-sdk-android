@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,7 +34,7 @@ public class TrackerTest {
     public Tracker createTracker() throws MalformedURLException {
         return Piwik.getInstance(Robolectric.application).newTracker(testAPIUrl, 1);
     }
-    
+
     public Piwik getPiwik() {
         return Piwik.getInstance(Robolectric.application);
     }
@@ -204,24 +205,15 @@ public class TrackerTest {
         tracker.setUserId("test");
         assertEquals(tracker.getUserId(), "test");
 
-        tracker.clearUserId();
-        assertNull(tracker.getUserId());
-
-        tracker.setUserId("");
-        assertNull(tracker.getUserId());
-
         tracker.setUserId(null);
-        assertNull(tracker.getUserId());
+        assertNotEquals("test", tracker.getUserId());
+        assertNotNull(tracker.getUserId());
 
-        tracker.setUserId("X98F6bcd4621d373");
-        assertEquals(tracker.getUserId(), "X98F6bcd4621d373");
-    }
+        String uuid = UUID.randomUUID().toString();
+        tracker.setUserId(uuid);
+        assertEquals(uuid, tracker.getUserId());
 
-    @Test
-    public void testSetUserIdLong() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setUserId(123456);
-        assertEquals(tracker.getUserId(), "123456");
+        assertEquals(uuid, createTracker().getUserId());
     }
 
     @Test

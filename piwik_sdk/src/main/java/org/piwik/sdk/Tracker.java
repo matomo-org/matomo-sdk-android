@@ -44,6 +44,9 @@ public class Tracker implements Dispatchable<Integer> {
     private static final int piwikHTTPRequestTimeout = 5;
     private static final int piwikQueryDefaultCapacity = 14;
 
+    // Sharedpreference keys for persisted values
+    private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+
     /**
      * The ID of the website we're tracking a visit/action for.
      */
@@ -54,17 +57,6 @@ public class Tracker implements Dispatchable<Integer> {
      */
     private final URL mApiUrl;
 
-    /**
-     * Defines the User ID for this request.
-     * User ID is any non empty unique string identifying the user (such as an email address or a username).
-     * To access this value, users must be logged-in in your system so you can
-     * fetch this user ID from your system, and pass it to Piwik.
-     * <p/>
-     * When specified, the User ID will be "enforced".
-     * This means that if there is no recent visit with this User ID, a new one will be created.
-     * If a visit is found in the last 30 minutes with your specified User ID,
-     * then the new action will be recorded to this existing visit.
-     */
     private String mUserId;
 
     /**
@@ -101,7 +93,7 @@ public class Tracker implements Dispatchable<Integer> {
     private final HashMap<String, String> queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
     private final HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
 
-     private final Random randomObject = new Random(new Date().getTime());
+    private final Random randomObject = new Random(new Date().getTime());
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -125,12 +117,14 @@ public class Tracker implements Dispatchable<Integer> {
             }
             mApiUrl = new URL(checkUrl + "piwik.php");
         }
+        mPiwik = piwik;
         mSiteId = siteId;
+        mAuthToken = authToken;
+
+        mUserId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
 
         setNewSession();
         setSessionTimeout(piwikDefaultSessionTimeout);
-        mAuthToken = authToken;
-        mPiwik = piwik;
     }
 
     protected URL getAPIUrl() {
@@ -264,25 +258,36 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Sets a User ID to this user (such as an email address or a username)
+     * Defines the User ID for this request.
+     * User ID is any non empty unique string identifying the user (such as an email address or a username).
+     * To access this value, users must be logged-in in your system so you can
+     * fetch this user ID from your system, and pass it to Piwik.
+     * <p/>
+     * When specified, the User ID will be "enforced".
+     * This means that if there is no recent visit with this User ID, a new one will be created.
+     * If a visit is found in the last 30 minutes with your specified User ID,
+     * then the new action will be recorded to this existing visit.
      *
-     * @param userId this parameter can be set to any string.
-     *               The string will be hashed, and used as "User ID".
+     * @param userId passing null will delete the current user-id.
+     *               Note that if the user-id is NULL, the tracker will automatically generate a new one.
      */
     public Tracker setUserId(String userId) {
-        if (userId != null && userId.length() > 0) {
-            this.mUserId = userId;
+        mUserId = userId;
+        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
+        return this;
+    }
+
+    /**
+     * The current user-id, if none is set, one will be generated and persisted.
+     *
+     * @return
+     */
+    protected String getUserId() {
+        if (mUserId == null) {
+            mUserId = UUID.randomUUID().toString();
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
         }
-        return this;
-    }
-
-    public Tracker setUserId(long userId) {
-        return setUserId(Long.toString(userId));
-    }
-
-    public Tracker clearUserId() {
-        mUserId = null;
-        return this;
+        return mUserId;
     }
 
     public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
@@ -784,12 +789,8 @@ public class Tracker implements Dispatchable<Integer> {
         return getApplicationBaseURL() + url;
     }
 
-    protected String getUserId() {
-        return mUserId;
-    }
-
     protected String getVisitorId() {
-        if(mVisitorId == null)
+        if (mVisitorId == null)
             mVisitorId = getRandomVisitorId();
         return mVisitorId;
     }
