@@ -7,7 +7,7 @@
 
 package org.piwik.sdk;
 
-import android.util.Log;
+import org.piwik.sdk.tools.Logy;
 
 /**
  * An exception handler that wraps the existing exception handler and dispatches event to a {@link org.piwik.sdk.Tracker}.
@@ -44,7 +44,7 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
             // Immediately dispatch as the app might be dying after rethrowing the exception
             getTracker().dispatch();
         } catch (Exception e) {
-            Log.e(Tracker.LOGGER_TAG, "Couldn't track uncaught exception", e);
+            Logy.e(Tracker.LOGGER_TAG, "Couldn't track uncaught exception", e);
         } finally {
             // re-throw critical exception further to the os (important)
             if (getDefaultExceptionHandler() != null && getDefaultExceptionHandler() != this) {

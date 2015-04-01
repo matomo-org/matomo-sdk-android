@@ -7,9 +7,9 @@
 
 package org.piwik.sdk;
 
-import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,18 +52,18 @@ public class CustomVariables extends HashMap<String, JSONArray> {
         if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) {
-                Log.w(Tracker.LOGGER_TAG, String.format("Name is too long %s", name));
+                Logy.w(Tracker.LOGGER_TAG, String.format("Name is too long %s", name));
                 name = name.substring(0, MAX_LENGTH);
             }
 
             if (value.length() > MAX_LENGTH) {
-                Log.w(Tracker.LOGGER_TAG, String.format("Value is too long %s", value));
+                Logy.w(Tracker.LOGGER_TAG, String.format("Value is too long %s", value));
                 value = value.substring(0, MAX_LENGTH);
             }
 
             return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
         }
-        Log.d(Tracker.LOGGER_TAG, "Index is out of range or name/value is null");
+        Logy.d(Tracker.LOGGER_TAG, "Index is out of range or name/value is null");
         return null;
     }
 
@@ -77,7 +77,7 @@ public class CustomVariables extends HashMap<String, JSONArray> {
         if (values.length() == 2 && index != null) {
             return super.put(index, values);
         }
-        Log.d(Tracker.LOGGER_TAG, "value length should be equal 2");
+        Logy.d(Tracker.LOGGER_TAG, "value length should be equal 2");
         return null;
     }
 

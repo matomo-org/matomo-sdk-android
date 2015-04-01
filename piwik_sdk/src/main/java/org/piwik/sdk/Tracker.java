@@ -7,12 +7,18 @@
 
 package org.piwik.sdk;
 
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
+import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.DeviceHelper;
+import org.piwik.sdk.tools.Logy;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -101,7 +107,7 @@ public class Tracker implements Dispatchable<Integer> {
     private final HashMap<String, String> queryParams = new HashMap<String, String>(piwikQueryDefaultCapacity);
     private final HashMap<String, CustomVariables> customVariables = new HashMap<String, CustomVariables>(2);
 
-     private final Random randomObject = new Random(new Date().getTime());
+    private final Random randomObject = new Random(new Date().getTime());
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -223,7 +229,7 @@ public class Tracker implements Dispatchable<Integer> {
     @Override
     public void dispatchingCompleted(Integer count) {
         isDispatching = false;
-        Log.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
+        Logy.d(Tracker.LOGGER_TAG, String.format("dispatched %s url(s)", count));
     }
 
     @Override
@@ -556,26 +562,86 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     /**
-     * Ensures that tracking application downloading will be fired only once
-     * by using SharedPreferences as flag storage
+     * Fires a download for this app once per update.
+     * The install will be tracked as:<p/>
+     * 'http://packageName:versionCode/installerPackagename'
+     * <p/>
+     * Also see {@link #trackNewAppDownload(android.content.Context, org.piwik.sdk.Tracker.ExtraIdentifier)}
+     *
+     * @return this tracker again for chaining
      */
     public Tracker trackAppDownload() {
-        SharedPreferences prefs = mPiwik.getSharedPreferences();
+        return trackAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
+    }
 
-        if (!prefs.getBoolean("downloaded", false)) {
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putBoolean("downloaded", true);
-            editor.commit();
-            trackNewAppDownload();
+    /**
+     * Fires a download for an arbitrary app once per update.
+     * @param app the app to track
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @return this tracker for chaining
+     */
+    public Tracker trackAppDownload(Context app, ExtraIdentifier extra) {
+        SharedPreferences prefs = mPiwik.getSharedPreferences();
+        try {
+            PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
+            String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
+            if (!prefs.getBoolean(firedKey, false)) {
+                trackNewAppDownload(app, extra);
+                prefs.edit().putBoolean(firedKey, true).commit();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
         return this;
     }
 
+    public enum ExtraIdentifier {
+        APK_CHECKSUM, INSTALLER_PACKAGENAME
+    }
+
     /**
-     * Make sure to call this method only once per user
+     * Track a download for a specific app
+     * <p/>
+     * Resulting download url:<p/>
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM}: http://packageName:versionCode/apk-md5-checksum <p/>
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}: http://packageName:versionCode/installerPackageName <p/>
+     * Note: Usually the installer-packagename is something like "com.android.vending" (Google Play),
+     * but users can modify this value, don't be surprised by some random values.
+     *
+     * @param app   the app you want to fire a download event for
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @return this tracker again, so you can chain calls
      */
-    public Tracker trackNewAppDownload() {
-        set(QueryParams.DOWNLOAD, getApplicationBaseURL());
+    public Tracker trackNewAppDownload(Context app, ExtraIdentifier extra) {
+        StringBuilder installIdentifier = new StringBuilder();
+        try {
+            String pkg = app.getPackageName();
+            installIdentifier.append("http://").append(pkg); // Identifies the app
+
+            PackageManager packMan = app.getPackageManager();
+            PackageInfo pkgInfo = packMan.getPackageInfo(pkg, 0);
+            installIdentifier.append(":").append(pkgInfo.versionCode);
+            String extraIdentifier = null;
+            if (extra == ExtraIdentifier.APK_CHECKSUM) {
+                ApplicationInfo appInfo = packMan.getApplicationInfo(pkg, 0);
+                if (appInfo.sourceDir != null) {
+                    try {
+                        extraIdentifier = Checksum.getMD5Checksum(new File(appInfo.sourceDir));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else if (extra == ExtraIdentifier.INSTALLER_PACKAGENAME) {
+                String installer = packMan.getInstallerPackageName(pkg);
+                if (installer != null && installer.length() < 200)
+                    extraIdentifier = packMan.getInstallerPackageName(pkg);
+            }
+            installIdentifier.append("/").append(extraIdentifier == null ? DEFAULT_UNKNOWN_VALUE : extraIdentifier);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return this;
+        }
+        set(QueryParams.DOWNLOAD, installIdentifier.toString());
         set(QueryParams.ACTION_NAME, "application/downloaded");
         set(QueryParams.URL_PATH, "/application/downloaded");
         return trackEvent("Application", "downloaded");
@@ -635,7 +701,7 @@ public class Tracker implements Dispatchable<Integer> {
             StackTraceElement trace = ex.getStackTrace()[0];
             className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
         } catch (Exception e) {
-            Log.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
+            Logy.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
             className = ex.getClass().getName();
         }
         String actionName = "exception/" + (isFatal ? "fatal/" : "") + (className + "/") + description;
@@ -675,9 +741,9 @@ public class Tracker implements Dispatchable<Integer> {
         String event = getQuery();
         if (mPiwik.isOptOut()) {
             lastEvent = event;
-            Log.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
+            Logy.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
         } else {
-            Log.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
+            Logy.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
             queue.add(event);
 
             tryDispatch();
@@ -789,7 +855,7 @@ public class Tracker implements Dispatchable<Integer> {
     }
 
     protected String getVisitorId() {
-        if(mVisitorId == null)
+        if (mVisitorId == null)
             mVisitorId = getRandomVisitorId();
         return mVisitorId;
     }
