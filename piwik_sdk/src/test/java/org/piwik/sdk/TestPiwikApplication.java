@@ -15,6 +15,11 @@ import java.lang.reflect.Method;
 
 public class TestPiwikApplication extends PiwikApplication implements TestLifecycleApplication {
 
+    public static final String INSTALLER_PACKAGENAME = "com.android.vending users can screw with this value !$()=%ÄÖÜ";
+    public static final byte[] FAKE_APK_DATA = "this is an apk, awesome right?".getBytes();
+    public static final String FAKE_APK_DATA_MD5 = "771BD8971508985852AF8F96170C52FB";
+    public static final int VERSION_CODE = 1;
+    public static final String PACKAGENAME = "org.piwik.sdk.test";
     private File mFakeApk;
 
     @Override
@@ -23,15 +28,14 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
         RobolectricPackageManager rpm = (RobolectricPackageManager) Robolectric.application.getPackageManager();
         PackageInfo packageInfo = new PackageInfo();
         packageInfo.packageName = getPackageName();
-        packageInfo.versionCode = 1;
+        packageInfo.versionCode = VERSION_CODE;
 
         ApplicationInfo applicationInfo = new ApplicationInfo();
         mFakeApk = new File(Environment.getExternalStorageDirectory(), "base.apk");
         applicationInfo.sourceDir = mFakeApk.getAbsolutePath();
         try {
             FileOutputStream out = new FileOutputStream(applicationInfo.sourceDir);
-            byte dataToWrite[] = "somedata".getBytes();
-            out.write(dataToWrite);
+            out.write(FAKE_APK_DATA);
             out.close();
         } catch (java.io.IOException e) {
             e.printStackTrace();
@@ -39,6 +43,8 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
 
         packageInfo.applicationInfo = applicationInfo;
         rpm.addPackage(packageInfo);
+
+        rpm.setInstallerPackageName(getPackageName(), INSTALLER_PACKAGENAME);
         super.onCreate();
     }
 
@@ -64,7 +70,7 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
 
     @Override
     public String getPackageName() {
-        return "org.piwik.sdk.test";
+        return PACKAGENAME;
     }
 
     @Override

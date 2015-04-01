@@ -8,10 +8,13 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.content.pm.PackageInfo;
 
 import org.robolectric.AndroidManifest;
 import org.robolectric.DefaultTestLifecycle;
+import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import org.robolectric.res.builder.RobolectricPackageManager;
 
 import java.lang.reflect.Method;
 
@@ -22,6 +25,12 @@ public class FullEnvTestLifeCycle extends DefaultTestLifecycle {
 
     @Override
     public Application createApplication(Method method, AndroidManifest appManifest, Config config) {
+        // FIXME If a future version of Robolectric implements "setInstallerPackageName", remove this.
+        RobolectricPackageManager oldManager = Robolectric.packageManager;
+        RobolectricPackageManager newManager = new FullEnvPackageManager();
+        for (PackageInfo pkg : oldManager.getInstalledPackages(0))
+            newManager.addPackage(pkg);
+        Robolectric.packageManager = newManager;
         return new TestPiwikApplication();
     }
 }

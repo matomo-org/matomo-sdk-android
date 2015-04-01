@@ -11,13 +11,14 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+
 import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.QuickTrack;
+import org.piwik.sdk.tools.Logy;
 
 
 public class SettingsActivity extends Activity {
@@ -66,7 +67,7 @@ public class SettingsActivity extends Activity {
                             ((PiwikApplication) getApplication()).getTracker()
                                     .setDispatchInterval(interval);
                         } catch (NumberFormatException e) {
-                            Log.d("not a number", charSequence.toString());
+                            Logy.d("not a number", charSequence.toString());
                         }
                     }
 
@@ -97,7 +98,7 @@ public class SettingsActivity extends Activity {
                                     .setSessionTimeout(timeoutMin * 60);
                         } catch (NumberFormatException e) {
                             ((EditText) settingsActivity.findViewById(R.id.sessionTimeoutInput)).setText("30");
-                            Log.d("not a number", charSequence.toString());
+                            Logy.d("not a number", charSequence.toString());
                         }
                     }
 

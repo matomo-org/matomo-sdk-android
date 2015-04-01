@@ -8,10 +8,11 @@
 package org.piwik.sdk;
 
 import android.text.TextUtils;
-import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.piwik.sdk.tools.Logy;
 
 import java.net.URL;
 import java.util.Iterator;
@@ -85,7 +86,7 @@ public class TrackerBulkURLWrapper {
         List<String> pageElements = events.subList(page.fromIndex, page.toIndex);
 
         if(pageElements.size() == 0){
-            Log.w(Tracker.LOGGER_TAG, "Empty page");
+            Logy.w(Tracker.LOGGER_TAG, "Empty page");
             return null;
         }
 
@@ -97,8 +98,8 @@ public class TrackerBulkURLWrapper {
                 params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), authToken);
             }
         } catch (JSONException e) {
-            Log.w(Tracker.LOGGER_TAG, "Cannot create json object", e);
-            Log.i(Tracker.LOGGER_TAG, TextUtils.join(", ", pageElements));
+            Logy.w(Tracker.LOGGER_TAG, "Cannot create json object", e);
+            Logy.i(Tracker.LOGGER_TAG, TextUtils.join(", ", pageElements));
             return null;
         }
         return params;
