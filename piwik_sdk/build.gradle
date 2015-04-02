@@ -1,3 +1,7 @@
+def gitSha() {
+    return 'git rev-parse --short HEAD'.execute().text.trim()
+}
+
 apply plugin: 'com.android.library'
 
 android {
@@ -55,7 +59,7 @@ task makeJar(type: Copy) {
     from('build/intermediates/bundles/release/')
     into('jar/')
     include('classes.jar')
-    rename('classes.jar', 'PiwikAndroidSdk.jar')
+    rename('classes.jar', 'PiwikAndroidSdk-' + gitSha() + '.jar')
 }
 
 makeJar.dependsOn(clearJar, build)
