@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
     public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
+    public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
     private final Context mContext;
     private boolean mOptOut = false;
     private boolean mDryRun = false;
@@ -33,6 +34,7 @@ public class Piwik {
 
     private Piwik(Context context) {
         mContext = context.getApplicationContext();
+        mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
     }
 
     protected Context getContext() {
@@ -64,6 +66,7 @@ public class Piwik {
 
     public void setAppOptOut(boolean optOut) {
         mOptOut = optOut;
+        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).commit();
     }
 
     public boolean isOptOut() {
@@ -73,7 +76,7 @@ public class Piwik {
     public boolean isDryRun() {
         return mDryRun;
     }
-    
+
     public boolean isDebug() {
         return mDebug;
     }
