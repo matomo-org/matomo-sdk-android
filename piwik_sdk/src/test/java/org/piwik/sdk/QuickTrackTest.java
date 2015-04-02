@@ -10,11 +10,9 @@ package org.piwik.sdk;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.net.MalformedURLException;
@@ -40,7 +38,7 @@ public class QuickTrackTest {
     @Before
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
-        Piwik.getInstance(Robolectric.application).setAppOptOut(true);
+        Piwik.getInstance(Robolectric.application).setOptOut(true);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {

@@ -64,11 +64,22 @@ public class Piwik {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
-    public void setAppOptOut(boolean optOut) {
+    /**
+     * Use this to disable Piwik, e.g. if the user opted out of tracking.
+     * Piwik will persist the choice and remain disable on next instance creation.</p>
+     * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
+     *
+     * @param optOut true to disable reporting
+     */
+    public void setOptOut(boolean optOut) {
         mOptOut = optOut;
         getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).commit();
     }
 
+    /**
+     *
+     * @return true if Piwik is currently disabled
+     */
     public boolean isOptOut() {
         return mOptOut;
     }

@@ -1,7 +1,6 @@
 package org.piwik.sdk;
 
 import android.app.Application;
-import android.content.Context;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -10,7 +9,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
-import org.robolectric.res.builder.RobolectricPackageManager;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -46,7 +44,7 @@ public class TrackerTest {
     @Before
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
-        Piwik.getInstance(Robolectric.application).setAppOptOut(true);
+        Piwik.getInstance(Robolectric.application).setOptOut(true);
     }
 
     @Test
@@ -54,7 +52,7 @@ public class TrackerTest {
         Application app = Robolectric.application;
         Piwik piwik = Piwik.getInstance(app);
         piwik.setDryRun(true);
-        piwik.setAppOptOut(true);
+        piwik.setOptOut(true);
         Tracker tracker = createTracker();
         //auto attach tracking screen view
         QuickTrack.bindToApp(app, tracker);
