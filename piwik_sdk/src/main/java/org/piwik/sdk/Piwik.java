@@ -112,7 +112,11 @@ public class Piwik {
         return getContext().getPackageName();
     }
 
-    protected SharedPreferences getSharedPreferences() {
+    /**
+     * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
+     * @return
+     */
+    public SharedPreferences getSharedPreferences() {
         return getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
     }
 }
