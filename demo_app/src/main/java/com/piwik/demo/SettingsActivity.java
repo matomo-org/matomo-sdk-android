@@ -49,7 +49,7 @@ public class SettingsActivity extends Activity {
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setAppOptOut(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getPiwik().setOptOut(((CheckBox) v).isChecked());
             }
         });
 

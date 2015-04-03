@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
     public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
+    public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
     private final Context mContext;
     private boolean mOptOut = false;
     private boolean mDryRun = false;
@@ -33,6 +34,7 @@ public class Piwik {
 
     private Piwik(Context context) {
         mContext = context.getApplicationContext();
+        mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
     }
 
     protected Context getContext() {
@@ -62,10 +64,22 @@ public class Piwik {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
-    public void setAppOptOut(boolean optOut) {
+    /**
+     * Use this to disable Piwik, e.g. if the user opted out of tracking.
+     * Piwik will persist the choice and remain disable on next instance creation.</p>
+     * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
+     *
+     * @param optOut true to disable reporting
+     */
+    public void setOptOut(boolean optOut) {
         mOptOut = optOut;
+        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).commit();
     }
 
+    /**
+     *
+     * @return true if Piwik is currently disabled
+     */
     public boolean isOptOut() {
         return mOptOut;
     }
@@ -73,7 +87,7 @@ public class Piwik {
     public boolean isDryRun() {
         return mDryRun;
     }
-    
+
     public boolean isDebug() {
         return mDebug;
     }
@@ -98,7 +112,11 @@ public class Piwik {
         return getContext().getPackageName();
     }
 
-    protected SharedPreferences getSharedPreferences() {
+    /**
+     * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
+     * @return
+     */
+    public SharedPreferences getSharedPreferences() {
         return getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
     }
 }
