@@ -101,11 +101,6 @@ public class TrackerTest {
     }
 
     @Test
-    public void testDispatchingFlow() throws Exception {
-        // TODO
-    }
-
-    @Test
     public void testSet() throws Exception {
         TrackMe trackMe = new TrackMe().set(QueryParams.HOURS, "0")
                 .set(QueryParams.MINUTES, (Integer) null)
