@@ -402,9 +402,9 @@ public class TrackerTest {
     public void testTrackNewAppDownload() throws Exception {
         Tracker tracker = createTracker();
         tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.APK_CHECKSUM);
-        QueryHashMap queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
-        Matcher m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
@@ -415,7 +415,7 @@ public class TrackerTest {
         tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
         queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
-        m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
@@ -428,7 +428,7 @@ public class TrackerTest {
         tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
         queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
-        m = REGEX_DOWNLOADTRACK.matcher((CharSequence) queryParams.get(QueryParams.DOWNLOAD));
+        m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
@@ -525,13 +525,21 @@ public class TrackerTest {
         String customUserAgent = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0";
         System.setProperty("http.agent", "aUserAgent");
 
-        assertEquals(tracker.getUserAgent(), defaultUserAgent);
+        TrackMe trackMe = new TrackMe();
+        tracker.doInjections(trackMe);
+        assertEquals(trackMe.get(QueryParams.USER_AGENT), defaultUserAgent);
 
-        tracker.setUserAgent(customUserAgent);
-        assertEquals(tracker.getUserAgent(), customUserAgent);
+        trackMe.set(QueryParams.USER_AGENT, customUserAgent);
+        tracker.doInjections(trackMe);
+        assertEquals(trackMe.get(QueryParams.USER_AGENT), customUserAgent);
 
-        tracker.setUserAgent(null);
-        assertEquals(tracker.getUserAgent(), defaultUserAgent);
+        trackMe.remove(QueryParams.USER_AGENT);
+        tracker.doInjections(trackMe);
+        assertEquals(trackMe.get(QueryParams.USER_AGENT), defaultUserAgent);
+
+        tracker.getDefaultTrackMe().remove(QueryParams.USER_AGENT);
+        tracker.doInjections(trackMe);
+        assertEquals(trackMe.get(QueryParams.USER_AGENT), null);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
@@ -545,6 +553,7 @@ public class TrackerTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
         QueryHashMap<String, String> values = new QueryHashMap<String, String>();
 

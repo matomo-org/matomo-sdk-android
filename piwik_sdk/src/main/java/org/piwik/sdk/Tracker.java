@@ -38,8 +38,8 @@ public class Tracker {
     // Piwik default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
     private static final String defaultTrueValue = "1";
-    private static final String defaultRecordValue = defaultTrueValue;
-    private static final String defaultAPIVersionValue = "1";
+    private static final String DEFAULT_RECORD_VALUE = defaultTrueValue;
+    private static final String DEFAULT_API_VERSION_VALUE = "1";
 
     // Sharedpreference keys for persisted values
     private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
@@ -54,27 +54,6 @@ public class Tracker {
      */
     private final URL mApiUrl;
 
-    private String mUserId;
-
-    /**
-     * The unique visitor ID, must be a 16 characters hexadecimal string.
-     * Every unique visitor must be assigned a different ID and this ID must not change after it is assigned.
-     * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
-     */
-    private String mVisitorId;
-
-    /**
-     * 32 character authorization key used to authenticate the API request.
-     * Should be equals `token_auth` value of the Super User
-     * or a user with admin access to the website visits are being tracked for.
-     */
-    private final String mAuthToken;
-
-    private String mScreenResolution;
-    private String mUserAgent;
-    private String mUserLanguage;
-    private String mUserCountry;
-
     private final Piwik mPiwik;
     private String mLastEvent;
     private String mApplicationDomain;
@@ -84,6 +63,8 @@ public class Tracker {
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
+
+    private final TrackMe mDefaultTrackMe = new TrackMe();
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -109,11 +90,25 @@ public class Tracker {
         }
         mPiwik = piwik;
         mSiteId = siteId;
-        mAuthToken = authToken;
 
-        mDispatcher = new Dispatcher(mPiwik, mApiUrl, mAuthToken);
+        mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken);
 
-        mUserId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
+        String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
+        if (userId == null)
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, UUID.randomUUID().toString()).commit();
+        mDefaultTrackMe.set(QueryParams.USER_ID, userId);
+        mDefaultTrackMe.set(QueryParams.SESSION_START, defaultTrueValue);
+
+        String resolution = DEFAULT_UNKNOWN_VALUE;
+        int[] res = DeviceHelper.getResolution(mPiwik.getContext());
+        if (res != null)
+            resolution = String.format("%sx%s", res[0], res[1]);
+        mDefaultTrackMe.set(QueryParams.SCREEN_RESOLUTION, resolution);
+
+        mDefaultTrackMe.set(QueryParams.USER_AGENT, DeviceHelper.getUserAgent());
+        mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
+        mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
+        mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
     }
 
     public Piwik getPiwik() {
@@ -128,6 +123,23 @@ public class Tracker {
         return mSiteId;
     }
 
+    /**
+     * This TrackMe object is used by Piwik to transmit a set of initial values, which only get send once per visit by default.
+     * If you which to send different values, change them on this object before the first transmission.
+     * <p/>
+     * {@link org.piwik.sdk.QueryParams#SESSION_START}<br>
+     * {@link org.piwik.sdk.QueryParams#SCREEN_RESOLUTION}<br>
+     * {@link org.piwik.sdk.QueryParams#USER_AGENT}<br>
+     * {@link org.piwik.sdk.QueryParams#LANGUAGE}<br>
+     * {@link org.piwik.sdk.QueryParams#COUNTRY}<br>
+     * <p/>
+     * If you wish to change any of these values after the first transmission, just send another TrackMe object with the relevant parameters set.
+     *
+     * @return the default TrackMe object
+     */
+    public TrackMe getDefaultTrackMe() {
+        return mDefaultTrackMe;
+    }
 
     public void startNewSession() {
         mSessionStartTime = 0;
@@ -193,8 +205,8 @@ public class Tracker {
      */
     public Tracker setUserId(String userId) {
         if (!"".equals(userId)) {
-            mUserId = userId;
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
+            mDefaultTrackMe.set(QueryParams.USER_ID, userId);
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
         }
         return this;
     }
@@ -203,18 +215,22 @@ public class Tracker {
      * @return a user-id string, either the one you set or the one Piwik generated for you.
      */
     public String getUserId() {
-        if (mUserId == null) {
-            mUserId = UUID.randomUUID().toString();
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, mUserId).commit();
-        }
-        return mUserId;
+        return mDefaultTrackMe.get(QueryParams.USER_ID);
     }
 
+    /**
+     * The unique visitor ID, must be a 16 characters hexadecimal string.
+     * Every unique visitor must be assigned a different ID and this ID must not change after it is assigned.
+     * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
+     */
     public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
-        if (confirmVisitorIdFormat(visitorId)) {
-            this.mVisitorId = visitorId;
-        }
+        if (confirmVisitorIdFormat(visitorId))
+            mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
         return this;
+    }
+
+    public String getVisitorId() {
+        return mDefaultTrackMe.get(QueryParams.VISITOR_ID);
     }
 
     private static final Pattern PATTERN_VISITOR_ID = Pattern.compile("^[0-9a-f]{16}$");
@@ -241,69 +257,6 @@ public class Tracker {
 
     protected String getApplicationDomain() {
         return mApplicationDomain != null ? mApplicationDomain : mPiwik.getApplicationDomain();
-    }
-
-    /**
-     * Returns real screen size if QueryParams.SCREEN_RESOLUTION is empty
-     * Note that the results also depend on the current device orientation.
-     * http://stackoverflow.com/a/9316553
-     *
-     * @return formatted string: WxH
-     */
-    public String getResolution() {
-        if (mScreenResolution == null) {
-            int[] resolution = DeviceHelper.getResolution(mPiwik.getContext());
-            if (resolution == null)
-                mScreenResolution = DEFAULT_UNKNOWN_VALUE;
-            else
-                mScreenResolution = String.format("%sx%s", resolution[0], resolution[1]);
-        }
-        return mScreenResolution;
-    }
-
-    /**
-     * Returns android system user agent
-     *
-     * @return well formatted user agent
-     */
-    public String getUserAgent() {
-        if (mUserAgent == null) {
-            mUserAgent = DeviceHelper.getUserAgent();
-        }
-        return mUserAgent;
-    }
-
-    /**
-     * Sets custom UserAgent
-     *
-     * @param userAgent your custom UserAgent String
-     */
-    public void setUserAgent(String userAgent) {
-        mUserAgent = userAgent;
-    }
-
-    /**
-     * Returns user language
-     *
-     * @return language
-     */
-    public String getLanguage() {
-        if (mUserLanguage == null) {
-            mUserLanguage = DeviceHelper.getUserLanguage();
-        }
-        return mUserLanguage;
-    }
-
-    /**
-     * Returns user country
-     *
-     * @return country
-     */
-    public String getCountry() {
-        if (mUserCountry == null) {
-            mUserCountry = DeviceHelper.getUserCountry();
-        }
-        return mUserCountry;
     }
 
     /**
@@ -571,24 +524,34 @@ public class Tracker {
                 .set(QueryParams.EVENT_VALUE, isFatal ? 1 : 0));
     }
 
+    /**
+     * There parameters are only interesting for the very first query.
+     *
+     */
     private void injectInitialParams(TrackMe trackMe) {
-        trackMe.trySet(QueryParams.SESSION_START, defaultTrueValue);
-        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, getResolution());
-        trackMe.trySet(QueryParams.USER_AGENT, getUserAgent());
-        trackMe.trySet(QueryParams.LANGUAGE, getLanguage());
-        trackMe.trySet(QueryParams.COUNTRY, getCountry());
+        trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
+        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
+        trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
+        trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
+        trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
     }
 
+    /**
+     * These parameters are required for all queries.
+     *
+     */
     private void injectBaseParams(TrackMe trackMe) {
-        trackMe.trySet(QueryParams.API_VERSION, defaultAPIVersionValue);
-        trackMe.trySet(QueryParams.RECORD, defaultRecordValue);
         trackMe.trySet(QueryParams.SITE_ID, mSiteId);
-        trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
+        trackMe.trySet(QueryParams.RECORD, DEFAULT_RECORD_VALUE);
+        trackMe.trySet(QueryParams.API_VERSION, DEFAULT_API_VERSION_VALUE);
         trackMe.trySet(QueryParams.RANDOM_NUMBER, mRandomAntiCachingValue.nextInt(100000));
-        trackMe.trySet(QueryParams.VISITOR_ID, getVisitorId());
-        trackMe.trySet(QueryParams.USER_ID, getUserId());
         trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date()));
         trackMe.trySet(QueryParams.SEND_IMAGE, "0");
+
+        trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
+        trackMe.trySet(QueryParams.USER_ID, mDefaultTrackMe.get(QueryParams.USER_ID));
+
+        trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
 
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
@@ -624,6 +587,10 @@ public class Tracker {
             mDispatcher.submit(event);
         }
         return this;
+    }
+
+    public static String makeRandomVisitorId() {
+        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
     /**
@@ -669,16 +636,6 @@ public class Tracker {
 
     protected String getApplicationBaseURL() {
         return String.format("http://%s", getApplicationDomain());
-    }
-
-    protected String getVisitorId() {
-        if (mVisitorId == null)
-            mVisitorId = getRandomVisitorId();
-        return mVisitorId;
-    }
-
-    private String getRandomVisitorId() {
-        return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
     protected Dispatcher getDispatcher() {
