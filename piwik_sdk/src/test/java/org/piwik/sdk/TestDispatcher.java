@@ -1,8 +1,10 @@
-package org.piwik.sdk;
-
-/**
- * Created by darken on 04.04.2015.
+/*
+ * Android SDK for Piwik
+ *
+ * @link https://github.com/piwik/piwik-android-sdk
+ * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
+package org.piwik.sdk;
 
 import android.util.Log;
 
@@ -59,7 +61,7 @@ public class TestDispatcher {
         tracker.setDispatchInterval(2);
 
         final int threadCount = 100;
-        final int queryCount = 100;
+        final int queryCount = 1000;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
 
@@ -80,7 +82,7 @@ public class TestDispatcher {
         assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
         assertTrue(tracker.dispatch());
 
-        checkForMIAs(threadCount*queryCount,createdEvents,tracker.getDispatcher().getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     @Test
@@ -106,7 +108,7 @@ public class TestDispatcher {
 
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
 
-        checkForMIAs(threadCount*queryCount,createdEvents,tracker.getDispatcher().getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
     private static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<HttpRequestBase> dryRunOutput) throws Exception {

@@ -211,6 +211,12 @@ If user ID is used, it must be persisted locally by the app and set directly on 
 
 If no user ID is used, the SDK will generate, manage and persist a random id for you.
 
+#### Modifying default parameters
+
+The Tracker has a method
+[getDefaultTrackMe](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#getDefaultTrackMe())
+modifying the object returned by it will change the default values used on each query.
+Note though that the Tracker will not overwrite any values you set on your own TrackMe object.
 
 #### Detailed API documentation
 

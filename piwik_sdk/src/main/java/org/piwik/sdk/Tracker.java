@@ -201,13 +201,14 @@ public class Tracker {
      * then the new action will be recorded to this existing visit.
      *
      * @param userId passing null will delete the current user-id.
-     *               Note that if the user-id is NULL, the tracker will automatically generate a new one.
      */
     public Tracker setUserId(String userId) {
-        if (!"".equals(userId)) {
+        if (userId != null) {
             mDefaultTrackMe.set(QueryParams.USER_ID, userId);
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
+        } else {
+            mDefaultTrackMe.remove(QueryParams.USER_ID);
         }
+        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
         return this;
     }
 
@@ -526,7 +527,6 @@ public class Tracker {
 
     /**
      * There parameters are only interesting for the very first query.
-     *
      */
     private void injectInitialParams(TrackMe trackMe) {
         trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
@@ -538,7 +538,6 @@ public class Tracker {
 
     /**
      * These parameters are required for all queries.
-     *
      */
     private void injectBaseParams(TrackMe trackMe) {
         trackMe.trySet(QueryParams.SITE_ID, mSiteId);

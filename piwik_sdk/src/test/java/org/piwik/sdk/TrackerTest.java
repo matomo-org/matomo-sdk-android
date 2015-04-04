@@ -197,8 +197,7 @@ public class TrackerTest {
         assertEquals(tracker.getUserId(), "test");
 
         tracker.setUserId(null);
-        assertNotEquals("test", tracker.getUserId());
-        assertNotNull(tracker.getUserId());
+        assertNull(tracker.getUserId());
 
         String uuid = UUID.randomUUID().toString();
         tracker.setUserId(uuid);
@@ -520,26 +519,29 @@ public class TrackerTest {
 
     @Test
     public void testSetUserAgent() throws MalformedURLException {
-        Tracker tracker = createTracker();
         String defaultUserAgent = "aUserAgent";
         String customUserAgent = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0";
         System.setProperty("http.agent", "aUserAgent");
 
+        // Default system user agent
+        Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
         tracker.doInjections(trackMe);
-        assertEquals(trackMe.get(QueryParams.USER_AGENT), defaultUserAgent);
+        assertEquals(defaultUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
+        // Custom developer specified useragent
+        tracker = createTracker();
+        trackMe = new TrackMe();
         trackMe.set(QueryParams.USER_AGENT, customUserAgent);
         tracker.doInjections(trackMe);
-        assertEquals(trackMe.get(QueryParams.USER_AGENT), customUserAgent);
+        assertEquals(customUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
-        trackMe.remove(QueryParams.USER_AGENT);
-        tracker.doInjections(trackMe);
-        assertEquals(trackMe.get(QueryParams.USER_AGENT), defaultUserAgent);
-
+        // Modifying default TrackMe, no USER_AGENT
+        tracker = createTracker();
+        trackMe = new TrackMe();
         tracker.getDefaultTrackMe().remove(QueryParams.USER_AGENT);
         tracker.doInjections(trackMe);
-        assertEquals(trackMe.get(QueryParams.USER_AGENT), null);
+        assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
@@ -555,7 +557,7 @@ public class TrackerTest {
 
     @SuppressWarnings("deprecation")
     private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
-        QueryHashMap<String, String> values = new QueryHashMap<String, String>();
+        QueryHashMap<String, String> values = new QueryHashMap<>();
 
         List<NameValuePair> params = URLEncodedUtils.parse(new URI("http://localhost/" + url), "UTF-8");
 
