@@ -37,8 +37,8 @@ public class Tracker {
 
     // Piwik default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
-    private static final String defaultTrueValue = "1";
-    private static final String DEFAULT_RECORD_VALUE = defaultTrueValue;
+    private static final String DEFAULT_TRUE_VALUE = "1";
+    private static final String DEFAULT_RECORD_VALUE = DEFAULT_TRUE_VALUE;
     private static final String DEFAULT_API_VERSION_VALUE = "1";
 
     // Sharedpreference keys for persisted values
@@ -97,7 +97,7 @@ public class Tracker {
         if (userId == null)
             getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, UUID.randomUUID().toString()).commit();
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
-        mDefaultTrackMe.set(QueryParams.SESSION_START, defaultTrueValue);
+        mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
         String resolution = DEFAULT_UNKNOWN_VALUE;
         int[] res = DeviceHelper.getResolution(mPiwik.getContext());
@@ -620,6 +620,10 @@ public class Tracker {
         return result;
     }
 
+    protected String getApplicationBaseURL() {
+        return String.format("http://%s", getApplicationDomain());
+    }
+
     /**
      * For testing purposes
      *
@@ -631,10 +635,6 @@ public class Tracker {
 
     protected void clearLastEvent() {
         mLastEvent = null;
-    }
-
-    protected String getApplicationBaseURL() {
-        return String.format("http://%s", getApplicationDomain());
     }
 
     protected Dispatcher getDispatcher() {
