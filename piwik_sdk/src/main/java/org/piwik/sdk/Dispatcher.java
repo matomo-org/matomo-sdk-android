@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
  * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
  * }
  */
+@SuppressWarnings("deprecation")
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
     private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
@@ -58,10 +59,10 @@ public class Dispatcher {
 
     private List<HttpRequestBase> mDryRunOutput = Collections.synchronizedList(new ArrayList<HttpRequestBase>());
 
-    private int mTimeOut = 1000;
+    private int mTimeOut =  5 * 1000; // 5s
     private volatile boolean mRunning = false;
 
-    private long mDispatchInterval;
+    private long mDispatchInterval = 120 * 1000; // 120s
     private Thread mWorkerThread;
 
     public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
@@ -186,7 +187,7 @@ public class Dispatcher {
 
     private boolean doRequest(HttpRequestBase requestBase) {
         HttpClient client = new DefaultHttpClient();
-        HttpConnectionParams.setConnectionTimeout(client.getParams(), mTimeOut * 1000);
+        HttpConnectionParams.setConnectionTimeout(client.getParams(), mTimeOut);
         HttpResponse response;
 
         if (mPiwik.isDryRun()) {

@@ -41,7 +41,7 @@ or build it by yourself from the sources by only gradle command.
 ./gradlew :piwik_sdk:makeJar
 ```
 
-The _.jar_ will be saved in **piwik_sdk/jar/PiwikAndroidSdk.jar**
+The _.jar_ will be saved in **piwik_sdk/jar/PiwikAndroidSdk-##HEAD_GITSHA##.jar**
 
 ### Initialize Tracker
 
@@ -62,15 +62,15 @@ recommended that the tracker be created and managed in the Application class.
 import java.net.MalformedURLException;
 
 public class YourApplication extends Application {
-    Tracker piwikTracker;
+    private Tracker mPiwikTracker;
 
-    synchronized Tracker getTracker() {
-        if (piwikTracker != null) {
-            return piwikTracker;
+    public synchronized Tracker getTracker() {
+        if (mPiwikTracker != null) {
+            return mPiwikTracker;
         }
 
         try {
-            piwikTracker = Piwik.getInstance(this).newTracker("http://your-piwik-domain.tld/piwik.php", 1);
+            mPiwikTracker = Piwik.getInstance(this).newTracker("http://your-piwik-domain.tld/piwik.php", 1);
         } catch (MalformedURLException e) {
             Log.w(Tracker.LOGGER_TAG, "url is malformed", e);
             return null;
@@ -137,7 +137,7 @@ Read more about what is a [Goal in Piwik](http://piwik.org/docs/tracking-goals-w
 To track a custom name-value pair assigned to your users or screen views use 
 [setUserCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setUserCustomVariable(int, java.lang.String, java.lang.String))
 and
-[setScreenCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setScreenCustomVariable(int, java.lang.String, java.lang.String))
+[setScreenCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/TrackMe.html#setScreenCustomVariable(int, java.lang.String, java.lang.String))
 methods. Those methods have to be called before a call to [trackScreenView](#track-screen-views).
 More about [custom variables on piwik.org](http://piwik.org/docs/custom-variables/).
 
@@ -146,8 +146,7 @@ More about [custom variables on piwik.org](http://piwik.org/docs/custom-variable
 
 Tracker tracker = ((YourApplication) getApplication()).getTracker();
 tracker.setUserCustomVariable(2, 'Age', '99');
-tracker.setScreenCustomVariable(2, 'Price', '0.99');
-tracker.trackScreenView('/path');
+tracker.trackScreenView(new TrackMe().setScreenCustomVariable(2, 'Price', '0.99'), '/path');
 ```
 
 #### Track application downloads
@@ -162,6 +161,19 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 
 ### Advanced tracker usage
 
+#### Custom queries
+
+The base method for any event is
+[track](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#track(org.piwik.sdk.TrackMe))
+You can create your own objects, set the parameters and send it along.
+```java
+TrackMe trackMe = new TrackMe()
+trackMe.set...
+/* ... */
+Tracker tracker = ((YourApplication) getApplication()).getTracker();
+tracker.track(trackMe);
+```
+
 #### Dispatching
 
 The tracker by default will dispatch any pending events every 120 seconds.
@@ -170,10 +182,8 @@ If a negative value is used the dispatch timer will never run, a manual dispatch
 
 ```java
         
-    Tracker tracker = ((YourApplication) getApplication()).getTracker();     
-    
+    Tracker tracker = ((YourApplication) getApplication()).getTracker();
     tracker.setDispatchInterval(-1);
-    
     // Track exception
     try {
         revenue = getRevenue();
@@ -208,18 +218,19 @@ Here is the design document written by Thomas to give a brief overview of the SD
 
 Piwik SDK should work fine with Android API Version >= 7 (Android 2.1.x)
 
-Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/Piwik.java#L40)
+Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
  method is available on API level >= 14.
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
 
-### Tests and coverage
+### Check SDK
 
-Following command will run unit-tests, generate java documentation and coverage reports.
+Following command will clean, build, test, generate documentation, do coverage reports and then create a jar.
 
 ```
-$ ./gradlew :piwik_sdk:clean jacocoTestReport generateReleaseJavadoc coveralls --info
+$ ./gradlew :piwik_sdk:clean :piwik_sdk:assemble :piwik_sdk:test :piwik_sdk:jacocoTestReport :piwik_sdk:generateReleaseJavadoc :piwik_sdk:coveralls --info :piwik_sdk:makeJar
 ```
+
 
 * Coverage output _./piwik_sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
 * Tests report _./piwik_sdk/build/test-report/debug/index.html_

@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("deprecation")
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
 public class TestDispatcher {
@@ -60,7 +61,7 @@ public class TestDispatcher {
         final int threadCount = 100;
         final int queryCount = 100;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchThreads(tracker, threadCount, queryCount, createdEvents);
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
@@ -73,7 +74,7 @@ public class TestDispatcher {
         final int threadCount = 10;
         final int queryCount = 10;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchThreads(tracker, threadCount, queryCount, createdEvents);
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
         Thread.sleep(500);
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
@@ -103,7 +104,7 @@ public class TestDispatcher {
             }
         }).start();
 
-        launchThreads(tracker, threadCount, queryCount, createdEvents);
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
 
         checkForMIAs(threadCount*queryCount,createdEvents,tracker.getDispatcher().getDryRunOutput());
     }
@@ -115,7 +116,7 @@ public class TestDispatcher {
         while (true) {
             Thread.sleep(500);
             flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
-            Log.d("testMultiThreadDispatch", createdEvents.size() + " events created, " + dryRunOutput.size() + " requests dispatched, containing " + flattenedQueries.size() + " flattened queries");
+            Log.d("checkForMIAs", createdEvents.size() + " events created, " + dryRunOutput.size() + " requests dispatched, containing " + flattenedQueries.size() + " flattened queries");
             if (flattenedQueries.size() == expectedEvents) {
                 break;
             } else {
@@ -138,10 +139,11 @@ public class TestDispatcher {
         }
         assertTrue(createdEvents.isEmpty());
         assertTrue(flattenedQueries.isEmpty());
+        Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
-    private static void launchThreads(final Tracker tracker, int threadCount, final int queryCount, final List<String> createdQueries) {
-        Log.d("testMultiThreadDispatch", "Launching " + threadCount + " threads, " + queryCount + " queries each");
+    private static void launchTestThreads(final Tracker tracker, int threadCount, final int queryCount, final List<String> createdQueries) {
+        Log.d("launchTestThreads", "Launching " + threadCount + " threads, " + queryCount + " queries each");
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
                 @Override
@@ -164,6 +166,7 @@ public class TestDispatcher {
                 }
             }).start();
         }
+        Log.d("launchTestThreads", "All launched.");
     }
 
     private static List<String> getFlattenedQueries(List<HttpRequestBase> httpRequestList) throws Exception {

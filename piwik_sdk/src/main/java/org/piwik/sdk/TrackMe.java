@@ -10,20 +10,21 @@ package org.piwik.sdk;
 import java.util.HashMap;
 
 /**
- * Created by darken on 04.04.2015.
+ * This objects represents one query to Piwik.
+ * For each event send to Piwik a TrackMe gets created, either explicitly by you or implicitly by the Tracker.
  */
 public class TrackMe {
     private static final int DEFAULT_QUERY_CAPACITY = 14;
-    private final HashMap<String, String> mQueryParams = new HashMap<String, String>(DEFAULT_QUERY_CAPACITY);
+    private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
     private final CustomVariables mScreenCustomVariable = new CustomVariables();
 
     /**
      * You can set any additional Tracking API Parameters within the SDK.
      * This includes for example the local time (parameters h, m and s).
      * <pre>
-     * tracker.set(QueryParams.HOURS, "10");
-     * tracker.set(QueryParams.MINUTES, "45");
-     * tracker.set(QueryParams.SECONDS, "30");
+     * set(QueryParams.HOURS, "10");
+     * set(QueryParams.MINUTES, "45");
+     * set(QueryParams.SECONDS, "30");
      * </pre>
      *
      * @param key   query params name
@@ -42,6 +43,38 @@ public class TrackMe {
         return this;
     }
 
+    public boolean has(QueryParams queryParams) {
+        return mQueryParams.containsKey(queryParams.toString());
+    }
+
+    /**
+     * Only sets the value if it doesn't exist.
+     *
+     * @param key type
+     * @param value value
+     * @return this (for chaining)
+     */
+    public TrackMe trySet(QueryParams key, Integer value) {
+        return trySet(key, String.valueOf(value));
+    }
+
+    /**
+     * Only sets the value if it doesn't exist.
+     *
+     * @param key type
+     * @param value value
+     * @return this (for chaining)
+     */
+    public TrackMe trySet(QueryParams key, String value) {
+        if (!has(key))
+            set(key, value);
+        return this;
+    }
+
+    /**
+     * The tracker calls this to build the final query to be sent via HTTP
+     * @return the query, but without the base URL
+     */
     public String build() {
         set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mScreenCustomVariable.toString());
         return Dispatcher.urlEncodeUTF8(mQueryParams);
@@ -57,7 +90,8 @@ public class TrackMe {
      * A custom variable is defined by a name — for example,
      * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
      * You can track up to 5 custom variables for each user to your app.
-     *  @param index this Integer accepts values from 1 to 5.
+     *
+     * @param index this Integer accepts values from 1 to 5.
      *              A given custom variable name must always be stored in the same "index" per session.
      *              For example, if you choose to store the variable name = "Gender" in
      *              index = 1 and you record another custom variable in index = 1, then the

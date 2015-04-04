@@ -114,7 +114,7 @@ public class Piwik {
 
     /**
      * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
-     * @return
+     * @return Piwik's SharedPreferences instance
      */
     public SharedPreferences getSharedPreferences() {
         return getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);

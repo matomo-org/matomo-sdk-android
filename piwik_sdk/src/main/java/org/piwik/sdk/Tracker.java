@@ -42,10 +42,6 @@ public class Tracker {
     private static final String defaultRecordValue = defaultTrueValue;
     private static final String defaultAPIVersionValue = "1";
 
-    // Default dispatcher values
-    private static final int piwikDefaultDispatchTimer = 120;
-    private static final int piwikHTTPRequestTimeout = 5;
-
     // Sharedpreference keys for persisted values
     private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
 
@@ -577,25 +573,23 @@ public class Tracker {
     }
 
     private void injectInitialParams(TrackMe trackMe) {
-        // TODO check if this is set before replacing
-        trackMe.set(QueryParams.SESSION_START, defaultTrueValue);
-        trackMe.set(QueryParams.SCREEN_RESOLUTION, getResolution());
-        trackMe.set(QueryParams.USER_AGENT, getUserAgent());
-        trackMe.set(QueryParams.LANGUAGE, getLanguage());
-        trackMe.set(QueryParams.COUNTRY, getCountry());
+        trackMe.trySet(QueryParams.SESSION_START, defaultTrueValue);
+        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, getResolution());
+        trackMe.trySet(QueryParams.USER_AGENT, getUserAgent());
+        trackMe.trySet(QueryParams.LANGUAGE, getLanguage());
+        trackMe.trySet(QueryParams.COUNTRY, getCountry());
     }
 
     private void injectBaseParams(TrackMe trackMe) {
-        // TODO make sure those don't exist yet
-        trackMe.set(QueryParams.API_VERSION, defaultAPIVersionValue);
-        trackMe.set(QueryParams.RECORD, defaultRecordValue);
-        trackMe.set(QueryParams.SITE_ID, mSiteId);
-        trackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
-        trackMe.set(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
-        trackMe.set(QueryParams.VISITOR_ID, getVisitorId());
-        trackMe.set(QueryParams.USER_ID, getUserId());
-        trackMe.set(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date()));
-        trackMe.set(QueryParams.SEND_IMAGE, "0");
+        trackMe.trySet(QueryParams.API_VERSION, defaultAPIVersionValue);
+        trackMe.trySet(QueryParams.RECORD, defaultRecordValue);
+        trackMe.trySet(QueryParams.SITE_ID, mSiteId);
+        trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
+        trackMe.trySet(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
+        trackMe.trySet(QueryParams.VISITOR_ID, getVisitorId());
+        trackMe.trySet(QueryParams.USER_ID, getUserId());
+        trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date()));
+        trackMe.trySet(QueryParams.SEND_IMAGE, "0");
 
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
