@@ -16,12 +16,22 @@ import android.view.WindowManager;
 import org.piwik.sdk.Piwik;
 
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 /**
  * Helper class to gain information about the device we are running on
  */
 public class DeviceHelper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DeviceHelper";
+
+    /**
+     * Returns android system user agent
+     *
+     * @return well formatted user agent
+     */
+    public static String getUserAgent() {
+        return System.getProperty("http.agent");
+    }
 
     /**
      * Tries to get the most accurate device resolution.
@@ -71,5 +81,23 @@ public class DeviceHelper {
         }
 
         return new int[]{width, height};
+    }
+
+    /**
+     * Returns user language
+     *
+     * @return language
+     */
+    public static String getUserLanguage() {
+        return Locale.getDefault().getLanguage();
+    }
+
+    /**
+     * Returns user country
+     *
+     * @return country
+     */
+    public static String getUserCountry() {
+        return Locale.getDefault().getCountry();
     }
 }

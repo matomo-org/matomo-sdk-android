@@ -23,7 +23,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -31,7 +30,7 @@ import java.util.regex.Pattern;
 
 /**
  * Main tracking class
- * This class is not Thread safe and should be externally synchronized or multiple instances used.
+ * This class is threadsafe.
  */
 public class Tracker {
     protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
@@ -71,22 +70,20 @@ public class Tracker {
      */
     private final String mAuthToken;
 
+    private String mScreenResolution;
+    private String mUserAgent;
+    private String mUserLanguage;
+    private String mUserCountry;
 
     private final Piwik mPiwik;
-
     private String mLastEvent;
-
-    private String applicationDomain;
-    private static String mScreenResolution;
-    private static String userAgent;
-    private static String userLanguage;
-    private static String userCountry;
+    private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
     private long mSessionStartTime;
 
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
-    private final Random randomObject = new Random(new Date().getTime());
+    private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -203,9 +200,7 @@ public class Tracker {
     }
 
     /**
-     * The current user-id, if none is set, one will be generated and persisted.
-     *
-     * @return
+     * @return a user-id string, either the one you set or the one Piwik generated for you.
      */
     public String getUserId() {
         if (mUserId == null) {
@@ -240,12 +235,12 @@ public class Tracker {
      * @param domain your-domain.com
      */
     public Tracker setApplicationDomain(String domain) {
-        applicationDomain = domain;
+        mApplicationDomain = domain;
         return this;
     }
 
     protected String getApplicationDomain() {
-        return applicationDomain != null ? applicationDomain : mPiwik.getApplicationDomain();
+        return mApplicationDomain != null ? mApplicationDomain : mPiwik.getApplicationDomain();
     }
 
     /**
@@ -256,10 +251,14 @@ public class Tracker {
      * @return formatted string: WxH
      */
     public String getResolution() {
-        int[] resolution = DeviceHelper.getResolution(mPiwik.getContext());
-        if (resolution == null)
-            return DEFAULT_UNKNOWN_VALUE;
-        return String.format("%sx%s", resolution[0], resolution[1]);
+        if (mScreenResolution == null) {
+            int[] resolution = DeviceHelper.getResolution(mPiwik.getContext());
+            if (resolution == null)
+                mScreenResolution = DEFAULT_UNKNOWN_VALUE;
+            else
+                mScreenResolution = String.format("%sx%s", resolution[0], resolution[1]);
+        }
+        return mScreenResolution;
     }
 
     /**
@@ -268,10 +267,10 @@ public class Tracker {
      * @return well formatted user agent
      */
     public String getUserAgent() {
-        if (userAgent == null) {
-            userAgent = System.getProperty("http.agent");
+        if (mUserAgent == null) {
+            mUserAgent = DeviceHelper.getUserAgent();
         }
-        return userAgent;
+        return mUserAgent;
     }
 
     /**
@@ -280,7 +279,7 @@ public class Tracker {
      * @param userAgent your custom UserAgent String
      */
     public void setUserAgent(String userAgent) {
-        this.userAgent = userAgent;
+        mUserAgent = userAgent;
     }
 
     /**
@@ -289,10 +288,10 @@ public class Tracker {
      * @return language
      */
     public String getLanguage() {
-        if (userLanguage == null) {
-            userLanguage = Locale.getDefault().getLanguage();
+        if (mUserLanguage == null) {
+            mUserLanguage = DeviceHelper.getUserLanguage();
         }
-        return userLanguage;
+        return mUserLanguage;
     }
 
     /**
@@ -301,10 +300,10 @@ public class Tracker {
      * @return country
      */
     public String getCountry() {
-        if (userCountry == null) {
-            userCountry = Locale.getDefault().getCountry();
+        if (mUserCountry == null) {
+            mUserCountry = DeviceHelper.getUserCountry();
         }
-        return userCountry;
+        return mUserCountry;
     }
 
     /**
@@ -322,7 +321,7 @@ public class Tracker {
      * @return this tracker
      */
     public Tracker trackScreenView(TrackMe trackMe, String path) {
-        return trackScreenView(path, null);
+        return trackScreenView(trackMe, path, null);
     }
 
     /**
@@ -378,8 +377,8 @@ public class Tracker {
      */
     public Tracker trackEvent(String category, String action, String label, Integer value) {
         return track(new TrackMe()
-                .set(QueryParams.EVENT_ACTION, action)
                 .set(QueryParams.EVENT_CATEGORY, category)
+                .set(QueryParams.EVENT_ACTION, action)
                 .set(QueryParams.EVENT_NAME, label)
                 .set(QueryParams.EVENT_VALUE, value));
 
@@ -397,7 +396,7 @@ public class Tracker {
      * @param idGoal id of goal as defined in piwik goal settings
      */
     public Tracker trackGoal(Integer idGoal) {
-        if (idGoal == null && idGoal < 0)
+        if (idGoal == null || idGoal < 0)
             return this;
         return track(new TrackMe().set(QueryParams.GOAL_ID, idGoal));
     }
@@ -585,7 +584,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.RECORD, defaultRecordValue);
         trackMe.trySet(QueryParams.SITE_ID, mSiteId);
         trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
-        trackMe.trySet(QueryParams.RANDOM_NUMBER, randomObject.nextInt(100000));
+        trackMe.trySet(QueryParams.RANDOM_NUMBER, mRandomAntiCachingValue.nextInt(100000));
         trackMe.trySet(QueryParams.VISITOR_ID, getVisitorId());
         trackMe.trySet(QueryParams.USER_ID, getUserId());
         trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date()));
@@ -625,10 +624,6 @@ public class Tracker {
             mDispatcher.submit(event);
         }
         return this;
-    }
-
-    public CustomVariables getVisitCustomVariable() {
-        return mVisitCustomVariable;
     }
 
     /**
