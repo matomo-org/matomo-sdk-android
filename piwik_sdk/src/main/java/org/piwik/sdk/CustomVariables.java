@@ -9,6 +9,8 @@ package org.piwik.sdk;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
@@ -16,6 +18,7 @@ import java.util.HashMap;
 
 
 public class CustomVariables extends HashMap<String, JSONArray> {
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
     /**
      * You can track up to 5 custom variables for each user to your app,
      * and up to 5 custom variables for each screen view.
@@ -32,7 +35,7 @@ public class CustomVariables extends HashMap<String, JSONArray> {
     private static final int MAX_VARIABLES = 5;
     protected static final int MAX_LENGTH = 200;
 
-    protected CustomVariables() {
+    public CustomVariables() {
         super(MAX_VARIABLES);
     }
 
@@ -52,18 +55,18 @@ public class CustomVariables extends HashMap<String, JSONArray> {
         if (index > 0 && index <= MAX_VARIABLES && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) {
-                Logy.w(Tracker.LOGGER_TAG, String.format("Name is too long %s", name));
+                Logy.w(LOGGER_TAG, String.format("Name is too long %s", name));
                 name = name.substring(0, MAX_LENGTH);
             }
 
             if (value.length() > MAX_LENGTH) {
-                Logy.w(Tracker.LOGGER_TAG, String.format("Value is too long %s", value));
+                Logy.w(LOGGER_TAG, String.format("Value is too long %s", value));
                 value = value.substring(0, MAX_LENGTH);
             }
 
             return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
         }
-        Logy.d(Tracker.LOGGER_TAG, "Index is out of range or name/value is null");
+        Logy.d(LOGGER_TAG, "Index is out of range or name/value is null");
         return null;
     }
 
@@ -77,7 +80,7 @@ public class CustomVariables extends HashMap<String, JSONArray> {
         if (values.length() == 2 && index != null) {
             return super.put(index, values);
         }
-        Logy.d(Tracker.LOGGER_TAG, "value length should be equal 2");
+        Logy.d(LOGGER_TAG, "value length should be equal 2");
         return null;
     }
 

@@ -101,25 +101,13 @@ public class TrackerTest {
     }
 
     @Test
-    public void testGetDispatchIntervalMillis() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setDispatchInterval(1);
-        assertEquals(tracker.getDispatchIntervalMillis(), 1000);
-    }
-
-    @Test
     public void testDispatchingFlow() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.dispatchingStarted();
-        assertTrue(tracker.isDispatching());
-        tracker.dispatchingCompleted(1);
-        assertFalse(tracker.isDispatching());
+        // TODO
     }
 
     @Test
     public void testSet() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.set(QueryParams.HOURS, "0")
+        TrackMe trackMe = new TrackMe().set(QueryParams.HOURS, "0")
                 .set(QueryParams.MINUTES, (Integer) null)
                 .set(QueryParams.SECONDS, (String) null)
                 .set(QueryParams.FIRST_VISIT_TIMESTAMP, (String) null)
@@ -134,9 +122,7 @@ public class TrackerTest {
                 .set(QueryParams.REFERRER, (String) null)
                 .set(QueryParams.CAMPAIGN_NAME, (String) null)
                 .set(QueryParams.CAMPAIGN_KEYWORD, (String) null);
-
-
-        assertEquals(tracker.getQuery(), "?new_visit=1&h=0");
+        assertEquals("?h=0", trackMe.build());
     }
 
     @Test
@@ -145,14 +131,18 @@ public class TrackerTest {
         tracker.setApplicationDomain("test.com");
         assertEquals(tracker.getApplicationDomain(), "test.com");
         assertEquals(tracker.getApplicationBaseURL(), "http://test.com");
-        assertEquals(tracker.getParamURL(), "http://test.com/");
+        TrackMe trackMe = new TrackMe();
+        tracker.doInjections(trackMe);
+        assertEquals("http://test.com/", trackMe.get(QueryParams.URL_PATH));
 
-        tracker.set(QueryParams.URL_PATH, "me");
-        assertEquals(tracker.getParamURL(), "http://test.com/me");
+        trackMe.set(QueryParams.URL_PATH, "me");
+        tracker.doInjections(trackMe);
+        assertEquals("http://test.com/me", trackMe.get(QueryParams.URL_PATH));
 
         // override protocol
-        tracker.set(QueryParams.URL_PATH, "https://my.com/secure");
-        assertEquals(tracker.getParamURL(), "https://my.com/secure");
+        trackMe.set(QueryParams.URL_PATH, "https://my.com/secure");
+        tracker.doInjections(trackMe);
+        assertEquals("https://my.com/secure", trackMe.get(QueryParams.URL_PATH));
     }
 
     @Test
@@ -197,8 +187,9 @@ public class TrackerTest {
         String visitorId = "0123456789abcdef";
         tracker.setVisitorId(visitorId);
         assertEquals(visitorId, tracker.getVisitorId());
-        tracker.beforeTracking();
-        assertTrue(tracker.getQuery().contains("_id=" + visitorId));
+        TrackMe trackMe = new TrackMe();
+        tracker.doInjections(trackMe);
+        assertTrue(trackMe.build().contains("_id=" + visitorId));
     }
 
     @Test
@@ -224,14 +215,15 @@ public class TrackerTest {
     @Test
     public void testGetResolution() throws Exception {
         Tracker tracker = createTracker();
-        tracker.setResolution(100, 200);
-        assertEquals(tracker.getQuery(), "?res=100x200&new_visit=1");
+        TrackMe trackMe = new TrackMe();
+        tracker.doInjections(trackMe);
+        assertTrue(trackMe.build().contains("res=480x800"));
     }
 
     @Test
     public void testSetUserCustomVariable() throws Exception {
         Tracker tracker = createTracker();
-        tracker.setUserCustomVariable(1, "2& ?", "3@#");
+        tracker.setVisitCustomVariable(1, "2& ?", "3@#");
         tracker.trackScreenView("");
 
         String event = tracker.getLastEvent();
@@ -245,45 +237,48 @@ public class TrackerTest {
     @Test
     public void testSetScreenCustomVariable() throws Exception {
         Tracker tracker = createTracker();
-        tracker.setScreenCustomVariable(1, "2", "3");
-        tracker.trackScreenView("");
+        TrackMe trackMe = new TrackMe();
+        trackMe.setScreenCustomVariable(1, "2", "3");
+        tracker.trackScreenView(trackMe, "", null);
 
         String event = tracker.getLastEvent();
         Map<String, String> queryParams = parseEventUrl(event);
 
-        assertEquals(queryParams.get("cvar"), "{'1':['2','3']}".replaceAll("'", "\""));
-
+        assertEquals("{'1':['2','3']}".replaceAll("'", "\""), queryParams.get("cvar"));
     }
 
     @Test
     public void testSetNewSession() throws Exception {
         Tracker tracker = createTracker();
-
-        assertEquals(tracker.getQuery(), "?new_visit=1");
-
-        tracker.trackScreenView("");
-        assertEquals(tracker.getQuery(), "");
+        TrackMe trackMe = new TrackMe();
+        tracker.doInjections(trackMe);
+        assertTrue(trackMe.build().contains("new_visit=1"));
 
         tracker.trackScreenView("");
-        assertEquals(tracker.getQuery(), "");
+        assertFalse(tracker.getLastEvent().contains("new_visit=1"));
 
-        tracker.setNewSession();
-        assertEquals(tracker.getQuery(), "?new_visit=1");
+        tracker.trackScreenView("");
+        assertFalse(tracker.getLastEvent().contains("new_visit=1"));
+
+        tracker.startNewSession();
+        tracker.trackScreenView("");
+        assertTrue(trackMe.build().contains("new_visit=1"));
     }
 
     @Test
     public void testSetSessionTimeout() throws Exception {
         Tracker tracker = createTracker();
 
-        tracker.setSessionTimeout(10);
-        assertFalse(tracker.isExpired());
+        tracker.setSessionTimeout(10000);
+        tracker.trackScreenView("test");
+        assertFalse(tracker.isSessionExpired());
 
         tracker.setSessionTimeout(0);
         Thread.sleep(1, 0);
-        assertTrue(tracker.isExpired());
+        assertTrue(tracker.isSessionExpired());
 
-        tracker.setSessionTimeout(10);
-        assertFalse(tracker.isExpired());
+        tracker.setSessionTimeout(10000);
+        assertFalse(tracker.isSessionExpired());
 
     }
 
@@ -291,14 +286,14 @@ public class TrackerTest {
     public void testCheckSessionTimeout() throws Exception {
         Tracker tracker = createTracker();
         tracker.setSessionTimeout(0);
-
-        assertEquals(tracker.getQuery(), "?new_visit=1");
-        tracker.afterTracking();
+        tracker.trackScreenView("test");
+        assertTrue(tracker.getLastEvent().contains("new_visit=1"));
         Thread.sleep(1, 0);
-        tracker.checkSessionTimeout();
-
-        assertEquals(tracker.getQuery(), "?new_visit=1");
-
+        tracker.trackScreenView("test");
+        assertTrue(tracker.getLastEvent().contains("new_visit=1"));
+        tracker.setSessionTimeout(60000);
+        tracker.trackScreenView("test");
+        assertFalse(tracker.getLastEvent().contains("new_visit=1"));
     }
 
     @Test
@@ -495,13 +490,14 @@ public class TrackerTest {
     }
 
     @Test
-    public void testGetParamUlr() throws Exception {
+    public void testUrlPathCorrection() throws Exception {
         Tracker tracker = createTracker();
         String[] paths = new String[]{null, "", "/",};
-
         for (String path : paths) {
-            tracker.trackScreenView(path);
-            assertEquals(tracker.getParamURL(), "http://org.piwik.sdk.test/");
+            TrackMe trackMe = new TrackMe();
+            trackMe.set(QueryParams.URL_PATH, path);
+            tracker.doInjections(trackMe);
+            assertEquals("http://org.piwik.sdk.test/", trackMe.get(QueryParams.URL_PATH));
         }
     }
 
@@ -571,7 +567,6 @@ public class TrackerTest {
         assertEquals(params.get(QueryParams.RECORD), "1");
         assertEquals(params.get(QueryParams.SEND_IMAGE), "0");
         assertEquals(params.get(QueryParams.VISITOR_ID).length(), 16);
-        assertEquals(params.get(QueryParams.LANGUAGE), "en");
         assertTrue(params.get(QueryParams.URL_PATH).startsWith("http://"));
         assertTrue(Integer.parseInt(params.get(QueryParams.RANDOM_NUMBER)) > 0);
     }

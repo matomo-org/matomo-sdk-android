@@ -29,7 +29,7 @@ public class SettingsActivity extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                QuickTrack.track((PiwikApplication) getApplication(),settingsActivity);
+                QuickTrack.track((PiwikApplication) getApplication(), settingsActivity);
             }
         });
 
@@ -55,7 +55,7 @@ public class SettingsActivity extends Activity {
 
         // dispatch interval
         EditText input = (EditText) findViewById(R.id.dispatchIntervallInput);
-        input.setText(Integer.toString(
+        input.setText(Long.toString(
                 ((PiwikApplication) getApplication()).getTracker().getDispatchInterval()
         ));
         input.addTextChangedListener(
@@ -84,8 +84,8 @@ public class SettingsActivity extends Activity {
 
         //session Timeout Input
         input = (EditText) findViewById(R.id.sessionTimeoutInput);
-        input.setText(Integer.toString(
-                ((PiwikApplication) getApplication()).getTracker().getSessionTimeout() / 60
+        input.setText(Long.toString(
+                (((PiwikApplication) getApplication()).getTracker().getSessionTimeout() / 60000)
         ));
         input.addTextChangedListener(
                 new TextWatcher() {
