@@ -31,41 +31,41 @@ public class TrackMe {
      * @param value value
      * @return tracker instance
      */
-    public TrackMe set(QueryParams key, String value) {
+    public synchronized TrackMe set(QueryParams key, String value) {
         if (value != null && value.length() > 0)
             mQueryParams.put(key.toString(), value);
         return this;
     }
 
-    public TrackMe set(QueryParams key, Integer value) {
+    public synchronized TrackMe set(QueryParams key, Integer value) {
         if (value != null)
             set(key, Integer.toString(value));
         return this;
     }
 
-    public boolean has(QueryParams queryParams) {
+    public synchronized boolean has(QueryParams queryParams) {
         return mQueryParams.containsKey(queryParams.toString());
     }
 
     /**
      * Only sets the value if it doesn't exist.
      *
-     * @param key type
+     * @param key   type
      * @param value value
      * @return this (for chaining)
      */
-    public TrackMe trySet(QueryParams key, Integer value) {
+    public synchronized TrackMe trySet(QueryParams key, Integer value) {
         return trySet(key, String.valueOf(value));
     }
 
     /**
      * Only sets the value if it doesn't exist.
      *
-     * @param key type
+     * @param key   type
      * @param value value
      * @return this (for chaining)
      */
-    public TrackMe trySet(QueryParams key, String value) {
+    public synchronized TrackMe trySet(QueryParams key, String value) {
         if (!has(key))
             set(key, value);
         return this;
@@ -73,15 +73,25 @@ public class TrackMe {
 
     /**
      * The tracker calls this to build the final query to be sent via HTTP
+     *
      * @return the query, but without the base URL
      */
-    public String build() {
+    public synchronized String build() {
         set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mScreenCustomVariable.toString());
         return Dispatcher.urlEncodeUTF8(mQueryParams);
     }
 
-    public String get(QueryParams queryParams) {
+    public synchronized String get(QueryParams queryParams) {
         return mQueryParams.get(queryParams.toString());
+    }
+
+    /**
+     * Deletes a query parameter
+     *
+     * @param key the paramter to delete
+     */
+    public synchronized void remove(QueryParams key) {
+        mQueryParams.remove(key.toString());
     }
 
     /**
@@ -99,12 +109,12 @@ public class TrackMe {
      * @param name  String defines the name of a specific Custom Variable such as "User type".
      * @param value String defines the value of a specific Custom Variable such as "Customer".
      */
-    public TrackMe setScreenCustomVariable(int index, String name, String value) {
+    public synchronized TrackMe setScreenCustomVariable(int index, String name, String value) {
         mScreenCustomVariable.put(index, name, value);
         return this;
     }
 
-    public CustomVariables getScreenCustomVariable() {
+    public synchronized CustomVariables getScreenCustomVariable() {
         return mScreenCustomVariable;
     }
 
