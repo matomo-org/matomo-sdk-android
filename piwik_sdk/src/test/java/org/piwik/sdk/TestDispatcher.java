@@ -58,7 +58,7 @@ public class TestDispatcher {
     @Test
     public void testMultiThreadDispatch() throws Exception {
         final Tracker tracker = createTracker();
-        tracker.setDispatchInterval(2);
+        tracker.setDispatchInterval(20);
 
         final int threadCount = 100;
         final int queryCount = 1000;
@@ -81,6 +81,23 @@ public class TestDispatcher {
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
         assertTrue(tracker.dispatch());
+
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
+    }
+
+    @Test
+    public void testBatchDispatch() throws Exception {
+        final Tracker tracker = createTracker();
+        tracker.setDispatchInterval(1000);
+
+        final int threadCount = 10;
+        final int queryCount = 10;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+        Thread.sleep(500);
+        assertEquals(threadCount * queryCount, createdEvents.size());
+        assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
+        Thread.sleep(500);
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
