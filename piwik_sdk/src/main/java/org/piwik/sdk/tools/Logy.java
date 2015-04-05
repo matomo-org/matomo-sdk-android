@@ -15,12 +15,13 @@ import org.piwik.sdk.BuildConfig;
  * Wrapper class for {@link android.util.Log} that allows to fine tune what gets logged.
  */
 public class Logy {
-    public static final int SILENT = -1;
+    public static final int SILENT = -2;
+    public static final int QUIET = -1;
     public static final int NORMAL = 0;
     public static final int DEBUG = 1;
     public static final int VERBOSE = 2;
 
-    public static int sLoglevel = BuildConfig.DEBUG ? VERBOSE : NORMAL;
+    public static int sLoglevel = BuildConfig.DEBUG ? VERBOSE : QUIET;
 
     public static void v(String c, String s) {
         if (sLoglevel >= VERBOSE) {
@@ -41,25 +42,25 @@ public class Logy {
     }
 
     public static void w(String c, String s) {
-        if (sLoglevel >= SILENT) {
+        if (sLoglevel > QUIET) {
             Log.w(c, s);
         }
     }
 
     public static void w(String c, String s, Throwable tr) {
-        if (sLoglevel >= SILENT) {
+        if (sLoglevel > QUIET) {
             Log.w(c, s, tr);
         }
     }
 
     public static void e(String c, String s) {
-        if (sLoglevel >= SILENT) {
+        if (sLoglevel != SILENT) {
             Log.e(c, s);
         }
     }
 
     public static void e(String c, String s, Throwable tr) {
-        if (sLoglevel >= SILENT) {
+        if (sLoglevel != SILENT) {
             Log.e(c, s, tr);
         }
     }

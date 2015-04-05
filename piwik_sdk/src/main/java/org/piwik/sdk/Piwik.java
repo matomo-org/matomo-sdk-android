@@ -94,7 +94,7 @@ public class Piwik {
 
     public void setDebug(boolean debug) {
         mDebug = debug;
-        Logy.sLoglevel = debug ? Logy.VERBOSE : Logy.NORMAL;
+        Logy.sLoglevel = debug ? Logy.VERBOSE : Logy.QUIET;
     }
 
     /**
