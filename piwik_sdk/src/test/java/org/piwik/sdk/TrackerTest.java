@@ -531,13 +531,6 @@ public class TrackerTest {
 
     @Test
     public void testSetAPIUrl() throws Exception {
-        try {
-            getPiwik().newTracker(null, 1);
-            assert false;
-        } catch (MalformedURLException e) {
-            assertTrue(e.getMessage().contains("provide the Piwik Tracker URL!"));
-        }
-
         String[] urls = new String[]{
                 "https://demo.org/piwik/piwik.php",
                 "https://demo.org/piwik/",
