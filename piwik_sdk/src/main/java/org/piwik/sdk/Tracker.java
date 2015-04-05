@@ -59,6 +59,7 @@ public class Tracker {
     private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
     private long mSessionStartTime;
+    private final Object mSessionLock = new Object();
 
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
@@ -76,9 +77,6 @@ public class Tracker {
      * @throws MalformedURLException
      */
     protected Tracker(@NonNull final String url, @NonNull int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
-        if (url == null)
-            throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org/piwik.php");
-
         String checkUrl = url;
         if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
             mApiUrl = new URL(checkUrl);
@@ -142,15 +140,21 @@ public class Tracker {
     }
 
     public void startNewSession() {
-        mSessionStartTime = 0;
+        synchronized (mSessionLock) {
+            mSessionStartTime = 0;
+        }
     }
 
     public void setSessionTimeout(int milliseconds) {
-        mSessionTimeout = milliseconds;
+        synchronized (mSessionLock) {
+            mSessionTimeout = milliseconds;
+        }
     }
 
     protected boolean isSessionExpired() {
-        return System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+        synchronized (mSessionLock) {
+            return System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+        }
     }
 
     public long getSessionTimeout() {
@@ -567,11 +571,15 @@ public class Tracker {
     }
 
     protected void doInjections(TrackMe trackMe) {
-        if (isSessionExpired()) {
-            // First track in this session, tell Piwik all we can offer by default
+        boolean newSession;
+        synchronized (mSessionLock) {
+            newSession = isSessionExpired();
             mSessionStartTime = System.currentTimeMillis();
-            injectInitialParams(trackMe);
         }
+        // First track in this session, tell Piwik all we can offer by default
+        if (newSession)
+            injectInitialParams(trackMe);
+
         injectBaseParams(trackMe);
     }
 

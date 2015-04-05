@@ -260,6 +260,40 @@ public class TrackerTest {
     }
 
     @Test
+    public void testSetNewSessionRaceCondition() throws Exception {
+        for (int retry = 0; retry < 5; retry++) {
+            getPiwik().setOptOut(false);
+            getPiwik().setDryRun(true);
+            getPiwik().setDebug(true);
+            final Tracker tracker = createTracker();
+            tracker.setDispatchInterval(0);
+            int count = 20;
+            for (int i = 0; i < count; i++) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        tracker.trackScreenView("Test");
+                    }
+                }).start();
+            }
+            Thread.sleep(500);
+            List<String> flattenedQueries = TestDispatcher.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            assertEquals(count, flattenedQueries.size());
+            int found = 0;
+            for (String query : flattenedQueries) {
+                if (query.contains("new_visit=1"))
+                    found++;
+            }
+            assertEquals(1, found);
+        }
+    }
+
+    @Test
     public void testSetSessionTimeout() throws Exception {
         Tracker tracker = createTracker();
 
