@@ -141,6 +141,33 @@ public class TrackerTest {
     }
 
     @Test
+    public void testOutlink() throws Exception {
+        Tracker tracker = createTracker();
+        assertNull(tracker.getLastEvent());
+
+        tracker.trackOutlink(new URL("file://mount/sdcard/something"));
+        assertNull(tracker.getLastEvent());
+
+        URL valid = new URL("https://foo.bar");
+        tracker.trackOutlink(valid);
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
+
+        valid = new URL("https://foo.bar");
+        tracker.trackOutlink(valid);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
+
+        valid = new URL("ftp://foo.bar");
+        tracker.trackOutlink(valid);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
+        assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
+    }
+
+    @Test
     public void testSetApplicationDomain() throws Exception {
         Tracker tracker = createTracker();
         tracker
