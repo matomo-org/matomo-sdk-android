@@ -75,7 +75,7 @@ public class Tracker {
      * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
      * @throws MalformedURLException
      */
-    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
+    protected Tracker(@NonNull final String url, @NonNull int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
         if (url == null)
             throw new MalformedURLException("You must provide the Piwik Tracker URL! e.g. http://piwik.website.org/piwik.php");
 
@@ -203,11 +203,7 @@ public class Tracker {
      * @param userId passing null will delete the current user-id.
      */
     public Tracker setUserId(String userId) {
-        if (userId != null) {
-            mDefaultTrackMe.set(QueryParams.USER_ID, userId);
-        } else {
-            mDefaultTrackMe.remove(QueryParams.USER_ID);
-        }
+        mDefaultTrackMe.set(QueryParams.USER_ID, userId);
         getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
         return this;
     }
@@ -305,12 +301,18 @@ public class Tracker {
         return track(trackMe);
     }
 
-    public Tracker trackEvent(String category, String action, String label) {
-        return trackEvent(category, action, label, null);
-    }
 
     public Tracker trackEvent(String category, String action) {
-        return trackEvent(category, action, null, null);
+        return track(new TrackMe()
+                .set(QueryParams.EVENT_CATEGORY, category)
+                .set(QueryParams.EVENT_ACTION, action));
+    }
+
+    public Tracker trackEvent(String category, String action, String label) {
+        return track(new TrackMe()
+                .set(QueryParams.EVENT_CATEGORY, category)
+                .set(QueryParams.EVENT_ACTION, action)
+                .set(QueryParams.EVENT_NAME, label));
     }
 
     /**
@@ -329,7 +331,7 @@ public class Tracker {
      * @param value    defines a numeric value associated with the event. For example, if you were tracking "Buy"
      *                 button clicks, you might log the number of items being purchased, or their total cost.
      */
-    public Tracker trackEvent(String category, String action, String label, Integer value) {
+    public Tracker trackEvent(String category, String action, String label, float value) {
         return track(new TrackMe()
                 .set(QueryParams.EVENT_CATEGORY, category)
                 .set(QueryParams.EVENT_ACTION, action)
@@ -337,7 +339,6 @@ public class Tracker {
                 .set(QueryParams.EVENT_VALUE, value));
 
     }
-
 
     /**
      * By default, Goals in Piwik are defined as "matching" parts of the screen path or screen title.
@@ -349,8 +350,8 @@ public class Tracker {
      *
      * @param idGoal id of goal as defined in piwik goal settings
      */
-    public Tracker trackGoal(Integer idGoal) {
-        if (idGoal == null || idGoal < 0)
+    public Tracker trackGoal(int idGoal) {
+        if (idGoal < 0)
             return this;
         return track(new TrackMe().set(QueryParams.GOAL_ID, idGoal));
     }
@@ -361,8 +362,8 @@ public class Tracker {
      * @param idGoal  id of goal as defined in piwik goal settings
      * @param revenue a monetary value that was generated as revenue by this goal conversion.
      */
-    public Tracker trackGoal(Integer idGoal, int revenue) {
-        if (idGoal == null || idGoal < 0)
+    public Tracker trackGoal(int idGoal, float revenue) {
+        if (idGoal < 0)
             return this;
         return track(new TrackMe()
                 .set(QueryParams.GOAL_ID, idGoal)
