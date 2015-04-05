@@ -408,6 +408,7 @@ public class TrackerTest {
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(TestPiwikApplication.FAKE_APK_DATA_MD5, m.group(3));
+        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
@@ -419,6 +420,7 @@ public class TrackerTest {
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, m.group(3));
+        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
@@ -432,6 +434,7 @@ public class TrackerTest {
         assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
         assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals("unknown", m.group(3));
+        assertEquals("unknown", queryParams.get(QueryParams.REFERRER));
     }
 
     @Test

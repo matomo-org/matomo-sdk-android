@@ -422,15 +422,22 @@ public class Tracker {
      * @return this tracker again, so you can chain calls
      */
     public Tracker trackNewAppDownload(Context app, ExtraIdentifier extra) {
-        StringBuilder installIdentifier = new StringBuilder();
+        StringBuilder installationIdentifier = new StringBuilder();
         try {
             String pkg = app.getPackageName();
-            installIdentifier.append("http://").append(pkg); // Identifies the app
+            installationIdentifier.append("http://").append(pkg); // Identifies the app
 
             PackageManager packMan = app.getPackageManager();
             PackageInfo pkgInfo = packMan.getPackageInfo(pkg, 0);
-            installIdentifier.append(":").append(pkgInfo.versionCode);
-            String extraIdentifier = null;
+            installationIdentifier.append(":").append(pkgInfo.versionCode);
+
+            // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
+            // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
+            String installerPackageName = packMan.getInstallerPackageName(pkg);
+            if (installerPackageName == null || installerPackageName.length() > 200)
+                installerPackageName = DEFAULT_UNKNOWN_VALUE;
+
+            String extraIdentifier = DEFAULT_UNKNOWN_VALUE;
             if (extra == ExtraIdentifier.APK_CHECKSUM) {
                 ApplicationInfo appInfo = packMan.getApplicationInfo(pkg, 0);
                 if (appInfo.sourceDir != null) {
@@ -441,21 +448,21 @@ public class Tracker {
                     }
                 }
             } else if (extra == ExtraIdentifier.INSTALLER_PACKAGENAME) {
-                String installer = packMan.getInstallerPackageName(pkg);
-                if (installer != null && installer.length() < 200)
-                    extraIdentifier = packMan.getInstallerPackageName(pkg);
+                extraIdentifier = installerPackageName;
             }
-            installIdentifier.append("/").append(extraIdentifier == null ? DEFAULT_UNKNOWN_VALUE : extraIdentifier);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            return this;
-        }
+            installationIdentifier.append("/").append(extraIdentifier);
+
         return track(new TrackMe()
                 .set(QueryParams.EVENT_CATEGORY, "Application")
                 .set(QueryParams.EVENT_ACTION, "downloaded")
                 .set(QueryParams.ACTION_NAME, "application/downloaded")
                 .set(QueryParams.URL_PATH, "/application/downloaded")
-                .set(QueryParams.DOWNLOAD, installIdentifier.toString()));
+                .set(QueryParams.DOWNLOAD, installationIdentifier.toString())
+                .set(QueryParams.REFERRER, installerPackageName));
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return this;
+        }
     }
 
     /**
