@@ -52,7 +52,7 @@ dependencies {
  * JAR
  */
 task clearJar(type: Delete) {
-    delete 'jar/PiwikAndroidSdk.jar'
+    delete fileTree(dir: "jar", exclude: "dont_delete.txt")
 }
 
 task makeJar(type: Copy) {
