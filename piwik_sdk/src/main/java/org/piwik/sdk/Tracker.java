@@ -375,6 +375,21 @@ public class Tracker {
     }
 
     /**
+     * Tracks an  <a href="http://piwik.org/faq/new-to-piwik/faq_71/">Outlink</a>
+     *
+     * @param url HTTPS, HTTP and FTPare valid
+     * @return this Tracker for chaining
+     */
+    public Tracker trackOutlink(URL url) {
+        if (url.getProtocol().equals("http") || url.getProtocol().equals("https") || url.getProtocol().equals("ftp")) {
+            return track(new TrackMe()
+                    .set(QueryParams.LINK, url.toExternalForm())
+                    .set(QueryParams.URL_PATH, url.toExternalForm()));
+        }
+        return this;
+    }
+
+    /**
      * Fires a download for this app once per update.
      * The install will be tracked as:<p/>
      * 'http://packageName:versionCode/installerPackagename'
@@ -562,7 +577,7 @@ public class Tracker {
             urlPath = getApplicationBaseURL() + "/";
         } else if (urlPath.startsWith("/")) {
             urlPath = getApplicationBaseURL() + urlPath;
-        } else if (urlPath.startsWith("http://") || urlPath.startsWith("https://")) {
+        } else if (urlPath.startsWith("http://") || urlPath.startsWith("https://") || urlPath.startsWith("ftp://")) {
             // URL is fine as it is
         } else if (!urlPath.startsWith("/")) {
             urlPath = getApplicationBaseURL() + "/" + urlPath;
