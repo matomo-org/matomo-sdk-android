@@ -9,6 +9,7 @@ package org.piwik.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 
 import org.piwik.sdk.tools.Logy;
 
@@ -50,7 +51,7 @@ public class Piwik {
      * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
      */
     @Deprecated
-    public Tracker newTracker(String trackerUrl, int siteId, String authToken) throws MalformedURLException {
+    public Tracker newTracker(@NonNull String trackerUrl, @NonNull int siteId, String authToken) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, authToken, this);
     }
 
@@ -60,7 +61,7 @@ public class Piwik {
      * @return Tracker object
      * @throws MalformedURLException
      */
-    public Tracker newTracker(String trackerUrl, int siteId) throws MalformedURLException {
+    public Tracker newTracker(@NonNull String trackerUrl, @NonNull int siteId) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
@@ -77,7 +78,6 @@ public class Piwik {
     }
 
     /**
-     *
      * @return true if Piwik is currently disabled
      */
     public boolean isOptOut() {
@@ -114,6 +114,7 @@ public class Piwik {
 
     /**
      * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
+     *
      * @return Piwik's SharedPreferences instance
      */
     public SharedPreferences getSharedPreferences() {

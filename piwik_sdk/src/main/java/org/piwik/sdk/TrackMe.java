@@ -7,6 +7,8 @@
 
 package org.piwik.sdk;
 
+import android.support.annotation.NonNull;
+
 import java.util.HashMap;
 
 /**
@@ -31,19 +33,25 @@ public class TrackMe {
      * @param value value
      * @return tracker instance
      */
-    public synchronized TrackMe set(QueryParams key, String value) {
-        if (value != null && value.length() > 0)
+    public synchronized TrackMe set(@NonNull QueryParams key, String value) {
+        if (value == null)
+            mQueryParams.remove(key.toString());
+        else if (value.length() > 0)
             mQueryParams.put(key.toString(), value);
         return this;
     }
 
-    public synchronized TrackMe set(QueryParams key, Integer value) {
-        if (value != null)
-            set(key, Integer.toString(value));
+    public synchronized TrackMe set(@NonNull QueryParams key, int value) {
+        set(key, Integer.toString(value));
         return this;
     }
 
-    public synchronized boolean has(QueryParams queryParams) {
+    public synchronized TrackMe set(@NonNull QueryParams key, float value) {
+        set(key, Float.toString(value));
+        return this;
+    }
+
+    public synchronized boolean has(@NonNull QueryParams queryParams) {
         return mQueryParams.containsKey(queryParams.toString());
     }
 
@@ -54,7 +62,7 @@ public class TrackMe {
      * @param value value
      * @return this (for chaining)
      */
-    public synchronized TrackMe trySet(QueryParams key, Integer value) {
+    public synchronized TrackMe trySet(@NonNull QueryParams key, int value) {
         return trySet(key, String.valueOf(value));
     }
 
@@ -65,7 +73,18 @@ public class TrackMe {
      * @param value value
      * @return this (for chaining)
      */
-    public synchronized TrackMe trySet(QueryParams key, String value) {
+    public synchronized TrackMe trySet(@NonNull QueryParams key, float value) {
+        return trySet(key, String.valueOf(value));
+    }
+
+    /**
+     * Only sets the value if it doesn't exist.
+     *
+     * @param key   type
+     * @param value value
+     * @return this (for chaining)
+     */
+    public synchronized TrackMe trySet(@NonNull QueryParams key, String value) {
         if (!has(key))
             set(key, value);
         return this;
@@ -81,17 +100,8 @@ public class TrackMe {
         return Dispatcher.urlEncodeUTF8(mQueryParams);
     }
 
-    public synchronized String get(QueryParams queryParams) {
+    public synchronized String get(@NonNull QueryParams queryParams) {
         return mQueryParams.get(queryParams.toString());
-    }
-
-    /**
-     * Deletes a query parameter
-     *
-     * @param key the paramter to delete
-     */
-    public synchronized void remove(QueryParams key) {
-        mQueryParams.remove(key.toString());
     }
 
     /**

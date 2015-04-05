@@ -25,6 +25,24 @@ public class DeviceHelper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DeviceHelper";
 
     /**
+     * Returns user language
+     *
+     * @return language
+     */
+    public static String getUserLanguage() {
+        return Locale.getDefault().getLanguage();
+    }
+
+    /**
+     * Returns user country
+     *
+     * @return country
+     */
+    public static String getUserCountry() {
+        return Locale.getDefault().getCountry();
+    }
+
+    /**
      * Returns android system user agent
      *
      * @return well formatted user agent
@@ -81,23 +99,5 @@ public class DeviceHelper {
         }
 
         return new int[]{width, height};
-    }
-
-    /**
-     * Returns user language
-     *
-     * @return language
-     */
-    public static String getUserLanguage() {
-        return Locale.getDefault().getLanguage();
-    }
-
-    /**
-     * Returns user country
-     *
-     * @return country
-     */
-    public static String getUserCountry() {
-        return Locale.getDefault().getCountry();
     }
 }

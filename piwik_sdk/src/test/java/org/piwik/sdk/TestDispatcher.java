@@ -58,7 +58,7 @@ public class TestDispatcher {
     @Test
     public void testMultiThreadDispatch() throws Exception {
         final Tracker tracker = createTracker();
-        tracker.setDispatchInterval(2);
+        tracker.setDispatchInterval(20);
 
         final int threadCount = 100;
         final int queryCount = 1000;
@@ -81,6 +81,23 @@ public class TestDispatcher {
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
         assertTrue(tracker.dispatch());
+
+        checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
+    }
+
+    @Test
+    public void testBatchDispatch() throws Exception {
+        final Tracker tracker = createTracker();
+        tracker.setDispatchInterval(1000);
+
+        final int threadCount = 10;
+        final int queryCount = 10;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+        Thread.sleep(500);
+        assertEquals(threadCount * queryCount, createdEvents.size());
+        assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
+        Thread.sleep(500);
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
@@ -111,7 +128,7 @@ public class TestDispatcher {
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
-    private static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<HttpRequestBase> dryRunOutput) throws Exception {
+    public static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<HttpRequestBase> dryRunOutput) throws Exception {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
         List<String> flattenedQueries;
@@ -144,7 +161,7 @@ public class TestDispatcher {
         Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
-    private static void launchTestThreads(final Tracker tracker, int threadCount, final int queryCount, final List<String> createdQueries) {
+    public static void launchTestThreads(final Tracker tracker, int threadCount, final int queryCount, final List<String> createdQueries) {
         Log.d("launchTestThreads", "Launching " + threadCount + " threads, " + queryCount + " queries each");
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
@@ -171,7 +188,7 @@ public class TestDispatcher {
         Log.d("launchTestThreads", "All launched.");
     }
 
-    private static List<String> getFlattenedQueries(List<HttpRequestBase> httpRequestList) throws Exception {
+    public static List<String> getFlattenedQueries(List<HttpRequestBase> httpRequestList) throws Exception {
         List<String> flattenedQueries = new ArrayList<>();
         for (HttpRequestBase request : httpRequestList) {
             if (request instanceof HttpPost) {

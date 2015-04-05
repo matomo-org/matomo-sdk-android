@@ -59,11 +59,10 @@ public class Dispatcher {
 
     private List<HttpRequestBase> mDryRunOutput = Collections.synchronizedList(new ArrayList<HttpRequestBase>());
 
-    private int mTimeOut =  5 * 1000; // 5s
+    private volatile int mTimeOut = 5 * 1000; // 5s
     private volatile boolean mRunning = false;
 
-    private long mDispatchInterval = 120 * 1000; // 120s
-    private Thread mWorkerThread;
+    private volatile long mDispatchInterval = 120 * 1000; // 120s
 
     public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
         mPiwik = piwik;
@@ -93,8 +92,7 @@ public class Dispatcher {
         synchronized (mThreadControl) {
             if (!mRunning) {
                 mRunning = true;
-                mWorkerThread = new Thread(mLoop);
-                mWorkerThread.start();
+                new Thread(mLoop).start();
                 return true;
             }
         }
@@ -121,6 +119,13 @@ public class Dispatcher {
         @Override
         public void run() {
             while (mRunning) {
+                try {
+                    // Either we wait the interval or forceDispatch() granted us one free pass
+                    mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
                 int count = 0;
                 List<String> availableEvents = new ArrayList<>();
                 mDispatchQueue.drainTo(availableEvents);
@@ -146,13 +151,6 @@ public class Dispatcher {
                         mRunning = false;
                         break;
                     }
-                }
-
-                try {
-                    // Either we wait the intervall or forceDispatch() granted us one free pass
-                    mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
         }

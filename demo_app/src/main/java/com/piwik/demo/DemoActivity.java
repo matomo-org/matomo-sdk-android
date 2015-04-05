@@ -94,7 +94,7 @@ public class DemoActivity extends ActionBarActivity {
         ((PiwikApplication) getApplication()).getPiwik().setDryRun(false);
 
         ((PiwikApplication) getApplication()).getTracker()
-                .setDispatchInterval(5)
+                .setDispatchInterval(5000)
                 .trackAppDownload()
                 .setUserId(getUserId());
 

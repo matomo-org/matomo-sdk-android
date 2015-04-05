@@ -103,20 +103,20 @@ public class TrackerTest {
     @Test
     public void testSet() throws Exception {
         TrackMe trackMe = new TrackMe().set(QueryParams.HOURS, "0")
-                .set(QueryParams.MINUTES, (Integer) null)
-                .set(QueryParams.SECONDS, (String) null)
-                .set(QueryParams.FIRST_VISIT_TIMESTAMP, (String) null)
-                .set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, (String) null)
-                .set(QueryParams.TOTAL_NUMBER_OF_VISITS, (String) null)
-                .set(QueryParams.GOAL_ID, (String) null)
-                .set(QueryParams.LATITUDE, (String) null)
-                .set(QueryParams.LONGITUDE, (String) null)
-                .set(QueryParams.SEARCH_KEYWORD, (String) null)
-                .set(QueryParams.SEARCH_CATEGORY, (String) null)
-                .set(QueryParams.SEARCH_NUMBER_OF_HITS, (String) null)
-                .set(QueryParams.REFERRER, (String) null)
-                .set(QueryParams.CAMPAIGN_NAME, (String) null)
-                .set(QueryParams.CAMPAIGN_KEYWORD, (String) null);
+                .set(QueryParams.MINUTES, null)
+                .set(QueryParams.SECONDS, null)
+                .set(QueryParams.FIRST_VISIT_TIMESTAMP, null)
+                .set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, null)
+                .set(QueryParams.TOTAL_NUMBER_OF_VISITS, null)
+                .set(QueryParams.GOAL_ID, null)
+                .set(QueryParams.LATITUDE, null)
+                .set(QueryParams.LONGITUDE, null)
+                .set(QueryParams.SEARCH_KEYWORD, null)
+                .set(QueryParams.SEARCH_CATEGORY, null)
+                .set(QueryParams.SEARCH_NUMBER_OF_HITS, null)
+                .set(QueryParams.REFERRER, null)
+                .set(QueryParams.CAMPAIGN_NAME, null)
+                .set(QueryParams.CAMPAIGN_KEYWORD, null);
         assertEquals("?h=0", trackMe.build());
     }
 
@@ -260,6 +260,40 @@ public class TrackerTest {
     }
 
     @Test
+    public void testSetNewSessionRaceCondition() throws Exception {
+        for (int retry = 0; retry < 5; retry++) {
+            getPiwik().setOptOut(false);
+            getPiwik().setDryRun(true);
+            getPiwik().setDebug(true);
+            final Tracker tracker = createTracker();
+            tracker.setDispatchInterval(0);
+            int count = 20;
+            for (int i = 0; i < count; i++) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        tracker.trackScreenView("Test");
+                    }
+                }).start();
+            }
+            Thread.sleep(500);
+            List<String> flattenedQueries = TestDispatcher.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            assertEquals(count, flattenedQueries.size());
+            int found = 0;
+            for (String query : flattenedQueries) {
+                if (query.contains("new_visit=1"))
+                    found++;
+            }
+            assertEquals(1, found);
+        }
+    }
+
+    @Test
     public void testSetSessionTimeout() throws Exception {
         Tracker tracker = createTracker();
 
@@ -311,11 +345,11 @@ public class TrackerTest {
         validateDefaultQuery(queryParams);
     }
 
-    private void checkEvent(QueryHashMap<String, String> queryParams, String name, String value) {
+    private void checkEvent(QueryHashMap<String, String> queryParams, String name, Float value) {
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "category");
         assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "test action");
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), name);
-        assertEquals(queryParams.get(QueryParams.EVENT_VALUE), value);
+        assertEquals(String.valueOf(queryParams.get(QueryParams.EVENT_VALUE)), String.valueOf(value));
         validateDefaultQuery(queryParams);
     }
 
@@ -338,8 +372,8 @@ public class TrackerTest {
     public void testTrackEventNameAndValue() throws Exception {
         Tracker tracker = createTracker();
         String name = "test name3";
-        tracker.trackEvent("category", "test action", name, 1);
-        checkEvent(parseEventUrl(tracker.getLastEvent()), name, "1");
+        tracker.trackEvent("category", "test action", name, 1f);
+        checkEvent(parseEventUrl(tracker.getLastEvent()), name, 1f);
     }
 
     @Test
@@ -356,11 +390,11 @@ public class TrackerTest {
     @Test
     public void testTrackGoalRevenue() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackGoal(1, 100);
+        tracker.trackGoal(1, 100f);
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
 
-        assertEquals(queryParams.get(QueryParams.GOAL_ID), "1");
-        assertEquals(queryParams.get(QueryParams.REVENUE), "100");
+        assertEquals("1", queryParams.get(QueryParams.GOAL_ID));
+        assertTrue(100f == Float.valueOf(queryParams.get(QueryParams.REVENUE)));
         validateDefaultQuery(queryParams);
     }
 
@@ -500,13 +534,6 @@ public class TrackerTest {
 
     @Test
     public void testSetAPIUrl() throws Exception {
-        try {
-            getPiwik().newTracker(null, 1);
-            assert false;
-        } catch (MalformedURLException e) {
-            assertTrue(e.getMessage().contains("provide the Piwik Tracker URL!"));
-        }
-
         String[] urls = new String[]{
                 "https://demo.org/piwik/piwik.php",
                 "https://demo.org/piwik/",
@@ -542,7 +569,7 @@ public class TrackerTest {
         // Modifying default TrackMe, no USER_AGENT
         tracker = createTracker();
         trackMe = new TrackMe();
-        tracker.getDefaultTrackMe().remove(QueryParams.USER_AGENT);
+        tracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
         tracker.doInjections(trackMe);
         assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
