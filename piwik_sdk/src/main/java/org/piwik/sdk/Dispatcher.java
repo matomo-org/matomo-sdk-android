@@ -7,6 +7,9 @@
 
 package org.piwik.sdk;
 
+import android.os.*;
+import android.os.Process;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -118,6 +121,7 @@ public class Dispatcher {
     private Runnable mLoop = new Runnable() {
         @Override
         public void run() {
+            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             while (mRunning) {
                 try {
                     // Either we wait the interval or forceDispatch() granted us one free pass
