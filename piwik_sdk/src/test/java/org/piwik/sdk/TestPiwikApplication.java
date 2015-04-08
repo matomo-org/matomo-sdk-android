@@ -8,6 +8,7 @@ import android.os.Environment;
 import org.robolectric.Robolectric;
 import org.robolectric.TestLifecycleApplication;
 import org.robolectric.res.builder.RobolectricPackageManager;
+import org.robolectric.shadows.ShadowLog;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,6 +25,7 @@ public class TestPiwikApplication extends PiwikApplication implements TestLifecy
 
     @Override
     public void onCreate() {
+        ShadowLog.stream = System.out;
         // Setup a fake PackageInfo for this app within the packagemanager
         RobolectricPackageManager rpm = (RobolectricPackageManager) Robolectric.application.getPackageManager();
         PackageInfo packageInfo = new PackageInfo();

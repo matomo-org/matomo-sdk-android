@@ -21,6 +21,7 @@ import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.tools.Logy;
+import org.piwik.sdk.TrackMe;
 
 
 public class DemoActivity extends ActionBarActivity {
@@ -68,7 +69,7 @@ public class DemoActivity extends ActionBarActivity {
             userId = null;
         }
 
-        if (userId == null){
+        if (userId == null) {
             long result = Build.ID.hashCode();
             result = 31 * result + Build.DISPLAY.hashCode();
             result = 31 * result + Build.PRODUCT.hashCode();
@@ -93,7 +94,7 @@ public class DemoActivity extends ActionBarActivity {
         ((PiwikApplication) getApplication()).getPiwik().setDryRun(false);
 
         ((PiwikApplication) getApplication()).getTracker()
-                .setDispatchInterval(5)
+                .setDispatchInterval(5000)
                 .trackAppDownload()
                 .setUserId(getUserId());
 
@@ -116,9 +117,11 @@ public class DemoActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 ((PiwikApplication) getApplication()).getTracker()
-                        .setScreenCustomVariable(1, "first", "var")
-                        .setScreenCustomVariable(2, "second", "long value")
-                        .trackScreenView("/custom_vars", "Custom Vars");
+                        .trackScreenView(
+                                new TrackMe()
+                                        .setScreenCustomVariable(1, "first", "var")
+                                        .setScreenCustomVariable(2, "second", "long value"),
+                                "/custom_vars", "Custom Vars");
             }
         });
 

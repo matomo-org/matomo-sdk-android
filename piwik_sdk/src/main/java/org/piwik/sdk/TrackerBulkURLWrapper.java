@@ -20,23 +20,23 @@ import java.util.List;
 
 
 public class TrackerBulkURLWrapper {
-
-    private static final int eventsPerPage = 20;
-    private int currentPage = 0;
-    private final int pages;
-    private final URL apiUrl;
-    private final String authToken;
-    private final List<String> events;
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "TrackerBulkURLWrapper";
+    private static final int EVENTS_PER_PAGE = 20;
+    private int mCurrentPage = 0;
+    private final int mPages;
+    private final URL mApiUrl;
+    private final String mAuthtoken;
+    private final List<String> mEvents;
 
     public TrackerBulkURLWrapper(final URL apiUrl, final List<String> events, final String authToken) {
-        this.apiUrl = apiUrl;
-        this.authToken = authToken;
-        this.pages = (int) Math.ceil(events.size() * 1.0 / eventsPerPage);
-        this.events = events;
+        mApiUrl = apiUrl;
+        mAuthtoken = authToken;
+        mPages = (int) Math.ceil(events.size() * 1.0 / EVENTS_PER_PAGE);
+        mEvents = events;
     }
 
     protected static int getEventsPerPage(){
-        return eventsPerPage;
+        return EVENTS_PER_PAGE;
     }
 
     /**
@@ -48,13 +48,13 @@ public class TrackerBulkURLWrapper {
         return new Iterator<Page>() {
             @Override
             public boolean hasNext() {
-                return currentPage < pages;
+                return mCurrentPage < mPages;
             }
 
             @Override
             public Page next() {
                 if (hasNext()) {
-                    return new Page(currentPage++);
+                    return new Page(mCurrentPage++);
                 }
                 return null;
             }
@@ -66,7 +66,7 @@ public class TrackerBulkURLWrapper {
     }
 
     public URL getApiUrl() {
-        return apiUrl;
+        return mApiUrl;
     }
 
     /**
@@ -83,10 +83,10 @@ public class TrackerBulkURLWrapper {
             return null;
         }
 
-        List<String> pageElements = events.subList(page.fromIndex, page.toIndex);
+        List<String> pageElements = mEvents.subList(page.fromIndex, page.toIndex);
 
         if(pageElements.size() == 0){
-            Logy.w(Tracker.LOGGER_TAG, "Empty page");
+            Logy.w(LOGGER_TAG, "Empty page");
             return null;
         }
 
@@ -94,12 +94,12 @@ public class TrackerBulkURLWrapper {
         try {
             params.put("requests", new JSONArray(pageElements));
 
-            if (authToken != null) {
-                params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), authToken);
+            if (mAuthtoken != null) {
+                params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), mAuthtoken);
             }
         } catch (JSONException e) {
-            Logy.w(Tracker.LOGGER_TAG, "Cannot create json object", e);
-            Logy.i(Tracker.LOGGER_TAG, TextUtils.join(", ", pageElements));
+            Logy.w(LOGGER_TAG, "Cannot create json object", e);
+            Logy.i(LOGGER_TAG, TextUtils.join(", ", pageElements));
             return null;
         }
         return params;
@@ -115,7 +115,7 @@ public class TrackerBulkURLWrapper {
             return null;
         }
 
-        return getApiUrl().toString() + events.get(page.fromIndex);
+        return getApiUrl().toString() + mEvents.get(page.fromIndex);
     }
 
     public final class Page {
@@ -123,12 +123,12 @@ public class TrackerBulkURLWrapper {
         protected final int fromIndex, toIndex;
 
         protected Page(int pageNumber) {
-            if (!(pageNumber >= 0 || pageNumber < pages)) {
+            if (!(pageNumber >= 0 || pageNumber < mPages)) {
                 fromIndex = toIndex = -1;
                 return;
             }
-            fromIndex = pageNumber * eventsPerPage;
-            toIndex = Math.min(fromIndex + eventsPerPage, events.size());
+            fromIndex = pageNumber * EVENTS_PER_PAGE;
+            toIndex = Math.min(fromIndex + EVENTS_PER_PAGE, mEvents.size());
         }
 
         public int elementsCount() {

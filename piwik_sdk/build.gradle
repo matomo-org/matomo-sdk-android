@@ -6,7 +6,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 22
-    buildToolsVersion '22'
+    buildToolsVersion '22.0.1'
 
     defaultConfig {
         minSdkVersion 7
@@ -29,7 +29,7 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-core:1.3'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
-    testCompile('org.robolectric:robolectric:2.+') {
+    testCompile('org.robolectric:robolectric:2.4') {
         exclude module: 'classworlds'
         exclude module: 'commons-logging'
         exclude module: 'httpclient'
@@ -52,7 +52,7 @@ dependencies {
  * JAR
  */
 task clearJar(type: Delete) {
-    delete 'jar/PiwikAndroidSdk.jar'
+    delete fileTree(dir: "jar", exclude: "dont_delete.txt")
 }
 
 task makeJar(type: Copy) {
