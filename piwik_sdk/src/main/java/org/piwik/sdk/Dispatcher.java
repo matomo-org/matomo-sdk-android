@@ -7,7 +7,6 @@
 
 package org.piwik.sdk;
 
-import android.os.*;
 import android.os.Process;
 
 import org.apache.http.HttpResponse;
@@ -196,7 +195,8 @@ public class Dispatcher {
             Logy.d(LOGGER_TAG, "DryRun, stored HttpRequest, now " + mDryRunOutput.size());
             mDryRunOutput.add(requestBase);
         } else {
-            mDryRunOutput.clear();
+            if (!mDryRunOutput.isEmpty())
+                mDryRunOutput.clear();
             try {
                 response = client.execute(requestBase);
                 int statusCode = response.getStatusLine().getStatusCode();
