@@ -76,7 +76,7 @@ public class Tracker {
      * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
      * @throws MalformedURLException
      */
-    protected Tracker(@NonNull final String url, @NonNull int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
+    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
         String checkUrl = url;
         if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
             mApiUrl = new URL(checkUrl);
@@ -92,9 +92,12 @@ public class Tracker {
         mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken);
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
-        if (userId == null)
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, UUID.randomUUID().toString()).commit();
+        if (userId == null) {
+            userId = UUID.randomUUID().toString();
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
+        }
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
+
         mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
         String resolution = DEFAULT_UNKNOWN_VALUE;

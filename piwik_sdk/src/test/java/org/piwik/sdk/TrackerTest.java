@@ -217,6 +217,8 @@ public class TrackerTest {
     @Test
     public void testSetUserId() throws Exception {
         Tracker tracker = createTracker();
+        assertNotNull(tracker.getDefaultTrackMe().get(QueryParams.USER_ID));
+
         tracker.setUserId("test");
         assertEquals(tracker.getUserId(), "test");
 
@@ -229,7 +231,6 @@ public class TrackerTest {
         String uuid = UUID.randomUUID().toString();
         tracker.setUserId(uuid);
         assertEquals(uuid, tracker.getUserId());
-
         assertEquals(uuid, createTracker().getUserId());
     }
 
