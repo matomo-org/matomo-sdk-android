@@ -243,7 +243,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetUserCustomVariable() throws Exception {
+    public void testSetVisitCustomVariable() throws Exception {
         Tracker tracker = createTracker();
         tracker.setVisitCustomVariable(1, "2& ?", "3@#");
         tracker.trackScreenView("");
