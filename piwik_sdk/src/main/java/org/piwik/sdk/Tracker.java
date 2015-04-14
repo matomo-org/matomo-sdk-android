@@ -114,7 +114,6 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
 
-        // TODO This isn't thread safe if multiple tracker instances are used
         long firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
         if (firstVisitTime == -1) {
             firstVisitTime = System.currentTimeMillis();
@@ -122,12 +121,10 @@ public class Tracker {
         }
         mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
 
-        // TODO This isn't thread safe if multiple tracker instances are used
         int visitCount = getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
         getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, ++visitCount).commit();
         mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
 
-        // TODO This isn't thread safe if multiple tracker instances are used
         long previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis());
         mDefaultTrackMe.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
         getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).commit();
