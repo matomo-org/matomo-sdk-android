@@ -45,7 +45,7 @@ public class TrackerTest {
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(true);
-        Piwik.getInstance(Robolectric.application).getSharedPreferences().edit().clear().commit();
+        Piwik.getInstance(Robolectric.application).getSharedPreferences().edit().clear().apply();
     }
 
     @Test

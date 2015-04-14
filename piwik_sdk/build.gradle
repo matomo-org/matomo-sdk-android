@@ -9,7 +9,7 @@ android {
     buildToolsVersion '22.0.1'
 
     defaultConfig {
-        minSdkVersion 7
+        minSdkVersion 10
         targetSdkVersion 22
         versionCode 1
         versionName '0.0.1'
@@ -118,7 +118,7 @@ android.libraryVariants.all { variant ->
 
         description "Generates Javadoc for $variant.name."
 
-        options.memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PRIVATE
+        options.memberLevel = JavadocMemberLevel.PRIVATE
         options.links("http://docs.oracle.com/javase/7/docs/api/");
         options.links("http://developer.android.com/reference/reference/");
         exclude '**/BuildConfig.java'

@@ -74,7 +74,7 @@ public class Piwik {
      */
     public void setOptOut(boolean optOut) {
         mOptOut = optOut;
-        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).commit();
+        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).apply();
     }
 
     /**
