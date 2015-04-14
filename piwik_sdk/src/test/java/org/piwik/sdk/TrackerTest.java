@@ -607,7 +607,6 @@ public class TrackerTest {
         Tracker tracker = createTracker();
         long firstVisitTimeStamp = Long.parseLong(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
         assertTrue(firstVisitTimeStamp > 0);
-        assertTrue((System.currentTimeMillis() - firstVisitTimeStamp) < 1000);
         Tracker tracker1 = createTracker();
         assertEquals(firstVisitTimeStamp, Long.parseLong(tracker1.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP)));
 
