@@ -43,6 +43,7 @@ public class Tracker {
 
     // Sharedpreference keys for persisted values
     private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+    private static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
 
     /**
      * The ID of the website we're tracking a visit/action for.
@@ -110,6 +111,13 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
+
+        long firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+        if (firstVisitTime == -1) {
+            firstVisitTime = System.currentTimeMillis();
+            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).commit();
+        }
+        mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
     }
 
     public Piwik getPiwik() {
@@ -475,13 +483,13 @@ public class Tracker {
             }
             installationIdentifier.append("/").append(extraIdentifier);
 
-        return track(new TrackMe()
-                .set(QueryParams.EVENT_CATEGORY, "Application")
-                .set(QueryParams.EVENT_ACTION, "downloaded")
-                .set(QueryParams.ACTION_NAME, "application/downloaded")
-                .set(QueryParams.URL_PATH, "/application/downloaded")
-                .set(QueryParams.DOWNLOAD, installationIdentifier.toString())
-                .set(QueryParams.REFERRER, installerPackageName));
+            return track(new TrackMe()
+                    .set(QueryParams.EVENT_CATEGORY, "Application")
+                    .set(QueryParams.EVENT_ACTION, "downloaded")
+                    .set(QueryParams.ACTION_NAME, "application/downloaded")
+                    .set(QueryParams.URL_PATH, "/application/downloaded")
+                    .set(QueryParams.DOWNLOAD, installationIdentifier.toString())
+                    .set(QueryParams.REFERRER, installerPackageName));
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             return this;
@@ -564,6 +572,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
         trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
         trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
+        trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
     }
 
     /**

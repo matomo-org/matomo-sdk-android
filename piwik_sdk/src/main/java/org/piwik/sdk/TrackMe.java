@@ -51,6 +51,11 @@ public class TrackMe {
         return this;
     }
 
+    public synchronized TrackMe set(@NonNull QueryParams key, long value) {
+        set(key, Long.toString(value));
+        return this;
+    }
+
     public synchronized boolean has(@NonNull QueryParams queryParams) {
         return mQueryParams.containsKey(queryParams.toString());
     }

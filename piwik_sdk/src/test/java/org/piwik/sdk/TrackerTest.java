@@ -602,6 +602,23 @@ public class TrackerTest {
         assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
 
+    @Test
+    public void testFirstVisitTimeStamp() throws Exception {
+        Tracker tracker = createTracker();
+        long firstVisitTimeStamp = Long.parseLong(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
+        assertTrue(firstVisitTimeStamp > 0);
+        assertTrue((System.currentTimeMillis() - firstVisitTimeStamp) < 1000);
+        Tracker tracker1 = createTracker();
+        assertEquals(firstVisitTimeStamp, Long.parseLong(tracker1.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+
+        tracker.trackEvent("TestCategory", "TestAction");
+        tracker1.trackEvent("TestCategory", "TestAction");
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+        queryParams = parseEventUrl(tracker1.getLastEvent());
+        assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+    }
+
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
 
         private QueryHashMap() {
