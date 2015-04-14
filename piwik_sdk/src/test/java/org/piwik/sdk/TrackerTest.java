@@ -645,22 +645,26 @@ public class TrackerTest {
     @Test
     public void testPreviousVisit() throws Exception {
         Piwik piwik = getPiwik();
+        // No timestamp yet
         assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
         Tracker tracker = createTracker();
         long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
         assertTrue((System.currentTimeMillis() - previousVisit) < 100);
         tracker.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        // Timestamp transmitted
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
+        // Transmitted timestamp is the one from the last visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
+        // Now the timestamp changed as this is the 3rd visit.
         assertNotEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
@@ -668,6 +672,7 @@ public class TrackerTest {
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
+        // Just make sure the timestamp in the 4th visit is from the 3rd visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
     }
 
