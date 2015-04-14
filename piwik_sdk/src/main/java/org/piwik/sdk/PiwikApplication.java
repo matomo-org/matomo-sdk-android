@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.os.Build;
 
 import java.net.MalformedURLException;
 
@@ -37,14 +38,29 @@ public abstract class PiwikApplication extends Application {
 
     /**
      * The URL of your remote Piwik server.
-     *
      */
     public abstract String getTrackerUrl();
 
     /**
      * The siteID you specified for this application in Piwik.
-     *
      */
     public abstract Integer getSiteId();
+
+
+    @Override
+    public void onLowMemory() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH && mPiwikTracker != null) {
+            mPiwikTracker.dispatch();
+        }
+        super.onLowMemory();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        if ((level == TRIM_MEMORY_UI_HIDDEN || level == TRIM_MEMORY_COMPLETE) && mPiwikTracker != null) {
+            mPiwikTracker.dispatch();
+        }
+        super.onTrimMemory(level);
+    }
 
 }
