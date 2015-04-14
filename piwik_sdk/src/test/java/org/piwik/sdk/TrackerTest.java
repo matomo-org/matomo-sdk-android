@@ -45,6 +45,7 @@ public class TrackerTest {
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(true);
+        Piwik.getInstance(Robolectric.application).getSharedPreferences().edit().clear().commit();
     }
 
     @Test
@@ -604,7 +605,10 @@ public class TrackerTest {
 
     @Test
     public void testFirstVisitTimeStamp() throws Exception {
+        Piwik piwik = getPiwik();
+        assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
         Tracker tracker = createTracker();
+        assertTrue(piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1) > 0);
         long firstVisitTimeStamp = Long.parseLong(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
         assertTrue(firstVisitTimeStamp > 0);
         Tracker tracker1 = createTracker();
@@ -616,6 +620,26 @@ public class TrackerTest {
         assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
         queryParams = parseEventUrl(tracker1.getLastEvent());
         assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+    }
+
+    @Test
+    public void testTotalVisitCount() throws Exception {
+        Piwik piwik = getPiwik();
+        assertEquals(-1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        Tracker tracker = createTracker();
+        assertEquals(1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertEquals(1, Integer.parseInt(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+
+        tracker.trackEvent("TestCategory", "TestAction");
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(1, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+
+        tracker = createTracker();
+        assertEquals(2, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertEquals(2, Integer.parseInt(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        tracker.trackEvent("TestCategory", "TestAction");
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(2, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {

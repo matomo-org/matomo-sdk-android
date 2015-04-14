@@ -42,8 +42,9 @@ public class Tracker {
     private static final String DEFAULT_API_VERSION_VALUE = "1";
 
     // Sharedpreference keys for persisted values
-    private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
-    private static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
+    protected static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+    protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
+    protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
 
     /**
      * The ID of the website we're tracking a visit/action for.
@@ -112,12 +113,18 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
 
+        // TODO This isn't thread safe if multiple tracker instances are used
         long firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
         if (firstVisitTime == -1) {
             firstVisitTime = System.currentTimeMillis();
             getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).commit();
         }
         mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
+
+        // TODO This isn't thread safe if multiple tracker instances are used
+        int visitCount = getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
+        getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, ++visitCount).commit();
+        mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
     }
 
     public Piwik getPiwik() {
@@ -573,6 +580,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
         trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
+        trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
     }
 
     /**
