@@ -45,6 +45,7 @@ public class Tracker {
     protected static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
     protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
     protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
+    protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
 
     /**
      * The ID of the website we're tracking a visit/action for.
@@ -125,6 +126,11 @@ public class Tracker {
         int visitCount = getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
         getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, ++visitCount).commit();
         mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
+
+        // TODO This isn't thread safe if multiple tracker instances are used
+        long previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis());
+        mDefaultTrackMe.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+        getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).commit();
     }
 
     public Piwik getPiwik() {
@@ -581,6 +587,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
         trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
+        trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
     }
 
     /**

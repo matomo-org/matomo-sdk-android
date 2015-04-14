@@ -642,6 +642,35 @@ public class TrackerTest {
         assertEquals(2, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
     }
 
+    @Test
+    public void testPreviousVisit() throws Exception {
+        Piwik piwik = getPiwik();
+        assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
+        Tracker tracker = createTracker();
+        long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        assertTrue((System.currentTimeMillis() - previousVisit) < 100);
+        tracker.trackEvent("TestCategory", "TestAction");
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+
+        tracker = createTracker();
+        tracker.trackEvent("TestCategory", "TestAction");
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+
+        tracker = createTracker();
+        tracker.trackEvent("TestCategory", "TestAction");
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertNotEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+
+        previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+
+        tracker = createTracker();
+        tracker.trackEvent("TestCategory", "TestAction");
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+    }
+
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
 
         private QueryHashMap() {
