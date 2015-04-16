@@ -42,7 +42,10 @@ public class Tracker {
     private static final String DEFAULT_API_VERSION_VALUE = "1";
 
     // Sharedpreference keys for persisted values
-    private static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+    protected static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+    protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
+    protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
+    protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
 
     /**
      * The ID of the website we're tracking a visit/action for.
@@ -94,7 +97,7 @@ public class Tracker {
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
             userId = UUID.randomUUID().toString();
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
+            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
         }
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
 
@@ -110,6 +113,21 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
+
+        long firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+        if (firstVisitTime == -1) {
+            firstVisitTime = System.currentTimeMillis();
+            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
+        }
+        mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
+
+        int visitCount = getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
+        getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, ++visitCount).apply();
+        mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
+
+        long previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis());
+        mDefaultTrackMe.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+        getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).apply();
     }
 
     public Piwik getPiwik() {
@@ -211,7 +229,7 @@ public class Tracker {
      */
     public Tracker setUserId(String userId) {
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
-        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).commit();
+        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
         return this;
     }
 
@@ -413,13 +431,12 @@ public class Tracker {
      * @return this tracker for chaining
      */
     public Tracker trackAppDownload(Context app, ExtraIdentifier extra) {
-        SharedPreferences prefs = mPiwik.getSharedPreferences();
         try {
             PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
-            if (!prefs.getBoolean(firedKey, false)) {
+            if (!getSharedPreferences().getBoolean(firedKey, false)) {
                 trackNewAppDownload(app, extra);
-                prefs.edit().putBoolean(firedKey, true).commit();
+                getSharedPreferences().edit().putBoolean(firedKey, true).apply();
             }
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
@@ -564,6 +581,9 @@ public class Tracker {
         trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
         trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
         trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
+        trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
+        trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
+        trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
     }
 
     /**

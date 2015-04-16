@@ -51,7 +51,7 @@ public class Piwik {
      * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
      */
     @Deprecated
-    public Tracker newTracker(@NonNull String trackerUrl, @NonNull int siteId, String authToken) throws MalformedURLException {
+    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId, String authToken) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, authToken, this);
     }
 
@@ -61,7 +61,7 @@ public class Piwik {
      * @return Tracker object
      * @throws MalformedURLException
      */
-    public Tracker newTracker(@NonNull String trackerUrl, @NonNull int siteId) throws MalformedURLException {
+    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, null, this);
     }
 
@@ -74,7 +74,7 @@ public class Piwik {
      */
     public void setOptOut(boolean optOut) {
         mOptOut = optOut;
-        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).commit();
+        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).apply();
     }
 
     /**
