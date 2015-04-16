@@ -82,6 +82,10 @@ public class TrackMe {
         return trySet(key, String.valueOf(value));
     }
 
+    public synchronized TrackMe trySet(@NonNull QueryParams key, long value) {
+        return trySet(key, String.valueOf(value));
+    }
+
     /**
      * Only sets the value if it doesn't exist.
      *

@@ -26,6 +26,7 @@ public class Piwik {
 
     private static Piwik sInstance;
     private boolean mDebug = BuildConfig.DEBUG;
+    private final SharedPreferences mSharedPreferences;
 
     public static synchronized Piwik getInstance(Context context) {
         if (sInstance == null)
@@ -35,6 +36,7 @@ public class Piwik {
 
     private Piwik(Context context) {
         mContext = context.getApplicationContext();
+        mSharedPreferences = getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
         mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
     }
 
@@ -118,6 +120,6 @@ public class Piwik {
      * @return Piwik's SharedPreferences instance
      */
     public SharedPreferences getSharedPreferences() {
-        return getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
+        return mSharedPreferences;
     }
 }

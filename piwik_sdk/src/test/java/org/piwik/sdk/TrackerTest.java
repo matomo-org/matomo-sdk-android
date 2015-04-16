@@ -13,10 +13,14 @@ import org.robolectric.annotation.Config;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -629,6 +633,79 @@ public class TrackerTest {
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(2, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+    }
+
+    @Test
+    public void testVisitCountMultipleThreads() throws Exception {
+        int threadCount = 10000;
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Tracker tracker = createTracker();
+                        Thread.sleep(new Random().nextInt(20 - 0) + 0);
+                        tracker.trackEvent("TestCategory", "TestAction");
+                        countDownLatch.countDown();
+                    } catch (MalformedURLException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        countDownLatch.await();
+        assertEquals(threadCount, getPiwik().getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, 0));
+    }
+
+    @Test
+    public void testFirstVisitMultipleThreads() throws Exception {
+        int threadCount = 100;
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        final List<Long> firstVisitTimes = Collections.synchronizedList(new ArrayList<Long>());
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Tracker tracker = createTracker();
+                        Thread.sleep(new Random().nextInt(20 - 0) + 0);
+                        tracker.trackEvent("TestCategory", "TestAction");
+                        long firstVisit = Long.valueOf(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
+                        firstVisitTimes.add(firstVisit);
+                        countDownLatch.countDown();
+                    } catch (MalformedURLException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        countDownLatch.await();
+        for (Long firstVisit : firstVisitTimes)
+            assertEquals(firstVisitTimes.get(0), firstVisit);
+    }
+
+    @Test
+    public void testPreviousVisits() throws Exception {
+        final List<Long> previousVisitTimes = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            try {
+                Tracker tracker = createTracker();
+                tracker.trackEvent("TestCategory", "TestAction");
+                String previousVisit = tracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
+                if (previousVisit != null)
+                    previousVisitTimes.add(Long.parseLong(previousVisit));
+                Thread.sleep(1);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        assertFalse(previousVisitTimes.contains(0l));
+        Long lastTime = 0l;
+        for (Long time : previousVisitTimes) {
+            assertTrue(lastTime < time);
+            lastTime = time;
+        }
     }
 
     @Test
