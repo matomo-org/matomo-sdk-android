@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.os.Build;
 
 import java.net.MalformedURLException;
 
@@ -19,56 +20,47 @@ public abstract class PiwikApplication extends Application {
     }
 
     /**
-     * Gives you a persisted Tracker object.
-     * <p/>
-     * The returned Tracker is not threadsafe at the moment.
-     * For use in threads create yourself a new tracker, see {@link #newTracker()}
+     * Gives you an all purpose thread-safe persisted Tracker object.
      *
      * @return a shared Tracker
      */
     public synchronized Tracker getTracker() {
         if (mPiwikTracker == null) {
-            mPiwikTracker = newTracker();
+            try {
+                mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Tracker URL was malformed.");
+            }
         }
         return mPiwikTracker;
     }
 
     /**
-     * Creates a new Tracker instance.
-     *
-     * @return a new Tracker, just for you.
-     */
-    public Tracker newTracker() {
-        try {
-            return getPiwik().newTracker(getTrackerUrl(), getSiteId(), getAuthToken());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            throw new RuntimeException("Tracker URL was malformed.");
-        }
-    }
-
-    /**
      * The URL of your remote Piwik server.
-     *
-     * @return
      */
     public abstract String getTrackerUrl();
 
     /**
      * The siteID you specified for this application in Piwik.
-     *
-     * @return
      */
     public abstract Integer getSiteId();
 
 
-    /**
-     * @deprecated An authoken from the Piwik server that allows more advanced features.
-     * It is encouraged that you do not use this within your app as the token can't be stored securely.
-     */
-    @Deprecated
-    public String getAuthToken() {
-        return null;
+    @Override
+    public void onLowMemory() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH && mPiwikTracker != null) {
+            mPiwikTracker.dispatch();
+        }
+        super.onLowMemory();
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        if ((level == TRIM_MEMORY_UI_HIDDEN || level == TRIM_MEMORY_COMPLETE) && mPiwikTracker != null) {
+            mPiwikTracker.dispatch();
+        }
+        super.onTrimMemory(level);
     }
 
 }
