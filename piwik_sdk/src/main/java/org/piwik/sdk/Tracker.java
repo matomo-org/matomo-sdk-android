@@ -128,16 +128,8 @@ public class Tracker {
     }
 
     /**
-     * This TrackMe object is used by Piwik to transmit a set of initial values, which only get send once per visit by default.
-     * If you which to send different values, change them on this object before the first transmission.
-     * <p/>
-     * {@link org.piwik.sdk.QueryParams#SESSION_START}<br>
-     * {@link org.piwik.sdk.QueryParams#SCREEN_RESOLUTION}<br>
-     * {@link org.piwik.sdk.QueryParams#USER_AGENT}<br>
-     * {@link org.piwik.sdk.QueryParams#LANGUAGE}<br>
-     * {@link org.piwik.sdk.QueryParams#COUNTRY}<br>
-     * <p/>
-     * If you wish to change any of these values after the first transmission, just send another TrackMe object with the relevant parameters set.
+     * Piwik will use the content of this object to fill in missing values before any transmission.
+     * While you can modify it's values, you can also just set them in your {@link TrackMe} object as already set values will not be overwritten.
      *
      * @return the default TrackMe object
      */
