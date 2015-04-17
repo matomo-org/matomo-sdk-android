@@ -13,10 +13,14 @@ import org.robolectric.annotation.Config;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -596,39 +600,109 @@ public class TrackerTest {
     public void testFirstVisitTimeStamp() throws Exception {
         Piwik piwik = getPiwik();
         assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
+
         Tracker tracker = createTracker();
-        assertTrue(piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1) > 0);
-        long firstVisitTimeStamp = Long.parseLong(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
-        assertTrue(firstVisitTimeStamp > 0);
         Tracker tracker1 = createTracker();
-        assertEquals(firstVisitTimeStamp, Long.parseLong(tracker1.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP)));
 
         tracker.trackEvent("TestCategory", "TestAction");
-        tracker1.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-        assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
-        queryParams = parseEventUrl(tracker1.getLastEvent());
-        assertEquals(firstVisitTimeStamp, Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+        tracker1.trackEvent("TestCategory", "TestAction");
+        QueryHashMap<String, String> queryParams1 = parseEventUrl(tracker1.getLastEvent());
+        assertEquals(Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)), Long.parseLong(queryParams1.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+        assertEquals(piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1), Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
     }
 
     @Test
     public void testTotalVisitCount() throws Exception {
         Piwik piwik = getPiwik();
-        assertEquals(-1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
         Tracker tracker = createTracker();
-        assertEquals(1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
-        assertEquals(1, Integer.parseInt(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        assertEquals(-1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
 
         tracker.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(1, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
 
         tracker = createTracker();
-        assertEquals(2, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
-        assertEquals(2, Integer.parseInt(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        assertEquals(1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(2, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        assertEquals(2, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+    }
+
+    @Test
+    public void testVisitCountMultipleThreads() throws Exception {
+        int threadCount = 1000;
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Tracker tracker = createTracker();
+                        Thread.sleep(new Random().nextInt(20 - 0) + 0);
+                        tracker.trackEvent("TestCategory", "TestAction");
+                        countDownLatch.countDown();
+                    } catch (MalformedURLException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        countDownLatch.await();
+        assertEquals(threadCount, getPiwik().getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, 0));
+    }
+
+    @Test
+    public void testFirstVisitMultipleThreads() throws Exception {
+        int threadCount = 100;
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        final List<Long> firstVisitTimes = Collections.synchronizedList(new ArrayList<Long>());
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Tracker tracker = createTracker();
+                        Thread.sleep(new Random().nextInt(20 - 0) + 0);
+                        tracker.trackEvent("TestCategory", "TestAction");
+                        long firstVisit = Long.valueOf(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
+                        firstVisitTimes.add(firstVisit);
+                        countDownLatch.countDown();
+                    } catch (MalformedURLException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        countDownLatch.await();
+        for (Long firstVisit : firstVisitTimes)
+            assertEquals(firstVisitTimes.get(0), firstVisit);
+    }
+
+    @Test
+    public void testPreviousVisits() throws Exception {
+        final List<Long> previousVisitTimes = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            try {
+                Tracker tracker = createTracker();
+                tracker.trackEvent("TestCategory", "TestAction");
+                String previousVisit = tracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
+                if (previousVisit != null)
+                    previousVisitTimes.add(Long.parseLong(previousVisit));
+                Thread.sleep(1);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+        assertFalse(previousVisitTimes.contains(0l));
+        Long lastTime = 0l;
+        for (Long time : previousVisitTimes) {
+            assertTrue(lastTime < time);
+            lastTime = time;
+        }
     }
 
     @Test
@@ -638,18 +712,20 @@ public class TrackerTest {
         assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
 
         Tracker tracker = createTracker();
-        long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-        assertNotEquals(-1, previousVisit);
         tracker.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
-        // First transmission, timestamp is of this visit
-        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+        // There was no previous visit
+        assertNull(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
         Thread.sleep(2);
+
+        // After the first visit we now have a timestamp for the previous visit
+        long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        assertNotEquals(-1, previousVisit);
 
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
-        // Transmitted timestamp is the one from the last visit
+        // Transmitted timestamp is the one from the first visit visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
         Thread.sleep(2);
 
@@ -667,6 +743,13 @@ public class TrackerTest {
         queryParams = parseEventUrl(tracker.getLastEvent());
         // Just make sure the timestamp in the 4th visit is from the 3rd visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+
+        // Test setting a custom timestamp
+        TrackMe custom = new TrackMe();
+        custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP,1000l);
+        tracker.track(custom);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(1000l, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {

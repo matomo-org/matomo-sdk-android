@@ -113,21 +113,6 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
-
-        long firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
-        if (firstVisitTime == -1) {
-            firstVisitTime = System.currentTimeMillis();
-            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
-        }
-        mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
-
-        int visitCount = getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
-        getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, ++visitCount).apply();
-        mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
-
-        long previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis());
-        mDefaultTrackMe.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
-        getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).apply();
     }
 
     public Piwik getPiwik() {
@@ -143,16 +128,8 @@ public class Tracker {
     }
 
     /**
-     * This TrackMe object is used by Piwik to transmit a set of initial values, which only get send once per visit by default.
-     * If you which to send different values, change them on this object before the first transmission.
-     * <p/>
-     * {@link org.piwik.sdk.QueryParams#SESSION_START}<br>
-     * {@link org.piwik.sdk.QueryParams#SCREEN_RESOLUTION}<br>
-     * {@link org.piwik.sdk.QueryParams#USER_AGENT}<br>
-     * {@link org.piwik.sdk.QueryParams#LANGUAGE}<br>
-     * {@link org.piwik.sdk.QueryParams#COUNTRY}<br>
-     * <p/>
-     * If you wish to change any of these values after the first transmission, just send another TrackMe object with the relevant parameters set.
+     * Piwik will use the content of this object to fill in missing values before any transmission.
+     * While you can modify it's values, you can also just set them in your {@link TrackMe} object as already set values will not be overwritten.
      *
      * @return the default TrackMe object
      */
@@ -622,9 +599,38 @@ public class Tracker {
             mSessionStartTime = System.currentTimeMillis();
         }
         // First track in this session, tell Piwik all we can offer by default
-        if (newSession)
-            injectInitialParams(trackMe);
+        if (newSession) {
+            long firstVisitTime;
+            int visitCount;
+            long previousVisit;
 
+            // synchronizing this because there could be Trackers on different threads
+            synchronized (getSharedPreferences()) {
+                visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
+                getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
+            }
+
+            synchronized (getSharedPreferences()) {
+                firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+                if (firstVisitTime == -1) {
+                    firstVisitTime = System.currentTimeMillis();
+                    getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
+                }
+            }
+
+            synchronized (getSharedPreferences()) {
+                previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).apply();
+            }
+
+            // trySet because the developer could have modded these after creating the Tracker
+            mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
+            mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
+            if (previousVisit != -1)
+                mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+
+            injectInitialParams(trackMe);
+        }
         injectBaseParams(trackMe);
     }
 
