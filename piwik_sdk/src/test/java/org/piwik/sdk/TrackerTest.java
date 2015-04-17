@@ -634,7 +634,7 @@ public class TrackerTest {
 
     @Test
     public void testVisitCountMultipleThreads() throws Exception {
-        int threadCount = 10000;
+        int threadCount = 1000;
         final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
