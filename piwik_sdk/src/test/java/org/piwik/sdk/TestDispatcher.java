@@ -57,6 +57,7 @@ public class TestDispatcher {
     @Test
     public void testSessionStartRaceCondition() throws Exception {
         for (int i = 0; i < 50; i++) {
+            Log.d("RaceConditionTest",  (50 - i) + " race-condition tests to go.");
             getPiwik().setDryRun(true);
             final Tracker tracker = createTracker();
             tracker.setDispatchInterval(0);
@@ -201,10 +202,7 @@ public class TestDispatcher {
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, j);
 
-                            long start = System.currentTimeMillis();
                             tracker.track(trackMe);
-                            long stop = System.currentTimeMillis();
-                            Log.v("track(TrackMe)", "track(...) build-time:" + (stop - start) + "ms");
                             createdQueries.add(tracker.getAPIUrl().toString() + trackMe.build());
                         }
                     } catch (Exception e) {
