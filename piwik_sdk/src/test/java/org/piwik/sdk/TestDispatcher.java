@@ -54,6 +54,31 @@ public class TestDispatcher {
         Piwik.getInstance(Robolectric.application).setDebug(false);
     }
 
+    @Test
+    public void testSessionStartRaceCondition() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            getPiwik().setDryRun(true);
+            final Tracker tracker = createTracker();
+            tracker.setDispatchInterval(0);
+            final int threadCount = 10;
+            final int queryCount = 3;
+            final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+            launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+            checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
+            List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            for (String out : output) {
+                if (output.indexOf(out) == 0) {
+                    assertTrue(out.contains("lang"));
+                    assertTrue(out.contains("_idts"));
+                    assertTrue(out.contains("new_visit"));
+                } else {
+                    assertFalse(out.contains("lang"));
+                    assertFalse(out.contains("_idts"));
+                    assertFalse(out.contains("new_visit"));
+                }
+            }
+        }
+    }
 
     @Test
     public void testMultiThreadDispatch() throws Exception {
@@ -175,7 +200,11 @@ public class TestDispatcher {
                                     .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, j);
+
+                            long start = System.currentTimeMillis();
                             tracker.track(trackMe);
+                            long stop = System.currentTimeMillis();
+                            Log.v("track(TrackMe)", "track(...) build-time:" + (stop - start) + "ms");
                             createdQueries.add(tracker.getAPIUrl().toString() + trackMe.build());
                         }
                     } catch (Exception e) {
