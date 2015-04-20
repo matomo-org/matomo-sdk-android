@@ -25,6 +25,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -149,12 +151,20 @@ public class Tracker {
         }
     }
 
-    protected boolean isSessionExpired() {
+    protected boolean tryNewSession() {
         synchronized (mSessionLock) {
-            return System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+            boolean expired = System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+            // Update the session timer
+            mSessionStartTime = System.currentTimeMillis();
+            return expired;
         }
     }
 
+    /**
+     * Default is 30min (30*60*1000).
+     *
+     * @return session timeout value in miliseconds
+     */
     public long getSessionTimeout() {
         return mSessionTimeout;
     }
@@ -592,51 +602,60 @@ public class Tracker {
         trackMe.set(QueryParams.URL_PATH, urlPath);
     }
 
-    protected void doInjections(TrackMe trackMe) {
-        boolean newSession;
-        synchronized (mSessionLock) {
-            newSession = isSessionExpired();
-            mSessionStartTime = System.currentTimeMillis();
+    private void prepareNewSession() {
+        long firstVisitTime;
+        int visitCount;
+        long previousVisit;
+
+        // Protected against Trackers on other threads trying to do the same thing.
+        // This works because they would use the same preference object.
+        synchronized (getSharedPreferences()) {
+            visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
+            getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
         }
-        // First track in this session, tell Piwik all we can offer by default
-        if (newSession) {
-            long firstVisitTime;
-            int visitCount;
-            long previousVisit;
 
-            // synchronizing this because there could be Trackers on different threads
-            synchronized (getSharedPreferences()) {
-                visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
-                getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
+        synchronized (getSharedPreferences()) {
+            firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+            if (firstVisitTime == -1) {
+                firstVisitTime = System.currentTimeMillis() / 1000;
+                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
             }
-
-            synchronized (getSharedPreferences()) {
-                firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
-                if (firstVisitTime == -1) {
-                    firstVisitTime = System.currentTimeMillis() / 1000;
-                    getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
-                }
-            }
-
-            synchronized (getSharedPreferences()) {
-                previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
-            }
-
-            // trySet because the developer could have modded these after creating the Tracker
-            mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
-            mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
-            if (previousVisit != -1)
-                mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
-
-            injectInitialParams(trackMe);
         }
-        injectBaseParams(trackMe);
+
+        synchronized (getSharedPreferences()) {
+            previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
+        }
+
+        // trySet because the developer could have modded these after creating the Tracker
+        mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
+        mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
+        if (previousVisit != -1)
+            mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
     }
 
+    private CountDownLatch mSessionStartLatch = new CountDownLatch(0);
 
     public Tracker track(TrackMe trackMe) {
-        doInjections(trackMe);
+        boolean newSession;
+        synchronized (mSessionLock) {
+            newSession = tryNewSession();
+            if (newSession)
+                mSessionStartLatch = new CountDownLatch(1);
+        }
+        if (newSession) {
+            prepareNewSession();
+            injectInitialParams(trackMe);
+        } else {
+            try {
+                // Another thread is currently creating a sessions first transmission, wait until it's done.
+                mSessionStartLatch.await(mDispatcher.getTimeOut(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        injectBaseParams(trackMe);
         String event = trackMe.build();
         if (mPiwik.isOptOut()) {
             mLastEvent = event;
@@ -645,6 +664,11 @@ public class Tracker {
             Logy.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
             mDispatcher.submit(event);
         }
+
+        // we did a first transmission, let the other through.
+        if (newSession)
+            mSessionStartLatch.countDown();
+
         return this;
     }
 

@@ -121,16 +121,16 @@ public class TrackerTest {
         assertEquals(tracker.getApplicationDomain(), "test.com");
         assertEquals(tracker.getApplicationBaseURL(), "http://test.com");
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("http://test.com/", trackMe.get(QueryParams.URL_PATH));
 
         trackMe.set(QueryParams.URL_PATH, "me");
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("http://test.com/me", trackMe.get(QueryParams.URL_PATH));
 
         // override protocol
         trackMe.set(QueryParams.URL_PATH, "https://my.com/secure");
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("https://my.com/secure", trackMe.get(QueryParams.URL_PATH));
     }
 
@@ -204,7 +204,7 @@ public class TrackerTest {
         tracker.setVisitorId(visitorId);
         assertEquals(visitorId, tracker.getVisitorId());
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("_id=" + visitorId));
     }
 
@@ -232,7 +232,7 @@ public class TrackerTest {
     public void testGetResolution() throws Exception {
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("res=480x800"));
     }
 
@@ -267,7 +267,7 @@ public class TrackerTest {
     public void testSetNewSession() throws Exception {
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("new_visit=1"));
 
         tracker.trackScreenView("");
@@ -321,14 +321,14 @@ public class TrackerTest {
 
         tracker.setSessionTimeout(10000);
         tracker.trackScreenView("test");
-        assertFalse(tracker.isSessionExpired());
+        assertFalse(tracker.tryNewSession());
 
         tracker.setSessionTimeout(0);
         Thread.sleep(1, 0);
-        assertTrue(tracker.isSessionExpired());
+        assertTrue(tracker.tryNewSession());
 
         tracker.setSessionTimeout(10000);
-        assertFalse(tracker.isSessionExpired());
+        assertFalse(tracker.tryNewSession());
 
     }
 
@@ -549,7 +549,7 @@ public class TrackerTest {
         for (String path : paths) {
             TrackMe trackMe = new TrackMe();
             trackMe.set(QueryParams.URL_PATH, path);
-            tracker.doInjections(trackMe);
+            tracker.track(trackMe);
             assertEquals("http://org.piwik.sdk.test/", trackMe.get(QueryParams.URL_PATH));
         }
     }
@@ -578,21 +578,21 @@ public class TrackerTest {
         // Default system user agent
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(defaultUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
         // Custom developer specified useragent
         tracker = createTracker();
         trackMe = new TrackMe();
         trackMe.set(QueryParams.USER_AGENT, customUserAgent);
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(customUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
         // Modifying default TrackMe, no USER_AGENT
         tracker = createTracker();
         trackMe = new TrackMe();
         tracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
 

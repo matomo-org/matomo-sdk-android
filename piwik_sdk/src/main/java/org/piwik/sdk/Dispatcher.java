@@ -72,6 +72,10 @@ public class Dispatcher {
         mAuthToken = authToken;
     }
 
+    /**
+     * Connection timeout in miliseconds
+     * @return
+     */
     public int getTimeOut() {
         return mTimeOut;
     }
