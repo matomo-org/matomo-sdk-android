@@ -563,6 +563,36 @@ public class Tracker {
      * There parameters are only interesting for the very first query.
      */
     private void injectInitialParams(TrackMe trackMe) {
+        long firstVisitTime;
+        int visitCount;
+        long previousVisit;
+
+        // Protected against Trackers on other threads trying to do the same thing.
+        // This works because they would use the same preference object.
+        synchronized (getSharedPreferences()) {
+            visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
+            getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
+        }
+
+        synchronized (getSharedPreferences()) {
+            firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+            if (firstVisitTime == -1) {
+                firstVisitTime = System.currentTimeMillis() / 1000;
+                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
+            }
+        }
+
+        synchronized (getSharedPreferences()) {
+            previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
+        }
+
+        // trySet because the developer could have modded these after creating the Tracker
+        mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
+        mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
+        if (previousVisit != -1)
+            mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+
         trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
         trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
         trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
@@ -602,38 +632,6 @@ public class Tracker {
         trackMe.set(QueryParams.URL_PATH, urlPath);
     }
 
-    private void prepareNewSession() {
-        long firstVisitTime;
-        int visitCount;
-        long previousVisit;
-
-        // Protected against Trackers on other threads trying to do the same thing.
-        // This works because they would use the same preference object.
-        synchronized (getSharedPreferences()) {
-            visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
-            getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
-        }
-
-        synchronized (getSharedPreferences()) {
-            firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
-            if (firstVisitTime == -1) {
-                firstVisitTime = System.currentTimeMillis() / 1000;
-                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
-            }
-        }
-
-        synchronized (getSharedPreferences()) {
-            previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
-        }
-
-        // trySet because the developer could have modded these after creating the Tracker
-        mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
-        mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
-        if (previousVisit != -1)
-            mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
-    }
-
     private CountDownLatch mSessionStartLatch = new CountDownLatch(0);
 
     public Tracker track(TrackMe trackMe) {
@@ -644,7 +642,6 @@ public class Tracker {
                 mSessionStartLatch = new CountDownLatch(1);
         }
         if (newSession) {
-            prepareNewSession();
             injectInitialParams(trackMe);
         } else {
             try {
