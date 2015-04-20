@@ -606,6 +606,10 @@ public class TrackerTest {
 
         tracker.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        Thread.sleep(10);
+        // make sure we are tracking in seconds
+        assertTrue(Math.abs((System.currentTimeMillis() / 1000) - Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP))) < 2);
+
         tracker1.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams1 = parseEventUrl(tracker1.getLastEvent());
         assertEquals(Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)), Long.parseLong(queryParams1.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
@@ -685,14 +689,14 @@ public class TrackerTest {
     @Test
     public void testPreviousVisits() throws Exception {
         final List<Long> previousVisitTimes = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 5; i++) {
             try {
                 Tracker tracker = createTracker();
                 tracker.trackEvent("TestCategory", "TestAction");
                 String previousVisit = tracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
                 if (previousVisit != null)
                     previousVisitTimes.add(Long.parseLong(previousVisit));
-                Thread.sleep(1);
+                Thread.sleep(1010);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -713,13 +717,15 @@ public class TrackerTest {
 
         Tracker tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
+        long _startTime = System.currentTimeMillis() / 1000;
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         // There was no previous visit
         assertNull(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
-        Thread.sleep(2);
+        Thread.sleep(1000);
 
         // After the first visit we now have a timestamp for the previous visit
         long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        assertTrue(previousVisit - _startTime < 2000);
         assertNotEquals(-1, previousVisit);
 
         tracker = createTracker();
@@ -727,14 +733,14 @@ public class TrackerTest {
         queryParams = parseEventUrl(tracker.getLastEvent());
         // Transmitted timestamp is the one from the first visit visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
-        Thread.sleep(2);
 
+        Thread.sleep(1000);
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
         // Now the timestamp changed as this is the 3rd visit.
         assertNotEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
-        Thread.sleep(2);
+        Thread.sleep(1000);
 
         previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
 
@@ -746,7 +752,7 @@ public class TrackerTest {
 
         // Test setting a custom timestamp
         TrackMe custom = new TrackMe();
-        custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP,1000l);
+        custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, 1000l);
         tracker.track(custom);
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(1000l, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));

@@ -613,14 +613,14 @@ public class Tracker {
             synchronized (getSharedPreferences()) {
                 firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
                 if (firstVisitTime == -1) {
-                    firstVisitTime = System.currentTimeMillis();
+                    firstVisitTime = System.currentTimeMillis() / 1000;
                     getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
                 }
             }
 
             synchronized (getSharedPreferences()) {
                 previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis()).apply();
+                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
             }
 
             // trySet because the developer could have modded these after creating the Tracker
