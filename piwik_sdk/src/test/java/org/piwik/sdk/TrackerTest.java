@@ -121,16 +121,16 @@ public class TrackerTest {
         assertEquals(tracker.getApplicationDomain(), "test.com");
         assertEquals(tracker.getApplicationBaseURL(), "http://test.com");
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("http://test.com/", trackMe.get(QueryParams.URL_PATH));
 
         trackMe.set(QueryParams.URL_PATH, "me");
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("http://test.com/me", trackMe.get(QueryParams.URL_PATH));
 
         // override protocol
         trackMe.set(QueryParams.URL_PATH, "https://my.com/secure");
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals("https://my.com/secure", trackMe.get(QueryParams.URL_PATH));
     }
 
@@ -204,7 +204,7 @@ public class TrackerTest {
         tracker.setVisitorId(visitorId);
         assertEquals(visitorId, tracker.getVisitorId());
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("_id=" + visitorId));
     }
 
@@ -232,7 +232,7 @@ public class TrackerTest {
     public void testGetResolution() throws Exception {
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("res=480x800"));
     }
 
@@ -267,7 +267,7 @@ public class TrackerTest {
     public void testSetNewSession() throws Exception {
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertTrue(trackMe.build().contains("new_visit=1"));
 
         tracker.trackScreenView("");
@@ -321,14 +321,14 @@ public class TrackerTest {
 
         tracker.setSessionTimeout(10000);
         tracker.trackScreenView("test");
-        assertFalse(tracker.isSessionExpired());
+        assertFalse(tracker.tryNewSession());
 
         tracker.setSessionTimeout(0);
         Thread.sleep(1, 0);
-        assertTrue(tracker.isSessionExpired());
+        assertTrue(tracker.tryNewSession());
 
         tracker.setSessionTimeout(10000);
-        assertFalse(tracker.isSessionExpired());
+        assertFalse(tracker.tryNewSession());
 
     }
 
@@ -549,7 +549,7 @@ public class TrackerTest {
         for (String path : paths) {
             TrackMe trackMe = new TrackMe();
             trackMe.set(QueryParams.URL_PATH, path);
-            tracker.doInjections(trackMe);
+            tracker.track(trackMe);
             assertEquals("http://org.piwik.sdk.test/", trackMe.get(QueryParams.URL_PATH));
         }
     }
@@ -578,21 +578,21 @@ public class TrackerTest {
         // Default system user agent
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(defaultUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
         // Custom developer specified useragent
         tracker = createTracker();
         trackMe = new TrackMe();
         trackMe.set(QueryParams.USER_AGENT, customUserAgent);
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(customUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
         // Modifying default TrackMe, no USER_AGENT
         tracker = createTracker();
         trackMe = new TrackMe();
         tracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
-        tracker.doInjections(trackMe);
+        tracker.track(trackMe);
         assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
 
@@ -606,6 +606,10 @@ public class TrackerTest {
 
         tracker.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        Thread.sleep(10);
+        // make sure we are tracking in seconds
+        assertTrue(Math.abs((System.currentTimeMillis() / 1000) - Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP))) < 2);
+
         tracker1.trackEvent("TestCategory", "TestAction");
         QueryHashMap<String, String> queryParams1 = parseEventUrl(tracker1.getLastEvent());
         assertEquals(Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)), Long.parseLong(queryParams1.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
@@ -685,14 +689,14 @@ public class TrackerTest {
     @Test
     public void testPreviousVisits() throws Exception {
         final List<Long> previousVisitTimes = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 5; i++) {
             try {
                 Tracker tracker = createTracker();
                 tracker.trackEvent("TestCategory", "TestAction");
                 String previousVisit = tracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
                 if (previousVisit != null)
                     previousVisitTimes.add(Long.parseLong(previousVisit));
-                Thread.sleep(1);
+                Thread.sleep(1010);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
@@ -713,13 +717,15 @@ public class TrackerTest {
 
         Tracker tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
+        long _startTime = System.currentTimeMillis() / 1000;
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         // There was no previous visit
         assertNull(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
-        Thread.sleep(2);
+        Thread.sleep(1000);
 
         // After the first visit we now have a timestamp for the previous visit
         long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        assertTrue(previousVisit - _startTime < 2000);
         assertNotEquals(-1, previousVisit);
 
         tracker = createTracker();
@@ -727,14 +733,14 @@ public class TrackerTest {
         queryParams = parseEventUrl(tracker.getLastEvent());
         // Transmitted timestamp is the one from the first visit visit
         assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
-        Thread.sleep(2);
 
+        Thread.sleep(1000);
         tracker = createTracker();
         tracker.trackEvent("TestCategory", "TestAction");
         queryParams = parseEventUrl(tracker.getLastEvent());
         // Now the timestamp changed as this is the 3rd visit.
         assertNotEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
-        Thread.sleep(2);
+        Thread.sleep(1000);
 
         previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
 
@@ -746,7 +752,7 @@ public class TrackerTest {
 
         // Test setting a custom timestamp
         TrackMe custom = new TrackMe();
-        custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP,1000l);
+        custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, 1000l);
         tracker.track(custom);
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(1000l, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));

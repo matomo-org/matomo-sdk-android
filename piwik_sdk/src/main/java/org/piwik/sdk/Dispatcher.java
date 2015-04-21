@@ -23,7 +23,6 @@ import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
 import org.piwik.sdk.tools.Logy;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -72,6 +71,11 @@ public class Dispatcher {
         mAuthToken = authToken;
     }
 
+    /**
+     * Connection timeout in miliseconds
+     *
+     * @return
+     */
     public int getTimeOut() {
         return mTimeOut;
     }
@@ -202,7 +206,7 @@ public class Dispatcher {
                 int statusCode = response.getStatusLine().getStatusCode();
                 Logy.d(LOGGER_TAG, String.format("status code %s", statusCode));
                 return statusCode == HttpStatus.SC_NO_CONTENT || statusCode == HttpStatus.SC_OK;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 Logy.w(LOGGER_TAG, "Cannot send request", e);
             }
         }

@@ -84,12 +84,12 @@ public enum QueryParams {
      */
     TOTAL_NUMBER_OF_VISITS("_idvc"),
     /**
-     * The UNIX timestamp of this visitor's previous visit.<p>
+     * The UNIX timestamp of this visitor's previous visit (seconds since Jan 01 1970. (UTC)).<p>
      * This parameter is used to populate the report Visitors > Engagement > Visits by days since last visit.
      */
     PREVIOUS_VISIT_TIMESTAMP("_viewts"),
     /**
-     * The UNIX timestamp of this visitor's first visit.<p>
+     * The UNIX timestamp of this visitor's first visit (seconds since Jan 01 1970. (UTC)).<p>
      * This could be set to the date where the user first started using your software/app, or when he/she created an account.
      * This parameter is used to populate the Goals > Days to Conversion report.
      */
