@@ -14,34 +14,21 @@ Integrating Piwik into your Android app
  
 1. [Install Piwik](http://piwik.org/docs/installation/)
 2. [Create a new website in the Piwik web interface](http://piwik.org/docs/manage-websites/). Copy the Website ID from "Settings > Websites".
-3. [Update AndroidManifest.xml](#update-manifest).
-4. Put [JAR file](#jar) into your `lib` folder.
-5. [Initialize Tracker](#initialize-tracker).
-6. [Track screen views, exceptions, goals and more](#tracker-usage).
-7. [Advanced tracker usage](#advanced-tracker-usage)
+3. [Include the library](#include-library)
+4. [Initialize Tracker](#initialize-tracker).
+5. [Track screen views, exceptions, goals and more](#tracker-usage).
+6. [Advanced tracker usage](#advanced-tracker-usage)
 
 
-### Update Manifest
+### Include library
+Add this to your apps build.gradle file:
 
-Update your `AndroidManifest.xml` file by adding the following permissions:
+```java
 
-```xml
-
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+compile 'org.piwik.sdk:piwik-sdk-android:0.0.2'
 ```
 
-### Jar
-
-Download [latest JAR](https://github.com/piwik/piwik-sdk-android/raw/master/piwik_sdk/jar/PiwikAndroidSdk.jar)
-or build it by yourself from the sources by only gradle command.
-
-```
-
-./gradlew :piwik_sdk:makeJar
-```
-
-The _.jar_ will be saved in **piwik_sdk/jar/PiwikAndroidSdk-##HEAD_GITSHA##.jar**
+[ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion)
 
 ### Initialize Tracker
 
