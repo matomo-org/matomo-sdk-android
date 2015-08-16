@@ -8,6 +8,6 @@ android:
     - extra-android-support
     - extra-android-m2repository
 
-script: ./gradlew :piwik_sdk:assemble :piwik_sdk:test
+script: ./gradlew :piwik-sdk:assemble :piwik-sdk:test
 
-after_success: ./gradlew :piwik_sdk:jacocoTestReport coveralls  --info
+after_success: ./gradlew :piwik-sdk:jacocoTestReport coveralls  --info

@@ -13,7 +13,7 @@ ext {
 
     publishedGroupId = 'org.piwik.sdk'
     libraryName = 'Piwik SDK for Android'
-    artifact = 'piwik-sdk-android'
+    artifact = 'piwik-sdk'
 
     libraryDescription = 'SDK for Android to measure your apps with Piwik '
 

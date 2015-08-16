@@ -11,13 +11,13 @@ In order to compile demo app by yourself proceed following steps:
 * Install and configure [Android Studio 0.8.6+](http://developer.android.com/sdk/installing/studio.html) and [Android SDK Packages](http://developer.android.com/sdk/installing/adding-packages.html) 
 * Clone Piwik Android SDK repo `git clone git@github.com:piwik/piwik-sdk-android.git`
 * Open cloned folder in Android Studio as new project and configure Gradle
-* In terminal run `./gradlew :demo_app:assembleDebug`
-* Copy .apk from `demo_app/build/outputs/apk/demo_app-debug.apk` to Your device and open it
+* In terminal run `./gradlew :exampleapp:assembleDebug`
+* Copy .apk from `exampleapp/build/outputs/apk/exampleapp-debug.apk` to Your device and open it
     
 If You want to run application:
 
 * configure Android Emulator in AVD Manager (Ensure You've downloaded ARM System image and Builds Tools in SDK Manager)
-* run "demo_app" by clicking __play__ icon or "Ctr+Shift+A"
+* run "exampleapp" by clicking __play__ icon or "Ctr+Shift+A"
 
 
 ## Screenshots

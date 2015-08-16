@@ -25,7 +25,7 @@ Add this to your apps build.gradle file:
 
 ```java
 
-compile 'org.piwik.sdk:piwik-sdk-android:0.0.2'
+compile 'org.piwik.sdk:piwik-sdk:0.0.2'
 ```
 
 
@@ -34,8 +34,8 @@ compile 'org.piwik.sdk:piwik-sdk-android:0.0.2'
 #### Basic
 
 You can simply extend your application with a 
-[``PiwikApplication``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/PiwikApplication.java) class. 
-[This approach is used](https://github.com/piwik/piwik-sdk-android/blob/master/demo_app/src/main/java/com/piwik/demo/DemoApp.java) in our demo app.
+[``PiwikApplication``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/PiwikApplication.java) class.
+[This approach is used](https://github.com/piwik/piwik-sdk-android/blob/master/exampleapp/src/main/java/com/piwik/demo/DemoApp.java) in our demo app.
 
 #### Advanced
 
@@ -210,7 +210,7 @@ Here is the design document written by Thomas to give a brief overview of the SD
 
 Piwik SDK should work fine with Android API Version >= 7 (Android 2.1.x)
 
-Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
+Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
  method is available on API level >= 14.
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
@@ -220,17 +220,17 @@ Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/
 Following command will clean, build, test, generate documentation, do coverage reports and then create a jar.
 
 ```
-$ ./gradlew :piwik_sdk:clean :piwik_sdk:assemble :piwik_sdk:test :piwik_sdk:jacocoTestReport :piwik_sdk:generateReleaseJavadoc :piwik_sdk:coveralls --info :piwik_sdk:makeJar
+$ ./gradlew :piwik-sdk:clean :piwik-sdk:assemble :piwik-sdk:test :piwik-sdk:jacocoTestReport :piwik-sdk:generateReleaseJavadoc :piwik-sdk:coveralls --info :piwik-sdk:makeJar
 ```
 
 
-* Coverage output _./piwik_sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
-* Tests report _./piwik_sdk/build/test-report/debug/index.html_
-* Javadoc _./piwik_sdk/build/docs/javadoc/index.html_
+* Coverage output _./piwik-sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
+* Tests report _./piwik-sdk/build/test-report/debug/index.html_
+* Javadoc _./piwik-sdk/build/docs/javadoc/index.html_
 
 ## Demo application
 
-Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/demo_app) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/demo_app/demo_app-debug.apk).
+Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/exampleapp/exampleapp-debug.apk).
 
 ## Contribute
 
