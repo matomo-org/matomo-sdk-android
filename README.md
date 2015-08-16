@@ -1,7 +1,7 @@
 Piwik SDK for Android
 ========================
 
-[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android)
+[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android) [ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion)
 
 This document describes how to get started using the Piwik Tracking SDK for Android. 
 [Piwik](http://piwik.org) is the leading open source web analytics platform 
@@ -28,7 +28,6 @@ Add this to your apps build.gradle file:
 compile 'org.piwik.sdk:piwik-sdk-android:0.0.2'
 ```
 
-[ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion)
 
 ### Initialize Tracker
 
