@@ -1,7 +1,7 @@
 Piwik SDK for Android
 ========================
 
-[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android)
+[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android) [ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion)
 
 This document describes how to get started using the Piwik Tracking SDK for Android. 
 [Piwik](http://piwik.org) is the leading open source web analytics platform 
@@ -14,42 +14,28 @@ Integrating Piwik into your Android app
  
 1. [Install Piwik](http://piwik.org/docs/installation/)
 2. [Create a new website in the Piwik web interface](http://piwik.org/docs/manage-websites/). Copy the Website ID from "Settings > Websites".
-3. [Update AndroidManifest.xml](#update-manifest).
-4. Put [JAR file](#jar) into your `lib` folder.
-5. [Initialize Tracker](#initialize-tracker).
-6. [Track screen views, exceptions, goals and more](#tracker-usage).
-7. [Advanced tracker usage](#advanced-tracker-usage)
+3. [Include the library](#include-library)
+4. [Initialize Tracker](#initialize-tracker).
+5. [Track screen views, exceptions, goals and more](#tracker-usage).
+6. [Advanced tracker usage](#advanced-tracker-usage)
 
 
-### Update Manifest
+### Include library
+Add this to your apps build.gradle file:
 
-Update your `AndroidManifest.xml` file by adding the following permissions:
+```java
 
-```xml
-
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+compile 'org.piwik.sdk:piwik-sdk:0.0.2'
 ```
 
-### Jar
-
-Download [latest JAR](https://github.com/piwik/piwik-sdk-android/raw/master/piwik_sdk/jar/PiwikAndroidSdk.jar)
-or build it by yourself from the sources by only gradle command.
-
-```
-
-./gradlew :piwik_sdk:makeJar
-```
-
-The _.jar_ will be saved in **piwik_sdk/jar/PiwikAndroidSdk-##HEAD_GITSHA##.jar**
 
 ### Initialize Tracker
 
 #### Basic
 
 You can simply extend your application with a 
-[``PiwikApplication``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/PiwikApplication.java) class. 
-[This approach is used](https://github.com/piwik/piwik-sdk-android/blob/master/demo_app/src/main/java/com/piwik/demo/DemoApp.java) in our demo app.
+[``PiwikApplication``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/PiwikApplication.java) class.
+[This approach is used](https://github.com/piwik/piwik-sdk-android/blob/master/exampleapp/src/main/java/com/piwik/demo/DemoApp.java) in our demo app.
 
 #### Advanced
 
@@ -224,7 +210,7 @@ Here is the design document written by Thomas to give a brief overview of the SD
 
 Piwik SDK should work fine with Android API Version >= 7 (Android 2.1.x)
 
-Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik_sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
+Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
  method is available on API level >= 14.
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
@@ -234,17 +220,17 @@ Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/
 Following command will clean, build, test, generate documentation, do coverage reports and then create a jar.
 
 ```
-$ ./gradlew :piwik_sdk:clean :piwik_sdk:assemble :piwik_sdk:test :piwik_sdk:jacocoTestReport :piwik_sdk:generateReleaseJavadoc :piwik_sdk:coveralls --info :piwik_sdk:makeJar
+$ ./gradlew :piwik-sdk:clean :piwik-sdk:assemble :piwik-sdk:test :piwik-sdk:jacocoTestReport :piwik-sdk:generateReleaseJavadoc :piwik-sdk:coveralls --info :piwik-sdk:makeJar
 ```
 
 
-* Coverage output _./piwik_sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
-* Tests report _./piwik_sdk/build/test-report/debug/index.html_
-* Javadoc _./piwik_sdk/build/docs/javadoc/index.html_
+* Coverage output _./piwik-sdk/build/reports/jacoco/jacocoTestReport/html/index.html_
+* Tests report _./piwik-sdk/build/test-report/debug/index.html_
+* Javadoc _./piwik-sdk/build/docs/javadoc/index.html_
 
 ## Demo application
 
-Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/demo_app) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/demo_app/demo_app-debug.apk).
+Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/exampleapp/exampleapp-debug.apk).
 
 ## Contribute
 

@@ -4,6 +4,33 @@ def gitSha() {
 
 apply plugin: 'com.android.library'
 
+def myVersionName = "0.0.2"
+def myVersionCode = 2
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'piwik-sdk-android'
+
+    publishedGroupId = 'org.piwik.sdk'
+    libraryName = 'Piwik SDK for Android'
+    artifact = 'piwik-sdk'
+
+    libraryDescription = 'SDK for Android to measure your apps with Piwik '
+
+    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
+    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
+
+    libraryVersion = myVersionName
+
+    developerId = 'darken'
+    developerName = 'Matthias Urhahn'
+    developerEmail = 'darken@darken.eu'
+
+    licenseName = 'BSD-3 Clause'
+    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
+    allLicenses = ["BSD 3-Clause"]
+}
+
 android {
     compileSdkVersion 22
     buildToolsVersion '22.0.1'
@@ -11,8 +38,8 @@ android {
     defaultConfig {
         minSdkVersion 10
         targetSdkVersion 22
-        versionCode 1
-        versionName '0.0.1'
+        versionCode myVersionCode
+        versionName myVersionName
     }
 }
 
@@ -76,11 +103,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:1.0.2'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
+task jacocoTestReport(type: JacocoReport, dependsOn: "connectedAndroidTest") {
     reports {
         xml.enabled = true
         html.enabled = true
@@ -125,3 +152,6 @@ android.libraryVariants.all { variant ->
         exclude '**/R.java'
     }
 }
+
+//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
