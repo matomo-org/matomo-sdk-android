@@ -13,8 +13,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
+import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.tools.Checksum;
+import org.piwik.sdk.tools.CurrencyFormatter;
 import org.piwik.sdk.tools.DeviceHelper;
 import org.piwik.sdk.tools.Logy;
 
@@ -71,6 +74,7 @@ public class Tracker {
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
 
     private final TrackMe mDefaultTrackMe = new TrackMe();
+    private final EcommerceItems ecommerceItems = new EcommerceItems();
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -524,6 +528,97 @@ public class Tracker {
                 .set(QueryParams.CONTENT_PIECE, contentPiece)
                 .set(QueryParams.CONTENT_TARGET, contentTarget)
                 .set(QueryParams.CONTENT_INTERACTION, interaction));
+    }
+
+    /**
+     * Adds a product into the ecommerce order. Must be called for each product in the order.
+     * If the same sku is used twice, the first item is overwritten.
+     *
+     * @param sku  (required) Unique identifier for the product
+     * @param name (optional) Product name
+     * @param category (optional) Product category
+     * @param price (optional) Price of the product in cents
+     * @param quantity (optional) Quantity
+     */
+    public void addEcommerceItem(String sku, @Nullable String name, @Nullable String category, @Nullable Integer price, @Nullable Integer quantity) {
+        //Set to reasonable default values
+        if (name == null) {
+            name = "";
+        }
+        if (category == null) {
+            category = "";
+        }
+        if (price == null) {
+            price = 0;
+        }
+        if (quantity == null) {
+            quantity = 1;
+        }
+        ecommerceItems.addItem(sku, name, category, price, quantity);
+    }
+
+    /**
+     * Remove a product from an ecommerce order.
+     * @param sku unique identifier for the product
+     */
+    public void removeEcommerceItem(String sku) {
+        ecommerceItems.removeItem(sku);
+    }
+
+    /**
+     * Clears all items from the ecommerce order
+     */
+    public void clearEcommerceItems() {
+        ecommerceItems.removeAll();
+    }
+
+    /**
+     * Tracks a shopping cart. Call this javascript function every time a user is adding, updating
+     * or deleting a product from the cart.
+     *
+     * @param grandTotal  total value of items in cart
+     */
+    public void trackEcommerceCartUpdate(int grandTotal){
+        track(new TrackMe()
+                .set(QueryParams.GOAL_ID, 0)
+                .set(QueryParams.REVENUE, CurrencyFormatter.priceString(grandTotal))
+                .set(QueryParams.ECOMMERCE_ITEMS, ecommerceItems.toJson()));
+    }
+
+    /**
+     * Tracks an Ecommerce order, including any ecommerce item previously added to the order.  All
+     * monetary values should be passed as an integer number of cents (or the smallest integer unit
+     * for your currency)
+     * @param orderId (required) A unique string identifying the order
+     * @param grandTotal (required) total amount of the order, in cents
+     * @param subTotal (optional) the subTotal for the order, in cents
+     * @param tax (optional) the tax for the order, in cents
+     * @param shipping (optional) the shipping for the order, in cents
+     * @param discount (optional) the discount for the order, in cents
+     */
+    public void trackEcommerceOrder(String orderId, Integer grandTotal, @Nullable Integer subTotal, @Nullable Integer tax, @Nullable Integer shipping, @Nullable Integer discount) {
+        TrackMe trackMe = new TrackMe()
+                .set(QueryParams.GOAL_ID, 0)
+                .set(QueryParams.ORDER_ID, orderId)
+                .set(QueryParams.REVENUE, CurrencyFormatter.priceString(grandTotal))
+                .set(QueryParams.ECOMMERCE_ITEMS, ecommerceItems.toJson());
+
+        if(subTotal != null) {
+            trackMe.set(QueryParams.SUBTOTAL, CurrencyFormatter.priceString(subTotal));
+        }
+
+        if (tax != null) {
+            trackMe.set(QueryParams.TAX, CurrencyFormatter.priceString(tax));
+        }
+
+        if(shipping != null) {
+            trackMe.set(QueryParams.SHIPPING, CurrencyFormatter.priceString(shipping));
+        }
+
+        if(discount != null) {
+            trackMe.set(QueryParams.DISCOUNT, CurrencyFormatter.priceString(discount));
+        }
+        track(trackMe);
     }
 
     /**

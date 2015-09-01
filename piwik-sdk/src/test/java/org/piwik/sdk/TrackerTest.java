@@ -523,6 +523,57 @@ public class TrackerTest {
     }
 
     @Test
+    public void testTrackEcommerceCartUpdate() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.addEcommerceItem("fake_sku", "fake_product", "fake_category", 200, 2);
+        tracker.addEcommerceItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        tracker.trackEcommerceCartUpdate(50000);
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "500.00");
+        assertEquals(queryParams.get(QueryParams.ECOMMERCE_ITEMS), "[[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"],[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]]");
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackEcommerceOrder() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.addEcommerceItem("fake_sku", "fake_product", "fake_category", 200, 2);
+        tracker.addEcommerceItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        tracker.trackEcommerceOrder("orderId", 10020, 7002, 2000, 1000, 0);
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
+        assertEquals(queryParams.get(QueryParams.ORDER_ID), "orderId");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "100.20");
+        assertEquals(queryParams.get(QueryParams.SUBTOTAL), "70.02");
+        assertEquals(queryParams.get(QueryParams.TAX), "20.00");
+        assertEquals(queryParams.get(QueryParams.SHIPPING), "10.00");
+        assertEquals(queryParams.get(QueryParams.DISCOUNT), "0.00");
+
+        assertEquals(queryParams.get(QueryParams.ECOMMERCE_ITEMS), "[[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"],[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]]");
+    }
+
+    @Test
+    public void testRemoveEcommerceItem() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.addEcommerceItem("fake_sku", "fake_product", "fake_category", 200, 2);
+        tracker.addEcommerceItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        tracker.removeEcommerceItem("fake_sku");
+
+        tracker.trackEcommerceCartUpdate(50000);
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "500.00");
+        assertEquals(queryParams.get(QueryParams.ECOMMERCE_ITEMS), "[[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]]");
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
     public void testTrackException() throws Exception {
         Tracker tracker = createTracker();
         Exception catchedException;

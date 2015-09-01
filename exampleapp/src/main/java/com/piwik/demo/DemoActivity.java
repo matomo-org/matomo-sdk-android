@@ -20,11 +20,16 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.Logy;
 import org.piwik.sdk.TrackMe;
 
+import java.util.Arrays;
+import java.util.List;
+
 
 public class DemoActivity extends ActionBarActivity {
+    int cartItems = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,6 +154,43 @@ public class DemoActivity extends ActionBarActivity {
                     revenue = 0;
                 }
                 ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
+            }
+        });
+
+        //ecommerce tracking
+        button = (Button) findViewById(R.id.trackEcommerceButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                tracker.trackEcommerceCartUpdate(8600);
+            }
+        });
+
+        button = (Button) findViewById(R.id.addEcommerceItemButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<String> skus = Arrays.asList("00001", "00002", "00003", "00004");
+                List<String> names = Arrays.asList("Silly Putty", "Fishing Rod", "Rubber Boots", "Cool Ranch Doritos");
+                List<String> categories = Arrays.asList("Toys & Games", "Hunting & Fishing", "Footwear", "Grocery");
+                List<Integer> prices = Arrays.asList(449, 3495, 2450, 250);
+
+                int index = cartItems % 4;
+                int quantity = (cartItems / 4) + 1;
+
+                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                tracker.addEcommerceItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
+                cartItems++;
+            }
+        });
+
+        button = (Button) findViewById(R.id.completeEcommerceOrderButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                tracker.trackEcommerceOrder(String.valueOf(10000*Math.random()), 10000, 1000, 2000, 3000, 500);
             }
         });
 
