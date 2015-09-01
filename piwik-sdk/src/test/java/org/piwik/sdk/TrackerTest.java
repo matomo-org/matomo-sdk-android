@@ -4,6 +4,7 @@ import android.app.Application;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -533,7 +534,13 @@ public class TrackerTest {
 
         assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
         assertEquals(queryParams.get(QueryParams.REVENUE), "500.00");
-        assertEquals(queryParams.get(QueryParams.ECOMMERCE_ITEMS), "[[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"],[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]]");
+
+        String ecommerceItemsJson = queryParams.get(QueryParams.ECOMMERCE_ITEMS);
+
+        new JSONArray(ecommerceItemsJson); // will throw exception if not valid json
+
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"]"));
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]"));
         validateDefaultQuery(queryParams);
     }
 
@@ -553,7 +560,13 @@ public class TrackerTest {
         assertEquals(queryParams.get(QueryParams.SHIPPING), "10.00");
         assertEquals(queryParams.get(QueryParams.DISCOUNT), "0.00");
 
-        assertEquals(queryParams.get(QueryParams.ECOMMERCE_ITEMS), "[[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"],[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]]");
+        String ecommerceItemsJson = queryParams.get(QueryParams.ECOMMERCE_ITEMS);
+
+        new JSONArray(ecommerceItemsJson); // will throw exception if not valid json
+
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"]"));
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]"));
+        validateDefaultQuery(queryParams);
     }
 
     @Test
