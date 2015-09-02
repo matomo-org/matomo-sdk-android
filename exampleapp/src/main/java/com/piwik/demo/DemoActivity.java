@@ -20,9 +20,10 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.Tracker;
-import org.piwik.sdk.tools.Logy;
 import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
+import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,12 +31,13 @@ import java.util.List;
 
 public class DemoActivity extends ActionBarActivity {
     int cartItems = 0;
+    private EcommerceItems items;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
-
+        items = new EcommerceItems();
         initPiwik();
     }
 
@@ -158,15 +160,6 @@ public class DemoActivity extends ActionBarActivity {
         });
 
         //ecommerce tracking
-        button = (Button) findViewById(R.id.trackEcommerceButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-                tracker.trackEcommerceCartUpdate(8600);
-            }
-        });
-
         button = (Button) findViewById(R.id.addEcommerceItemButton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,9 +172,17 @@ public class DemoActivity extends ActionBarActivity {
                 int index = cartItems % 4;
                 int quantity = (cartItems / 4) + 1;
 
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-                tracker.addEcommerceItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
+                items.addItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
                 cartItems++;
+            }
+        });
+
+        button = (Button) findViewById(R.id.trackEcommerceCartUpdateButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+                tracker.trackEcommerceCartUpdate(8600, items);
             }
         });
 
@@ -190,7 +191,7 @@ public class DemoActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-                tracker.trackEcommerceOrder(String.valueOf(10000*Math.random()), 10000, 1000, 2000, 3000, 500);
+                tracker.trackEcommerceOrder(String.valueOf(10000 * Math.random()), 10000, 1000, 2000, 3000, 500, items);
             }
         });
 

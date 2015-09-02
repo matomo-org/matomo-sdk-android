@@ -7,43 +7,73 @@
 
 package org.piwik.sdk.ecommerce;
 
+import android.support.annotation.Nullable;
+
+import org.json.JSONArray;
 import org.piwik.sdk.tools.CurrencyFormatter;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class EcommerceItems {
-    public Map<String, List<String>> items = new HashMap<>();
+    public Map<String, JSONArray> items = new HashMap<>();
 
-    public void addItem(String sku, String name, String category, int price, int quantity) {
-        List<String> item = Arrays.asList(sku, name, category, CurrencyFormatter.priceString(price), "" + quantity);
+
+    /**
+     * Adds a product into the ecommerce order. Must be called for each product in the order.
+     * If the same sku is used twice, the first item is overwritten.
+     *
+     * @param sku      (required) Unique identifier for the product
+     * @param name     (optional) Product name
+     * @param category (optional) Product category
+     * @param price    (optional) Price of the product in cents
+     * @param quantity (optional) Quantity
+     */
+    public void addItem(String sku, @Nullable String name, @Nullable String category, @Nullable Integer price, @Nullable Integer quantity) {
+        if (name == null) {
+            name = "";
+        }
+        if (category == null) {
+            category = "";
+        }
+        if (price == null) {
+            price = 0;
+        }
+        if (quantity == null) {
+            quantity = 1;
+        }
+
+        JSONArray item = new JSONArray();
+        item.put(sku);
+        item.put(name);
+        item.put(category);
+        item.put(CurrencyFormatter.priceString(price));
+        item.put(quantity.toString());
         items.put(sku, item);
     }
 
-    public String toJson() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[");
-        for( List<String> item : items.values() ) {
-            builder.append("[");
-            for (String attribute : item) {
-                builder.append("\"").append(attribute).append("\",");
-            }
-            builder.deleteCharAt(builder.length() - 1);
-            builder.append("],");
-        }
-        builder.deleteCharAt(builder.length()-1);
-        builder.append("]");
-
-        return builder.toString();
-    }
-
+    /**
+     * Remove a product from an ecommerce order.
+     *
+     * @param sku unique identifier for the product
+     */
     public void removeItem(String sku) {
         items.remove(sku);
     }
 
+    /**
+     * Clears all items from the ecommerce order
+     */
     public void removeAll() {
         items.clear();
+    }
+
+    public String toJson() {
+        JSONArray jsonItems = new JSONArray();
+
+        for (JSONArray item : items.values()) {
+            jsonItems.put(item);
+        }
+        return jsonItems.toString();
     }
 }
