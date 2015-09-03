@@ -9,8 +9,6 @@ package org.piwik.sdk;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.piwik.sdk.Piwik;
-import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;

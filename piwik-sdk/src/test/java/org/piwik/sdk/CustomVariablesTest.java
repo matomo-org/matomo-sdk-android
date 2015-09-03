@@ -2,6 +2,7 @@ package org.piwik.sdk;
 
 import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
@@ -23,10 +25,11 @@ public class CustomVariablesTest {
         cv.put(1, "name", "value");
         cv.put(2, "name2", "uńicódę");
 
-        assertEquals(
-                "{\"2\":[\"name2\",\"uńicódę\"],\"1\":[\"name\",\"value\"]}",
-                cv.toString()
-        );
+        String cvJson = cv.toString();
+        new JSONObject(cvJson); //Will throw exception if not valid json
+
+        assertTrue(cvJson.contains("\"2\":[\"name2\",\"uńicódę\"]"));
+        assertTrue(cvJson.contains("\"1\":[\"name\",\"value\"]"));
     }
 
     @Test
