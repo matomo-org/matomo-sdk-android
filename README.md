@@ -145,6 +145,24 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 ((YourApplication) getApplication()).getTracker().trackAppDownload();
 ```
 
+#### Ecommerce
+
+Piwik provides ecommerce analytics that let you measure items added to carts,
+and learn detailed metrics about abandoned carts and purchased orders.
+
+To track an Ecommerce order use `trackEcommerceOrder` method.
+`orderId` and `grandTotal` (ie. revenue) are required parameters.
+
+```java
+
+Tracker tracker = ((YourApplication) getApplication()).getTracker();
+EcommerceItems items = new EcommerceItems();
+items.addItem("sku", "product", "category", 200, 2);
+items.addItem("sku", "product2", "category2", 400, 3);
+// grandTotal, subTotal, tax, shipping, discount, EcommerceItems
+tracker.trackEcommerceOrder("orderId", 10000, 7000, 2000, 1000, 0, items);
+```
+
 ### Advanced tracker usage
 
 #### Custom queries
