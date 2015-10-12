@@ -272,6 +272,36 @@ public enum QueryParams {
      */
     EVENT_VALUE("e_v"),
 
+    // Ecommerce parameters
+    /**
+     * Items in your cart or order for ecommerce tracking
+     */
+    ECOMMERCE_ITEMS("ec_items"),
+
+    /**
+     * The amount of tax paid for the order
+     */
+    TAX("ec_tx"),
+
+    /**
+     * The unique identifier for the order
+     */
+    ORDER_ID("ec_id"),
+
+    /**
+     * The amount of shipping paid on the order
+     */
+    SHIPPING("ec_sh"),
+
+    /**
+     * The amount of the discount on the order
+     */
+    DISCOUNT("ec_dt"),
+
+    /**
+     * The sub total amount of the order
+     */
+    SUBTOTAL("ec_st"),
 
     // Other parameters
     /**

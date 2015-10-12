@@ -4,8 +4,8 @@ def gitSha() {
 
 apply plugin: 'com.android.library'
 
-def myVersionName = "0.0.2"
-def myVersionCode = 2
+def myVersionName = "0.0.3"
+def myVersionCode = 3
 
 ext {
     bintrayRepo = 'maven'

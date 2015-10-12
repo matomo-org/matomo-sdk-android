@@ -39,6 +39,31 @@
             android:id="@+id/trackGoalButton"
             android:layout_below="@+id/raiseExceptionButton" android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Ecommerce Item"
+        android:id="@+id/addEcommerceItemButton"
+        android:layout_below="@+id/trackGoalButton" android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Track Ecommerce Cart Update"
+        android:id="@+id/trackEcommerceCartUpdateButton"
+        android:layout_below="@+id/addEcommerceItemButton" android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Track Ecommerce Order"
+        android:id="@+id/completeEcommerceOrderButton"
+        android:layout_below="@+id/trackEcommerceCartUpdateButton" android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
+
     <EditText
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

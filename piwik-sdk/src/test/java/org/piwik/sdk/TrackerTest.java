@@ -4,9 +4,11 @@ import android.app.Application;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -519,6 +521,54 @@ public class TrackerTest {
         assertEquals(queryParams.get(QueryParams.CONTENT_NAME), name);
         assertEquals(queryParams.get(QueryParams.CONTENT_PIECE), "test");
         assertEquals(queryParams.get(QueryParams.CONTENT_TARGET), "test2");
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackEcommerceCartUpdate() throws Exception {
+        Tracker tracker = createTracker();
+        EcommerceItems items = new EcommerceItems();
+        items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
+        items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        tracker.trackEcommerceCartUpdate(50000, items);
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "500.00");
+
+        String ecommerceItemsJson = queryParams.get(QueryParams.ECOMMERCE_ITEMS);
+
+        new JSONArray(ecommerceItemsJson); // will throw exception if not valid json
+
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"]"));
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]"));
+        validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackEcommerceOrder() throws Exception {
+        Tracker tracker = createTracker();
+        EcommerceItems items = new EcommerceItems();
+        items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
+        items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        tracker.trackEcommerceOrder("orderId", 10020, 7002, 2000, 1000, 0, items);
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
+        assertEquals(queryParams.get(QueryParams.ORDER_ID), "orderId");
+        assertEquals(queryParams.get(QueryParams.REVENUE), "100.20");
+        assertEquals(queryParams.get(QueryParams.SUBTOTAL), "70.02");
+        assertEquals(queryParams.get(QueryParams.TAX), "20.00");
+        assertEquals(queryParams.get(QueryParams.SHIPPING), "10.00");
+        assertEquals(queryParams.get(QueryParams.DISCOUNT), "0.00");
+
+        String ecommerceItemsJson = queryParams.get(QueryParams.ECOMMERCE_ITEMS);
+
+        new JSONArray(ecommerceItemsJson); // will throw exception if not valid json
+
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku\",\"fake_product\",\"fake_category\",\"2.00\",\"2\"]"));
+        assertTrue(ecommerceItemsJson.contains("[\"fake_sku_2\",\"fake_product_2\",\"fake_category_2\",\"4.00\",\"3\"]"));
         validateDefaultQuery(queryParams);
     }
 
