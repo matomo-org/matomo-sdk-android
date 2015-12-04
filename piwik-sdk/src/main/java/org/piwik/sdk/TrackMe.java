@@ -20,6 +20,14 @@ public class TrackMe {
     private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
     private final CustomVariables mScreenCustomVariable = new CustomVariables();
 
+    protected synchronized TrackMe set(@NonNull String key, String value) {
+        if (value == null)
+            mQueryParams.remove(key);
+        else if (value.length() > 0)
+            mQueryParams.put(key, value);
+        return this;
+    }
+
     /**
      * You can set any additional Tracking API Parameters within the SDK.
      * This includes for example the local time (parameters h, m and s).
@@ -34,10 +42,7 @@ public class TrackMe {
      * @return tracker instance
      */
     public synchronized TrackMe set(@NonNull QueryParams key, String value) {
-        if (value == null)
-            mQueryParams.remove(key.toString());
-        else if (value.length() > 0)
-            mQueryParams.put(key.toString(), value);
+        set(key.toString(), value);
         return this;
     }
 

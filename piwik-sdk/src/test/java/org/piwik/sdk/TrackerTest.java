@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.plugins.CustomDimensions;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -832,6 +833,33 @@ public class TrackerTest {
         tracker.track(custom);
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(1000l, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+    }
+
+    @Test
+    public void testSetCustomDimensions() throws Exception {
+        CustomDimensions customDimensions = new CustomDimensions();
+        customDimensions.set(0, "foo");
+        customDimensions.set(1, "foo");
+        customDimensions.set(2, "bar");
+        customDimensions.set(3, "empty").set(3, null);
+        customDimensions.set(4, "");
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(customDimensions.build());
+
+        assertEquals(queryParams.get("dimension1"), "foo");
+        assertEquals(queryParams.get("dimension2"), "bar");
+        assertFalse(queryParams.containsKey("dimension0"));
+        assertFalse(queryParams.containsKey("dimension3"));
+        assertFalse(queryParams.containsKey("dimension4"));
+    }
+
+    @Test
+    public void testSetCustomDimensionsMaxLength() throws Exception {
+        CustomDimensions customDimensions = new CustomDimensions();
+        customDimensions.set(1, new String(new char[1000]));
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(customDimensions.build());
+        assertEquals(queryParams.get("dimension1").length(), 255);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
