@@ -1,7 +1,7 @@
 Piwik SDK for Android
 ========================
 
-[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android) [ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion)
+[![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android) [ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion) [![Coverage Status](https://coveralls.io/repos/piwik/piwik-sdk-android/badge.svg?branch=master&service=github)](https://coveralls.io/github/piwik/piwik-sdk-android?branch=master)
 
 This document describes how to get started using the Piwik Tracking SDK for Android. 
 [Piwik](http://piwik.org) is the leading open source web analytics platform 
@@ -121,7 +121,7 @@ Read more about what is a [Goal in Piwik](http://piwik.org/docs/tracking-goals-w
 #### Track custom vars
 
 To track a custom name-value pair assigned to your users or screen views use 
-[setUserCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setUserCustomVariable(int, java.lang.String, java.lang.String))
+[setVisitCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/Tracker.html#setVisitCustomVariable(int, java.lang.String, java.lang.String))
 and
 [setScreenCustomVariable](http://piwik.github.io/piwik-sdk-android/org/piwik/sdk/TrackMe.html#setScreenCustomVariable(int, java.lang.String, java.lang.String))
 methods. Those methods have to be called before a call to [trackScreenView](#track-screen-views).
@@ -131,7 +131,7 @@ More about [custom variables on piwik.org](http://piwik.org/docs/custom-variable
 ```java
 
 Tracker tracker = ((YourApplication) getApplication()).getTracker();
-tracker.setUserCustomVariable(2, 'Age', '99');
+tracker.setVisitCustomVariable(2, 'Age', '99');
 tracker.trackScreenView(new TrackMe().setScreenCustomVariable(2, 'Price', '0.99'), '/path');
 ```
 
