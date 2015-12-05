@@ -47,7 +47,7 @@ dependencies {
     repositories {
         mavenCentral()
     }
-    compile 'com.android.support:support-annotations:21.0.0'
+    compile 'com.android.support:support-annotations:22.2.1'
     // Espresso
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.0')
     androidTestCompile('com.android.support.test:testing-support-lib:0.1')
@@ -103,11 +103,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1x'
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: "connectedAndroidTest") {
+task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {
     reports {
         xml.enabled = true
         html.enabled = true
@@ -123,7 +123,7 @@ task jacocoTestReport(type: JacocoReport, dependsOn: "connectedAndroidTest") {
     sourceDirectories = files([
             'src/main/java',
     ])
-    executionData = files('build/jacoco/testDebug.exec')
+    executionData = files('build/jacoco/testDebugUnitTest.exec')
 }
 
 coveralls {
