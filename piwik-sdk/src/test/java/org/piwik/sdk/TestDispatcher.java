@@ -56,8 +56,8 @@ public class TestDispatcher {
 
     @Test
     public void testSessionStartRaceCondition() throws Exception {
-        for (int i = 0; i < 50; i++) {
-            Log.d("RaceConditionTest",  (50 - i) + " race-condition tests to go.");
+        for (int i = 0; i < 10; i++) {
+            Log.d("RaceConditionTest",  (10 - i) + " race-condition tests to go.");
             getPiwik().setDryRun(true);
             final Tracker tracker = createTracker();
             tracker.setDispatchInterval(0);
@@ -65,6 +65,7 @@ public class TestDispatcher {
             final int queryCount = 3;
             final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
             launchTestThreads(tracker, threadCount, queryCount, createdEvents);
+            Thread.sleep(500);
             checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
             List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             for (String out : output) {
@@ -86,8 +87,8 @@ public class TestDispatcher {
         final Tracker tracker = createTracker();
         tracker.setDispatchInterval(20);
 
-        final int threadCount = 100;
-        final int queryCount = 1000;
+        final int threadCount = 20;
+        final int queryCount = 100;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
 
@@ -114,16 +115,16 @@ public class TestDispatcher {
     @Test
     public void testBatchDispatch() throws Exception {
         final Tracker tracker = createTracker();
-        tracker.setDispatchInterval(1000);
+        tracker.setDispatchInterval(1500);
 
-        final int threadCount = 10;
-        final int queryCount = 10;
+        final int threadCount = 5;
+        final int queryCount = 5;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(tracker, threadCount, queryCount, createdEvents);
-        Thread.sleep(500);
+        Thread.sleep(1000);
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, tracker.getDispatcher().getDryRunOutput().size());
-        Thread.sleep(500);
+        Thread.sleep(1000);
 
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
@@ -132,8 +133,8 @@ public class TestDispatcher {
     public void testRandomDispatchIntervals() throws Exception {
         final Tracker tracker = createTracker();
 
-        final int threadCount = 100;
-        final int queryCount = 1000;
+        final int threadCount = 10;
+        final int queryCount = 100;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
 
         new Thread(new Runnable() {
