@@ -72,9 +72,9 @@ public class Dispatcher {
     }
 
     /**
-     * Connection timeout in miliseconds
+     * Connection timeout in milliseconds
      *
-     * @return
+     * @return timeout in milliseconds
      */
     public int getTimeOut() {
         return mTimeOut;
@@ -107,12 +107,14 @@ public class Dispatcher {
 
     /**
      * Starts the dispatcher for one cycle if it is currently not working.
-     * If the dispatcher is working it will skip the dispatch intervall once.
+     * If the dispatcher is working it will skip the dispatch interval once.
      */
-    public void forceDispatch() {
+    public boolean forceDispatch() {
         if (!launch()) {
             mSleepToken.release();
+            return false;
         }
+        return true;
     }
 
     public void submit(String query) {
@@ -163,14 +165,14 @@ public class Dispatcher {
         }
     };
 
-    private boolean doGet(String trackingEndPointUrl) {
+    protected boolean doGet(String trackingEndPointUrl) {
         if (trackingEndPointUrl == null)
             return false;
         HttpGet get = new HttpGet(trackingEndPointUrl);
         return doRequest(get);
     }
 
-    private boolean doPost(URL url, JSONObject json) {
+    protected boolean doPost(URL url, JSONObject json) {
         if (url == null || json == null)
             return false;
 

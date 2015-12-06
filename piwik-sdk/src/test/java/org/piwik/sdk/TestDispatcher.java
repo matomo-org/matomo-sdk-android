@@ -21,6 +21,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +53,44 @@ public class TestDispatcher {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(false);
         Piwik.getInstance(Robolectric.application).setDebug(false);
+    }
+
+    @Test
+    public void testSetTimeout() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setTimeOut(100);
+        assertEquals(dispatcher.getTimeOut(), 100);
+    }
+
+    @Test
+    public void testForceDispatchTwice() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setDispatchInterval(-1);
+        dispatcher.setTimeOut(20);
+        dispatcher.submit("url");
+
+        assertTrue(dispatcher.forceDispatch());
+        assertFalse(dispatcher.forceDispatch());
+    }
+
+    @Test
+    public void testDoPostFailed() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setTimeOut(1);
+        assertFalse(dispatcher.doPost(null, null));
+        assertFalse(dispatcher.doPost(new URL("http://test/?s=^test"), new JSONObject()));
+    }
+
+    @Test
+    public void testDoGetFailed() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setTimeOut(1);
+        assertFalse(dispatcher.doGet(null));
+    }
+
+    @Test
+    public void testUrlEncodeUTF8() throws Exception {
+        assertEquals(Dispatcher.urlEncodeUTF8((String)null), "");
     }
 
     @Test
