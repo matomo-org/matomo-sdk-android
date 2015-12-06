@@ -97,6 +97,17 @@ public class TrackerTest {
     }
 
     @Test
+    public void testGetSiteId() throws Exception {
+        assertEquals(createTracker().getSiteId(), 1);
+    }
+
+    @Test
+    public void testGetPiwik() throws Exception {
+        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
+        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
+    }
+
+    @Test
     public void testSet() throws Exception {
         TrackMe trackMe = new TrackMe().set(QueryParams.HOURS, "0")
                 .set(QueryParams.MINUTES, null)
@@ -331,7 +342,7 @@ public class TrackerTest {
 
         tracker.setSessionTimeout(10000);
         assertFalse(tracker.tryNewSession());
-
+        assertEquals(tracker.getSessionTimeout(), 10000);
     }
 
     @Test
@@ -351,7 +362,7 @@ public class TrackerTest {
     @Test
     public void testTrackScreenView() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackScreenView("/test/test");
+        tracker.trackScreenView("/test/test", "title");
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
 
         assertTrue(queryParams.get(QueryParams.URL_PATH).endsWith("/test/test"));
@@ -420,6 +431,21 @@ public class TrackerTest {
         assertEquals("1", queryParams.get(QueryParams.GOAL_ID));
         assertTrue(100f == Float.valueOf(queryParams.get(QueryParams.REVENUE)));
         validateDefaultQuery(queryParams);
+    }
+
+    @Test
+    public void testTrackerEquals() throws Exception {
+        Tracker tracker = createTracker();
+        Tracker tracker2 = Piwik.getInstance(Robolectric.application).newTracker("http://localhost", 100);
+        assertFalse(tracker.equals(null));
+        assertFalse(tracker.equals(new String()));
+        assertFalse(tracker.equals(tracker2));
+    }
+
+    @Test
+    public void testTrackerHashCode() throws Exception {
+        Tracker tracker = createTracker();
+        assertEquals(tracker.hashCode(), 31 + tracker.getAPIUrl().hashCode());
     }
 
     @Test
