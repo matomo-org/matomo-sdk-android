@@ -145,6 +145,20 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 ((YourApplication) getApplication()).getTracker().trackAppDownload();
 ```
 
+#### Custom Dimensions
+To track [Custom Dimensions](https://plugins.piwik.org/CustomDimensions) in scope Action or Visit
+consider following example:
+
+```java
+
+Tracker tracker = ((YourApplication) getApplication()).getTracker();
+tracker.track(
+    new CustomDimensions()
+        .set(1, "foo")
+        .set(2, "bar")
+);
+```
+
 #### Ecommerce
 
 Piwik provides ecommerce analytics that let you measure items added to carts,
