@@ -103,7 +103,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.0.1x'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
     }
 }
 
