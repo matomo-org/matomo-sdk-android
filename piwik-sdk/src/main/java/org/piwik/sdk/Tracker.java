@@ -15,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.CurrencyFormatter;

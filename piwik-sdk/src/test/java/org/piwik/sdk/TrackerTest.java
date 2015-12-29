@@ -1,15 +1,15 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.util.Pair;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.plugins.CustomDimensions;
+import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -873,15 +873,13 @@ public class TrackerTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
         QueryHashMap<String, String> values = new QueryHashMap<>();
 
-        List<NameValuePair> params = URLEncodedUtils.parse(new URI("http://localhost/" + url), "UTF-8");
+        List<Pair<String, String>> params = UrlHelper.parse(new URI("http://localhost/" + url), "UTF-8");
 
-        for (NameValuePair param : params) {
-            values.put(param.getName(), param.getValue());
-        }
+        for (Pair<String, String> param : params)
+            values.put(param.first, param.second);
 
         return values;
     }

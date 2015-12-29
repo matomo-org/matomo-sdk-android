@@ -7,6 +7,8 @@
 
 package org.piwik.sdk;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.json.JSONArray;
@@ -14,6 +16,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.piwik.sdk.tools.Logy;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -28,14 +31,14 @@ public class TrackerBulkURLWrapper {
     private final String mAuthtoken;
     private final List<String> mEvents;
 
-    public TrackerBulkURLWrapper(final URL apiUrl, final List<String> events, final String authToken) {
+    public TrackerBulkURLWrapper(@NonNull final URL apiUrl, @NonNull final List<String> events, @Nullable final String authToken) {
         mApiUrl = apiUrl;
         mAuthtoken = authToken;
         mPages = (int) Math.ceil(events.size() * 1.0 / EVENTS_PER_PAGE);
         mEvents = events;
     }
 
-    protected static int getEventsPerPage(){
+    protected static int getEventsPerPage() {
         return EVENTS_PER_PAGE;
     }
 
@@ -65,6 +68,7 @@ public class TrackerBulkURLWrapper {
         };
     }
 
+    @NonNull
     public URL getApiUrl() {
         return mApiUrl;
     }
@@ -78,6 +82,7 @@ public class TrackerBulkURLWrapper {
      *
      * @return json object
      */
+    @Nullable
     public JSONObject getEvents(Page page) {
         if (page == null || page.isEmpty()) {
             return null;
@@ -85,7 +90,7 @@ public class TrackerBulkURLWrapper {
 
         List<String> pageElements = mEvents.subList(page.fromIndex, page.toIndex);
 
-        if(pageElements.size() == 0){
+        if (pageElements.size() == 0) {
             Logy.w(LOGGER_TAG, "Empty page");
             return null;
         }
@@ -108,14 +113,19 @@ public class TrackerBulkURLWrapper {
     /**
      * @param page Page object
      * @return tracked url. For example
-     *  "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
+     * "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
      */
-    public String getEventUrl(Page page) {
-        if (page == null || page.isEmpty()) {
+    @Nullable
+    public URL getEventUrl(Page page) {
+        if (page == null || page.isEmpty())
             return null;
-        }
 
-        return getApiUrl().toString() + mEvents.get(page.fromIndex);
+        try {
+            return new URL(getApiUrl().toString() + mEvents.get(page.fromIndex));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public final class Page {
