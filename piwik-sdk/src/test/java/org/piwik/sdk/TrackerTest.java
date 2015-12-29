@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -554,6 +555,7 @@ public class TrackerTest {
     @Test
     public void testTrackEcommerceCartUpdate() throws Exception {
         Tracker tracker = createTracker();
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
@@ -576,6 +578,7 @@ public class TrackerTest {
     @Test
     public void testTrackEcommerceOrder() throws Exception {
         Tracker tracker = createTracker();
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
