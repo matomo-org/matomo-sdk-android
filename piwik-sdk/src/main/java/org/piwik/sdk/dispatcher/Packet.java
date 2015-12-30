@@ -23,10 +23,16 @@ public class Packet {
     private final JSONObject mJSONObject;
     private final long mTimeStamp;
 
+    /**
+     * Constructor for GET requests
+     */
     public Packet(@NonNull URL targetURL) {
         this(targetURL, null);
     }
 
+    /**
+     * Constructor for POST requests
+     */
     public Packet(@NonNull URL targetURL, @Nullable JSONObject JSONObject) {
         mTargetURL = targetURL;
         mJSONObject = JSONObject;
@@ -38,11 +44,17 @@ public class Packet {
         return mTargetURL;
     }
 
+    /**
+     * @return may be null if it is a GET request
+     */
     @Nullable
     public JSONObject getJSONObject() {
         return mJSONObject;
     }
 
+    /**
+     * A timestamp to use when replaying offline data
+     */
     public long getTimeStamp() {
         return mTimeStamp;
     }

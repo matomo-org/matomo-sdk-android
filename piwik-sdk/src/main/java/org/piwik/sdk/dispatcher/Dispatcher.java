@@ -75,10 +75,19 @@ public class Dispatcher {
         return mTimeOut;
     }
 
+    /**
+     * Timeout when trying to establish connection and when trying to read a response.
+     *
+     * @param timeOut timeout in milliseconds
+     */
     public void setTimeOut(int timeOut) {
         mTimeOut = timeOut;
     }
 
+    /**
+     * Packets are collected and dispatched in batches, this intervals sets the pause between batches.
+     * @param dispatchInterval in milliseconds
+     */
     public void setDispatchInterval(long dispatchInterval) {
         mDispatchInterval = dispatchInterval;
         if (mDispatchInterval != -1)
@@ -168,7 +177,7 @@ public class Dispatcher {
 
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) {
-         // Some error checking
+        // Some error checking
         if (packet.getTargetURL() == null)
             return false;
         if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0)
@@ -188,7 +197,7 @@ public class Dispatcher {
             urlConnection.setConnectTimeout(mTimeOut);
             urlConnection.setReadTimeout(mTimeOut);
 
-            // IF there is there is json data we want to do a post
+            // IF there is json data we want to do a post
             if (packet.getJSONObject() != null) {
                 // POST
                 urlConnection.setDoOutput(true); // Forces post
