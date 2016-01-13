@@ -7,6 +7,7 @@
 
 package com.piwik.demo;
 
+import org.piwik.sdk.Piwik;
 import org.piwik.sdk.PiwikApplication;
 
 public class DemoApp extends PiwikApplication {
@@ -21,4 +22,9 @@ public class DemoApp extends PiwikApplication {
         return 53;
     }
 
+    @Override
+    public void onCreate() {
+        Piwik.getInstance(this).setDebug(true);
+        super.onCreate();
+    }
 }
