@@ -13,12 +13,12 @@ public class DemoApp extends PiwikApplication {
 
     @Override
     public String getTrackerUrl() {
-        return "http://beacons.testing.piwik.pro/piwik.php";
+        return "http://demo.piwik.org/";
     }
 
     @Override
     public Integer getSiteId() {
-        return 4;
+        return 53;
     }
 
 }
