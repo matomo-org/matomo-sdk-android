@@ -8,15 +8,13 @@ package org.piwik.sdk;
 
 import android.util.Log;
 
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.Packet;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -77,26 +75,26 @@ public class TestDispatcher {
     public void testDoPostFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
-        assertFalse(dispatcher.doPost(null, null));
-        assertFalse(dispatcher.doPost(new URL("http://test/?s=^test"), new JSONObject()));
+        assertFalse(dispatcher.dispatch(new Packet(null, null)));
+        assertFalse(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject())));
     }
 
     @Test
     public void testDoGetFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setTimeOut(1);
-        assertFalse(dispatcher.doGet(null));
+        assertFalse(dispatcher.dispatch(new Packet(null)));
     }
 
     @Test
     public void testUrlEncodeUTF8() throws Exception {
-        assertEquals(Dispatcher.urlEncodeUTF8((String)null), "");
+        assertEquals(Dispatcher.urlEncodeUTF8((String) null), "");
     }
 
     @Test
     public void testSessionStartRaceCondition() throws Exception {
         for (int i = 0; i < 10; i++) {
-            Log.d("RaceConditionTest",  (10 - i) + " race-condition tests to go.");
+            Log.d("RaceConditionTest", (10 - i) + " race-condition tests to go.");
             getPiwik().setDryRun(true);
             final Tracker tracker = createTracker();
             tracker.setDispatchInterval(0);
@@ -194,7 +192,7 @@ public class TestDispatcher {
         checkForMIAs(threadCount * queryCount, createdEvents, tracker.getDispatcher().getDryRunOutput());
     }
 
-    public static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<HttpRequestBase> dryRunOutput) throws Exception {
+    public static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<Packet> dryRunOutput) throws Exception {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
         List<String> flattenedQueries;
@@ -255,20 +253,17 @@ public class TestDispatcher {
         Log.d("launchTestThreads", "All launched.");
     }
 
-    public static List<String> getFlattenedQueries(List<HttpRequestBase> httpRequestList) throws Exception {
+    public static List<String> getFlattenedQueries(List<Packet> packets) throws Exception {
         List<String> flattenedQueries = new ArrayList<>();
-        for (HttpRequestBase request : httpRequestList) {
-            if (request instanceof HttpPost) {
-                HttpPost post = (HttpPost) request;
-                JSONObject postContent = new JSONObject(EntityUtils.toString((post).getEntity()));
-                JSONArray batchedRequests = postContent.getJSONArray("requests");
+        for (Packet request : packets) {
+            if (request.getJSONObject() != null) {
+                JSONArray batchedRequests = request.getJSONObject().getJSONArray("requests");
                 for (int json = 0; json < batchedRequests.length(); json++) {
-                    String unbatchedRequest = post.getURI() + batchedRequests.get(json).toString();
+                    String unbatchedRequest = request.getTargetURL().toExternalForm() + batchedRequests.get(json).toString();
                     flattenedQueries.add(unbatchedRequest);
                 }
-            } else if (request instanceof HttpGet) {
-                HttpGet get = (HttpGet) request;
-                flattenedQueries.add(get.getURI().toString());
+            } else {
+                flattenedQueries.add(request.getTargetURL().toExternalForm());
             }
         }
         return flattenedQueries;

@@ -5,26 +5,21 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.os.Process;
+import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONObject;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.TrackerBulkURLWrapper;
 import org.piwik.sdk.tools.Logy;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -58,7 +53,7 @@ public class Dispatcher {
     private final URL mApiUrl;
     private final String mAuthToken;
 
-    private List<HttpRequestBase> mDryRunOutput = Collections.synchronizedList(new ArrayList<HttpRequestBase>());
+    private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
 
     private volatile int mTimeOut = 5 * 1000; // 5s
     private volatile boolean mRunning = false;
@@ -80,10 +75,19 @@ public class Dispatcher {
         return mTimeOut;
     }
 
+    /**
+     * Timeout when trying to establish connection and when trying to read a response.
+     *
+     * @param timeOut timeout in milliseconds
+     */
     public void setTimeOut(int timeOut) {
         mTimeOut = timeOut;
     }
 
+    /**
+     * Packets are collected and dispatched in batches, this intervals sets the pause between batches.
+     * @param dispatchInterval in milliseconds
+     */
     public void setDispatchInterval(long dispatchInterval) {
         mDispatchInterval = dispatchInterval;
         if (mDispatchInterval != -1)
@@ -146,10 +150,16 @@ public class Dispatcher {
 
                     // use doGET when only event on current page
                     if (page.elementsCount() > 1) {
-                        if (doPost(wrapper.getApiUrl(), wrapper.getEvents(page)))
+                        JSONObject eventData = wrapper.getEvents(page);
+                        if (eventData == null)
+                            continue;
+                        if (dispatch(new Packet(wrapper.getApiUrl(), eventData)))
                             count += page.elementsCount();
                     } else {
-                        if (doGet(wrapper.getEventUrl(page)))
+                        URL targetURL = wrapper.getEventUrl(page);
+                        if (targetURL == null)
+                            continue;
+                        if (dispatch(new Packet(targetURL)))
                             count += 1;
                     }
                 }
@@ -165,52 +175,50 @@ public class Dispatcher {
         }
     };
 
-    protected boolean doGet(String trackingEndPointUrl) {
-        if (trackingEndPointUrl == null)
+    @VisibleForTesting
+    public boolean dispatch(@NonNull Packet packet) {
+        // Some error checking
+        if (packet.getTargetURL() == null)
             return false;
-        HttpGet get = new HttpGet(trackingEndPointUrl);
-        return doRequest(get);
-    }
-
-    protected boolean doPost(URL url, JSONObject json) {
-        if (url == null || json == null)
+        if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0)
             return false;
-
-        String jsonBody = json.toString();
-        try {
-            HttpPost post = new HttpPost(url.toURI());
-            StringEntity se = new StringEntity(jsonBody);
-            se.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-            post.setEntity(se);
-
-            return doRequest(post);
-        } catch (URISyntaxException e) {
-            Logy.w(LOGGER_TAG, String.format("URI Syntax Error %s", url.toString()), e);
-        } catch (UnsupportedEncodingException e) {
-            Logy.w(LOGGER_TAG, String.format("Unsupported Encoding %s", jsonBody), e);
-        }
-        return false;
-    }
-
-    private boolean doRequest(HttpRequestBase requestBase) {
-        HttpClient client = new DefaultHttpClient();
-        HttpConnectionParams.setConnectionTimeout(client.getParams(), mTimeOut);
-        HttpResponse response;
 
         if (mPiwik.isDryRun()) {
             Logy.d(LOGGER_TAG, "DryRun, stored HttpRequest, now " + mDryRunOutput.size());
-            mDryRunOutput.add(requestBase);
-        } else {
-            if (!mDryRunOutput.isEmpty())
-                mDryRunOutput.clear();
-            try {
-                response = client.execute(requestBase);
-                int statusCode = response.getStatusLine().getStatusCode();
-                Logy.d(LOGGER_TAG, String.format("status code %s", statusCode));
-                return statusCode == HttpStatus.SC_NO_CONTENT || statusCode == HttpStatus.SC_OK;
-            } catch (Exception e) {
-                Logy.w(LOGGER_TAG, "Cannot send request", e);
+            mDryRunOutput.add(packet);
+            return true;
+        }
+
+        if (!mDryRunOutput.isEmpty())
+            mDryRunOutput.clear();
+
+        try {
+            HttpURLConnection urlConnection = (HttpURLConnection) packet.getTargetURL().openConnection();
+            urlConnection.setConnectTimeout(mTimeOut);
+            urlConnection.setReadTimeout(mTimeOut);
+
+            // IF there is json data we want to do a post
+            if (packet.getJSONObject() != null) {
+                // POST
+                urlConnection.setDoOutput(true); // Forces post
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty("charset", "utf-8");
+
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                writer.write(packet.getJSONObject().toString());
+                writer.flush();
+                writer.close();
+            } else {
+                // GET
+                urlConnection.setDoOutput(false); // Defaults to false, but for readability
             }
+
+            int statusCode = urlConnection.getResponseCode();
+            Logy.d(LOGGER_TAG, String.format("status code %s", statusCode));
+            return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
+        } catch (Exception e) {
+            // Broad but an analytics app shouldn't impact it's host app.
+            Logy.w(LOGGER_TAG, "Cannot send request", e);
         }
         return false;
     }
@@ -251,7 +259,7 @@ public class Dispatcher {
         return sb.substring(0, sb.length() - 1);
     }
 
-    public List<HttpRequestBase> getDryRunOutput() {
+    public List<Packet> getDryRunOutput() {
         return mDryRunOutput;
     }
 

@@ -5,6 +5,8 @@ import org.junit.runner.RunWith;
 import org.piwik.sdk.FullEnvTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -20,6 +22,7 @@ public class EcommerceItemsTest {
 
     @Test
     public void testAddItems() throws Exception {
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
@@ -31,6 +34,7 @@ public class EcommerceItemsTest {
 
     @Test
     public void testRemoveItem() throws Exception {
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);

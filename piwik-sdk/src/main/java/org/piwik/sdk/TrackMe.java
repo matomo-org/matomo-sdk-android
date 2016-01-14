@@ -9,6 +9,8 @@ package org.piwik.sdk;
 
 import android.support.annotation.NonNull;
 
+import org.piwik.sdk.dispatcher.Dispatcher;
+
 import java.util.HashMap;
 
 /**
