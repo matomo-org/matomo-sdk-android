@@ -25,7 +25,7 @@ Add this to your apps build.gradle file:
 
 ```java
 
-compile 'org.piwik.sdk:piwik-sdk:0.0.3'
+compile 'org.piwik.sdk:piwik-sdk:0.0.4'
 ```
 
 
