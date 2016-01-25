@@ -36,6 +36,24 @@ public class TrackerBulkURLWrapperTest {
     }
 
     @Test
+    public void testEmptyPage() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null);
+        assertNull(wrapper.getEvents(null));
+    }
+
+    @Test
+    public void testEventUrlForEmptyPage() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null);
+        assertNull(wrapper.getEventUrl(null));
+    }
+
+    @Test
+    public void testWrapperMalformedURLException() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper("http://localhost", ":a/");
+        assertNull(wrapper.getEventUrl(wrapper.iterator().next()));
+    }
+
+    @Test
     public void testPageIterator() throws Exception {
         TrackerBulkURLWrapper wrapper = createWrapper(null, "test1");
         assertTrue(wrapper.iterator().hasNext());
