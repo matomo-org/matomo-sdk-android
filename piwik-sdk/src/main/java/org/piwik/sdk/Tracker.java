@@ -415,31 +415,26 @@ public class Tracker {
     }
 
     /**
-     * Fires a download for this app once per update.
-     * The install will be tracked as:<p/>
-     * 'http://packageName:versionCode/installerPackagename'
-     * <p/>
-     * Also see {@link #trackNewAppDownload(android.content.Context, org.piwik.sdk.Tracker.ExtraIdentifier)}
-     *
-     * @return this tracker again for chaining
+     * Default download tracking.<br/>
+     * Calls {@link #trackAppDownload(org.piwik.sdk.Tracker.ExtraIdentifier)} with {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
      */
     public Tracker trackAppDownload() {
-        return trackAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
+        return trackAppDownload(ExtraIdentifier.NONE);
     }
 
     /**
-     * Fires a download for an arbitrary app once per update.
+     * Fires a download for once per update.
      *
-     * @param app   the app to track
-     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
      * @return this tracker for chaining
      */
-    public Tracker trackAppDownload(Context app, ExtraIdentifier extra) {
+    public Tracker trackAppDownload(ExtraIdentifier extra) {
         try {
-            PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
+            Context context = getPiwik().getContext();
+            PackageInfo pkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
             if (!getSharedPreferences().getBoolean(firedKey, false)) {
-                trackNewAppDownload(app, extra);
+                trackNewAppDownload(extra);
                 getSharedPreferences().edit().putBoolean(firedKey, true).apply();
             }
         } catch (PackageManager.NameNotFoundException e) {
@@ -449,52 +444,65 @@ public class Tracker {
     }
 
     public enum ExtraIdentifier {
-        APK_CHECKSUM, INSTALLER_PACKAGENAME
+        APK_CHECKSUM,
+        NONE
     }
 
     /**
-     * Track a download for a specific app
-     * <p/>
+     * Sends a download event for this app
+     * <p class="note">
      * Resulting download url:<p/>
-     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM}: http://packageName:versionCode/apk-md5-checksum <p/>
-     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}: http://packageName:versionCode/installerPackageName <p/>
-     * Note: Usually the installer-packagename is something like "com.android.vending" (Google Play),
-     * but users can modify this value, don't be surprised by some random values.
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM}:<br/>
+     * http://packageName:versionCode/apk-md5-checksum<br/>
+     * Usually the installer-packagename is something like "com.android.vending" (Google Play),
+     * but users can modify this value, don't be surprised by some random values.<p/>
+     * <p/>
+     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}:<br/>
+     * http://packageName:versionCode<p/>
      *
-     * @param app   the app you want to fire a download event for
-     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#INSTALLER_PACKAGENAME}
+     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
      * @return this tracker again, so you can chain calls
      */
-    public Tracker trackNewAppDownload(Context app, ExtraIdentifier extra) {
+    public Tracker trackNewAppDownload(ExtraIdentifier extra) {
         StringBuilder installationIdentifier = new StringBuilder();
         try {
-            String pkg = app.getPackageName();
+            Context context = getPiwik().getContext();
+            String pkg = context.getPackageName();
             installationIdentifier.append("http://").append(pkg); // Identifies the app
 
-            PackageManager packMan = app.getPackageManager();
+            PackageManager packMan = context.getPackageManager();
             PackageInfo pkgInfo = packMan.getPackageInfo(pkg, 0);
             installationIdentifier.append(":").append(pkgInfo.versionCode);
 
-            // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
-            // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
-            String installerPackageName = packMan.getInstallerPackageName(pkg);
-            if (installerPackageName == null || installerPackageName.length() > 200)
-                installerPackageName = DEFAULT_UNKNOWN_VALUE;
-
-            String extraIdentifier = DEFAULT_UNKNOWN_VALUE;
             if (extra == ExtraIdentifier.APK_CHECKSUM) {
                 ApplicationInfo appInfo = packMan.getApplicationInfo(pkg, 0);
                 if (appInfo.sourceDir != null) {
+                    String md5Identifier = null;
                     try {
-                        extraIdentifier = Checksum.getMD5Checksum(new File(appInfo.sourceDir));
+                        md5Identifier = Checksum.getMD5Checksum(new File(appInfo.sourceDir));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                    if (md5Identifier != null)
+                        installationIdentifier.append("/").append(md5Identifier);
                 }
-            } else if (extra == ExtraIdentifier.INSTALLER_PACKAGENAME) {
-                extraIdentifier = installerPackageName;
             }
-            installationIdentifier.append("/").append(extraIdentifier);
+
+            // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
+            // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
+            String referringApp = packMan.getInstallerPackageName(pkg);
+            if (referringApp != null && referringApp.length() > 200)
+                referringApp = referringApp.substring(0, 200);
+
+//            if (referringApp != null && referringApp.equals("com.android.vending")) {
+//                // For this type of install source we could have extra referral information
+//                String referrerExtras = getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+//                if (referrerExtras != null) {
+//                    referringApp = referringApp + "/?" + referrerExtras;
+//                }
+//            }
+            if (referringApp != null)
+                referringApp = "http://" + referringApp;
 
             return track(new TrackMe()
                     .set(QueryParams.EVENT_CATEGORY, "Application")
@@ -502,7 +510,7 @@ public class Tracker {
                     .set(QueryParams.ACTION_NAME, "application/downloaded")
                     .set(QueryParams.URL_PATH, "/application/downloaded")
                     .set(QueryParams.DOWNLOAD, installationIdentifier.toString())
-                    .set(QueryParams.REFERRER, installerPackageName));
+                    .set(QueryParams.REFERRER, referringApp)); // Can be null in which case the TrackMe removes the REFERRER parameter.
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
             return this;

@@ -43,7 +43,7 @@ public class DemoApp extends PiwikApplication {
 
         // Track this app install, this will only trigger once per app version.
         // i.e. "http://com.piwik.demo:1/185DECB5CFE28FDB2F45887022D668B4"
-        getTracker().trackAppDownload(this, Tracker.ExtraIdentifier.APK_CHECKSUM);
+        getTracker().trackAppDownload(Tracker.ExtraIdentifier.APK_CHECKSUM);
         // Alternative:
         // i.e. "http://com.piwik.demo:1/com.android.vending"
         // getTracker().trackAppDownload();
