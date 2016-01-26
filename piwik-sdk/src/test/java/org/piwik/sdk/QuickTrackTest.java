@@ -7,11 +7,12 @@
 
 package org.piwik.sdk;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
+import android.util.Pair;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -53,14 +54,11 @@ public class QuickTrackTest {
     }
 
     private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
-        QueryHashMap<String, String> values = new QueryHashMap<String, String>();
-
-        List<NameValuePair> params = URLEncodedUtils.parse(new URI("http://localhost/" + url), "UTF-8");
-
-        for (NameValuePair param : params) {
-            values.put(param.getName(), param.getValue());
-        }
-
+        QueryHashMap<String, String> values = new QueryHashMap<>();
+        List<Pair<String, String>> params = UrlHelper.parse(new URI("http://localhost/" + url), "UTF-8");
+        
+        for (Pair<String, String> param : params)
+            values.put(param.first, param.second);
         return values;
     }
 

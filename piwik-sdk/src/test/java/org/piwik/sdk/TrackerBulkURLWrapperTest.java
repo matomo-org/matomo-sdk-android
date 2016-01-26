@@ -36,6 +36,24 @@ public class TrackerBulkURLWrapperTest {
     }
 
     @Test
+    public void testEmptyPage() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null);
+        assertNull(wrapper.getEvents(null));
+    }
+
+    @Test
+    public void testEventUrlForEmptyPage() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper(null);
+        assertNull(wrapper.getEventUrl(null));
+    }
+
+    @Test
+    public void testWrapperMalformedURLException() throws Exception {
+        TrackerBulkURLWrapper wrapper = createWrapper("http://localhost", ":a/");
+        assertNull(wrapper.getEventUrl(wrapper.iterator().next()));
+    }
+
+    @Test
     public void testPageIterator() throws Exception {
         TrackerBulkURLWrapper wrapper = createWrapper(null, "test1");
         assertTrue(wrapper.iterator().hasNext());
@@ -49,7 +67,7 @@ public class TrackerBulkURLWrapperTest {
         for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() * 2; i++) {
             events.add("eve" + i);
         }
-        TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(null, events, null);
+        TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(new URL("http://example.com/"), events, null);
 
         Iterator<TrackerBulkURLWrapper.Page> it = wrapper.iterator();
         assertTrue(it.hasNext());
@@ -99,6 +117,6 @@ public class TrackerBulkURLWrapperTest {
         TrackerBulkURLWrapper.Page page = wrapper.iterator().next();
         assertEquals(page.elementsCount(), 1);
         assertFalse(page.isEmpty());
-        assertEquals(wrapper.getEventUrl(page), "http://example.com/?eve20");
+        assertEquals(wrapper.getEventUrl(page), new URL("http://example.com/?eve20"));
     }
 }

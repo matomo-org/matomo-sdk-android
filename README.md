@@ -25,7 +25,7 @@ Add this to your apps build.gradle file:
 
 ```java
 
-compile 'org.piwik.sdk:piwik-sdk:0.0.3'
+compile 'org.piwik.sdk:piwik-sdk:0.0.4'
 ```
 
 
@@ -143,6 +143,20 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 ```java
 
 ((YourApplication) getApplication()).getTracker().trackAppDownload();
+```
+
+#### Custom Dimensions
+To track [Custom Dimensions](https://plugins.piwik.org/CustomDimensions) in scope Action or Visit
+consider following example:
+
+```java
+
+Tracker tracker = ((YourApplication) getApplication()).getTracker();
+tracker.track(
+    new CustomDimensions()
+        .set(1, "foo")
+        .set(2, "bar")
+);
 ```
 
 #### Ecommerce

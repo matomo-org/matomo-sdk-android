@@ -1,14 +1,15 @@
 package org.piwik.sdk;
 
 import android.app.Application;
+import android.util.Pair;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.plugins.CustomDimensions;
+import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -553,6 +555,7 @@ public class TrackerTest {
     @Test
     public void testTrackEcommerceCartUpdate() throws Exception {
         Tracker tracker = createTracker();
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
@@ -575,6 +578,7 @@ public class TrackerTest {
     @Test
     public void testTrackEcommerceOrder() throws Exception {
         Tracker tracker = createTracker();
+        Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
         items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
@@ -834,6 +838,33 @@ public class TrackerTest {
         assertEquals(1000l, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
     }
 
+    @Test
+    public void testSetCustomDimensions() throws Exception {
+        CustomDimensions customDimensions = new CustomDimensions();
+        customDimensions.set(0, "foo");
+        customDimensions.set(1, "foo");
+        customDimensions.set(2, "bar");
+        customDimensions.set(3, "empty").set(3, null);
+        customDimensions.set(4, "");
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(customDimensions.build());
+
+        assertEquals(queryParams.get("dimension1"), "foo");
+        assertEquals(queryParams.get("dimension2"), "bar");
+        assertFalse(queryParams.containsKey("dimension0"));
+        assertFalse(queryParams.containsKey("dimension3"));
+        assertFalse(queryParams.containsKey("dimension4"));
+    }
+
+    @Test
+    public void testSetCustomDimensionsMaxLength() throws Exception {
+        CustomDimensions customDimensions = new CustomDimensions();
+        customDimensions.set(1, new String(new char[1000]));
+
+        QueryHashMap<String, String> queryParams = parseEventUrl(customDimensions.build());
+        assertEquals(queryParams.get("dimension1").length(), 255);
+    }
+
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
 
         private QueryHashMap() {
@@ -845,15 +876,13 @@ public class TrackerTest {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
         QueryHashMap<String, String> values = new QueryHashMap<>();
 
-        List<NameValuePair> params = URLEncodedUtils.parse(new URI("http://localhost/" + url), "UTF-8");
+        List<Pair<String, String>> params = UrlHelper.parse(new URI("http://localhost/" + url), "UTF-8");
 
-        for (NameValuePair param : params) {
-            values.put(param.getName(), param.getValue());
-        }
+        for (Pair<String, String> param : params)
+            values.put(param.first, param.second);
 
         return values;
     }
