@@ -7,22 +7,16 @@
 
 package org.piwik.sdk;
 
-import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.ecommerce.EcommerceItems;
-import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.CurrencyFormatter;
 import org.piwik.sdk.tools.DeviceHelper;
 import org.piwik.sdk.tools.Logy;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -73,7 +67,7 @@ public class Tracker {
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
-
+    private final DownloadTrackingHelper mDownloadTrackingHelper;
     private final TrackMe mDefaultTrackMe = new TrackMe();
 
     /**
@@ -119,6 +113,8 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
+
+        mDownloadTrackingHelper = new DownloadTrackingHelper(this);
     }
 
     public Piwik getPiwik() {
@@ -428,18 +424,8 @@ public class Tracker {
      * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
      * @return this tracker for chaining
      */
-    public Tracker trackAppDownload(ExtraIdentifier extra) {
-        try {
-            Context context = getPiwik().getContext();
-            PackageInfo pkgInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
-            if (!getSharedPreferences().getBoolean(firedKey, false)) {
-                trackNewAppDownload(extra);
-                getSharedPreferences().edit().putBoolean(firedKey, true).apply();
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
+    public Tracker trackAppDownload(@NonNull ExtraIdentifier extra) {
+        mDownloadTrackingHelper.trackOnce(extra);
         return this;
     }
 
@@ -463,58 +449,9 @@ public class Tracker {
      * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
      * @return this tracker again, so you can chain calls
      */
-    public Tracker trackNewAppDownload(ExtraIdentifier extra) {
-        StringBuilder installationIdentifier = new StringBuilder();
-        try {
-            Context context = getPiwik().getContext();
-            String pkg = context.getPackageName();
-            installationIdentifier.append("http://").append(pkg); // Identifies the app
-
-            PackageManager packMan = context.getPackageManager();
-            PackageInfo pkgInfo = packMan.getPackageInfo(pkg, 0);
-            installationIdentifier.append(":").append(pkgInfo.versionCode);
-
-            if (extra == ExtraIdentifier.APK_CHECKSUM) {
-                ApplicationInfo appInfo = packMan.getApplicationInfo(pkg, 0);
-                if (appInfo.sourceDir != null) {
-                    String md5Identifier = null;
-                    try {
-                        md5Identifier = Checksum.getMD5Checksum(new File(appInfo.sourceDir));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    if (md5Identifier != null)
-                        installationIdentifier.append("/").append(md5Identifier);
-                }
-            }
-
-            // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
-            // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
-            String referringApp = packMan.getInstallerPackageName(pkg);
-            if (referringApp != null && referringApp.length() > 200)
-                referringApp = referringApp.substring(0, 200);
-
-//            if (referringApp != null && referringApp.equals("com.android.vending")) {
-//                // For this type of install source we could have extra referral information
-//                String referrerExtras = getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
-//                if (referrerExtras != null) {
-//                    referringApp = referringApp + "/?" + referrerExtras;
-//                }
-//            }
-            if (referringApp != null)
-                referringApp = "http://" + referringApp;
-
-            return track(new TrackMe()
-                    .set(QueryParams.EVENT_CATEGORY, "Application")
-                    .set(QueryParams.EVENT_ACTION, "downloaded")
-                    .set(QueryParams.ACTION_NAME, "application/downloaded")
-                    .set(QueryParams.URL_PATH, "/application/downloaded")
-                    .set(QueryParams.DOWNLOAD, installationIdentifier.toString())
-                    .set(QueryParams.REFERRER, referringApp)); // Can be null in which case the TrackMe removes the REFERRER parameter.
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            return this;
-        }
+    public Tracker trackNewAppDownload(@NonNull ExtraIdentifier extra) {
+        mDownloadTrackingHelper.trackNewAppDownload(extra);
+        return this;
     }
 
     /**

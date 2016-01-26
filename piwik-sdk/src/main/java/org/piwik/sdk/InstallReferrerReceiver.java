@@ -15,11 +15,11 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "InstallReferrerReceiver";
 
     // Google Play
-    private static final String REFERRER_SOURCE_GPLAY = "com.android.vending.INSTALL_REFERRER";
+    static final String REFERRER_SOURCE_GPLAY = "com.android.vending.INSTALL_REFERRER";
     static final String ARG_KEY_GPLAY_REFERRER = "referrer";
 
     static final String PREF_KEY_INSTALL_REFERRER_EXTRAS = "referrer.extras";
-    public static final List<String> RESPONSIBILITIES = Arrays.asList(REFERRER_SOURCE_GPLAY);
+    static final List<String> RESPONSIBILITIES = Arrays.asList(REFERRER_SOURCE_GPLAY);
 
     @Override
     public void onReceive(Context context, Intent intent) {
