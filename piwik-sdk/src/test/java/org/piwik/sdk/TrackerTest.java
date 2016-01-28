@@ -5,10 +5,12 @@ import android.util.Pair;
 
 import org.json.JSONArray;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.plugins.CustomDimensions;
 import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
+import org.robolectric.annotation.Config;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -33,6 +35,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@Config(emulateSdk = 18, manifest = Config.NONE)
+@RunWith(FullEnvTestRunner.class)
 public class TrackerTest extends PiwikDefaultTest {
 
     @Test
