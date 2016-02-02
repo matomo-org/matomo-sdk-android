@@ -54,11 +54,12 @@ public class Dispatcher {
     private final String mAuthToken;
 
     private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
-
-    private volatile int mTimeOut = 5 * 1000; // 5s
+    public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
+    private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile boolean mRunning = false;
 
-    private volatile long mDispatchInterval = 120 * 1000; // 120s
+    public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
+    private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
 
     public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
         mPiwik = piwik;
@@ -71,21 +72,23 @@ public class Dispatcher {
      *
      * @return timeout in milliseconds
      */
-    public int getTimeOut() {
+    public int getConnectionTimeOut() {
         return mTimeOut;
     }
 
     /**
      * Timeout when trying to establish connection and when trying to read a response.
+     * Values take effect on next dispatch.
      *
      * @param timeOut timeout in milliseconds
      */
-    public void setTimeOut(int timeOut) {
+    public void setConnectionTimeOut(int timeOut) {
         mTimeOut = timeOut;
     }
 
     /**
      * Packets are collected and dispatched in batches, this intervals sets the pause between batches.
+     *
      * @param dispatchInterval in milliseconds
      */
     public void setDispatchInterval(long dispatchInterval) {
