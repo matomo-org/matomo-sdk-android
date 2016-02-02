@@ -173,6 +173,19 @@ public class Tracker {
         return mSessionTimeout;
     }
 
+    /**
+     * {@link Dispatcher#getConnectionTimeOut()}
+     */
+    public int getDispatchTimeout() {
+        return mDispatcher.getConnectionTimeOut();
+    }
+
+    /**
+     * {@link Dispatcher#setConnectionTimeOut(int)}
+     */
+    public void setDispatchTimeout(int timeout) {
+        mDispatcher.setConnectionTimeOut(timeout);
+    }
 
     /**
      * Processes all queued events in background thread
@@ -710,7 +723,7 @@ public class Tracker {
         } else {
             try {
                 // Another thread is currently creating a sessions first transmission, wait until it's done.
-                mSessionStartLatch.await(mDispatcher.getTimeOut(), TimeUnit.MILLISECONDS);
+                mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

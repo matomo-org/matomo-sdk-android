@@ -54,17 +54,29 @@ public class TestDispatcher {
     }
 
     @Test
-    public void testSetTimeout() throws Exception {
+    public void testDefaultConnectionTimeout() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(100);
-        assertEquals(dispatcher.getTimeOut(), 100);
+        assertEquals(Dispatcher.DEFAULT_CONNECTION_TIMEOUT, dispatcher.getConnectionTimeOut());
+    }
+
+    @Test
+    public void testSetConnectionTimeout() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setConnectionTimeOut(100);
+        assertEquals(100, dispatcher.getConnectionTimeOut());
+    }
+
+    @Test
+    public void testDefaultDispatchInterval() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        assertEquals(Dispatcher.DEFAULT_DISPATCH_INTERVAL, dispatcher.getDispatchInterval());
     }
 
     @Test
     public void testForceDispatchTwice() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setDispatchInterval(-1);
-        dispatcher.setTimeOut(20);
+        dispatcher.setConnectionTimeOut(20);
         dispatcher.submit("url");
 
         assertTrue(dispatcher.forceDispatch());
@@ -74,7 +86,7 @@ public class TestDispatcher {
     @Test
     public void testDoPostFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(1);
+        dispatcher.setConnectionTimeOut(1);
         assertFalse(dispatcher.dispatch(new Packet(null, null)));
         assertFalse(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject())));
     }
@@ -82,7 +94,7 @@ public class TestDispatcher {
     @Test
     public void testDoGetFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(1);
+        dispatcher.setConnectionTimeOut(1);
         assertFalse(dispatcher.dispatch(new Packet(null)));
     }
 

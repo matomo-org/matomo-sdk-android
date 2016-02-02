@@ -99,6 +99,15 @@ public class TrackerTest {
     }
 
     @Test
+    public void testSetDispatchTimeout() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.setDispatchTimeout(1337);
+
+        assertEquals(1337, tracker.getDispatcher().getConnectionTimeOut());
+        assertEquals(1337, tracker.getDispatchTimeout());
+    }
+
+    @Test
     public void testGetSiteId() throws Exception {
         assertEquals(createTracker().getSiteId(), 1);
     }
