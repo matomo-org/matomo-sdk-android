@@ -23,9 +23,13 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Logy.d("LOGGER_TAG", intent.toString());
+        Logy.d(LOGGER_TAG, intent.toString());
         if (intent.getAction() == null || !RESPONSIBILITIES.contains(intent.getAction())) {
             Logy.w(LOGGER_TAG, "Got called outside our responsibilities: " + intent.getAction());
+            return;
+        }
+        if (intent.getBooleanExtra("forwarded", false)) {
+            Logy.d(LOGGER_TAG, "Dropping forwarded intent");
             return;
         }
         SharedPreferences piwikPreferences = Piwik.getInstance(context.getApplicationContext()).getSharedPreferences();
@@ -33,9 +37,14 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
             String referrer = intent.getStringExtra(ARG_KEY_GPLAY_REFERRER);
             if (referrer != null) {
                 piwikPreferences.edit().putString(PREF_KEY_INSTALL_REFERRER_EXTRAS, referrer).apply();
-                Logy.d("LOGGER_TAG", "Stored Google Play referrer extras: " + referrer);
+                Logy.d(LOGGER_TAG, "Stored Google Play referrer extras: " + referrer);
             }
         }
+        // Forward to other possible recipients
+        intent.setComponent(null);
+        intent.setPackage(context.getPackageName());
+        intent.putExtra("forwarded", true);
+        context.sendBroadcast(intent);
     }
 }
 
