@@ -11,7 +11,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInstaller;
-import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -36,6 +35,11 @@ public class FullEnvPackageManager extends RobolectricPackageManager {
     @Override
     public Intent getLeanbackLaunchIntentForPackage(String packageName) {
         return null;
+    }
+
+    @Override
+    public boolean isPermissionRevokedByPolicy(String permName, String pkgName) {
+        return false;
     }
 
     @Override

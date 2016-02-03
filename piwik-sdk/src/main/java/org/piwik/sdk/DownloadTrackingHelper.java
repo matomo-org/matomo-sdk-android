@@ -97,7 +97,7 @@ class DownloadTrackingHelper {
             if (referringApp != null && referringApp.length() > 200)
                 referringApp = referringApp.substring(0, 200);
 
-            if (referringApp != null && referringApp.equals("com.android.vending")) {
+            if (referringApp != null && referringApp.equals(INSTALL_SOURCE_GOOGLE_PLAY)) {
                 // For this type of install source we could have extra referral information
                 String referrerExtras = mPreferences.getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
                 if (referrerExtras != null) {
