@@ -9,6 +9,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
@@ -26,9 +27,18 @@ public class InstallReferrerReceiverTest extends PiwikDefaultTest {
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
         String referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData1, referrerDataFromPreferences);
+        assertTrue(testIntent.getBooleanExtra("forwarded", false));
+
 
         String testReferrerData2 = "pk_campaign=Email-Nov2011&pk_kwd=OrderNow";
         testIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData2);
+
+        receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
+        referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        assertEquals(testReferrerData1, referrerDataFromPreferences);
+
+
+        testIntent.putExtra("forwarded", false);
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
         referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData2, referrerDataFromPreferences);
