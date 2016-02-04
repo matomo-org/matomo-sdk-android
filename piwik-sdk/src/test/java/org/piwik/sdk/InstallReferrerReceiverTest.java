@@ -15,7 +15,8 @@ import static junit.framework.Assert.assertTrue;
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class InstallReferrerReceiverTest extends PiwikDefaultTest {
-
+    // How to test on a live device:
+    // adb shell am broadcast -a com.android.vending.INSTALL_REFERRER -n com.piwik.demo/org.piwik.sdk.InstallReferrerReceiver --es "referrer" "utm_medium%3Dpartner%26utm_campaign%3Dpart
     @Test
     public void testReceiveGooglePlay() throws Exception {
         InstallReferrerReceiver receiver = new InstallReferrerReceiver();

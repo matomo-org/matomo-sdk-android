@@ -430,7 +430,15 @@ public class Tracker {
     }
 
     public enum ExtraIdentifier {
+        /**
+         * The MD5 checksum of the apk file.
+         * com.example.pkg:1/ABCDEF01234567
+         */
         APK_CHECKSUM,
+        /**
+         * No extra identifier.
+         * com.example.pkg:1
+         */
         NONE
     }
 
