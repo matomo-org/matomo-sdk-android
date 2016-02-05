@@ -51,20 +51,30 @@ class DownloadTrackingHelper {
     }
 
     void trackNewAppDownload(@NonNull final ExtraIdentifier extra) {
-        String referringApp = mPackMan.getInstallerPackageName(mPackageName);
-        if (INSTALL_SOURCE_GOOGLE_PLAY.equals(referringApp)) {
+        final Thread trackTask = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                trackNewAppDownloadInternal(extra);
+            }
+        });
+
+        boolean delay = INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPackageName));
+        if (delay) {
+            // Delay tracking incase we were called from within Application.onCreate
             Logy.d(LOGGER_TAG, "Google Play is install source, deferring tracking.");
-            // Installed by Google Play
-            // If we are called from from within Application.onCreate wait for the install REFERRER
-            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    trackNewAppDownloadInternal(extra);
-                }
-            }, 3000);
-        } else {
-            trackNewAppDownloadInternal(extra);
         }
+
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (extra == ExtraIdentifier.APK_CHECKSUM) {
+                    // Don't do APK checksum on this thread, we don't want to block.
+                    trackTask.start();
+                } else {
+                    trackTask.run();
+                }
+            }
+        }, delay ? 3000 : 0);
     }
 
     void trackNewAppDownloadInternal(@NonNull ExtraIdentifier extra) {
