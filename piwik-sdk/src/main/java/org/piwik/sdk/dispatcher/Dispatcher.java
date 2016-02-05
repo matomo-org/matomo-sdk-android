@@ -187,8 +187,8 @@ public class Dispatcher {
             return false;
 
         if (mPiwik.isDryRun()) {
-            Logy.d(LOGGER_TAG, "DryRun, stored HttpRequest, now " + mDryRunOutput.size());
             mDryRunOutput.add(packet);
+            Logy.d(LOGGER_TAG, "DryRun, stored HttpRequest, now " + mDryRunOutput.size());
             return true;
         }
 
