@@ -480,6 +480,7 @@ public class TrackerTest extends PiwikDefaultTest {
     public void testTrackNewAppDownload() throws Exception {
         Tracker tracker = createTracker();
         tracker.trackNewAppDownload(Tracker.ExtraIdentifier.APK_CHECKSUM);
+        Thread.sleep(100); // APK checksum happens off thread
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
         Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
