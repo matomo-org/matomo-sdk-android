@@ -2,7 +2,7 @@ package org.piwik.sdk.ecommerce;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.piwik.sdk.FullEnvTestRunner;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.robolectric.annotation.Config;
 
 import java.util.Locale;

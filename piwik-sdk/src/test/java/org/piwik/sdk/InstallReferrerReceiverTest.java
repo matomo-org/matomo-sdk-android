@@ -4,6 +4,7 @@ import android.content.Intent;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -14,7 +15,7 @@ import static junit.framework.Assert.assertTrue;
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
-public class InstallReferrerReceiverTest extends PiwikDefaultTest {
+public class InstallReferrerReceiverTest extends DefaultTestCase {
     // How to test on a live device:
     // adb shell am broadcast -a com.android.vending.INSTALL_REFERRER -n com.piwik.demo/org.piwik.sdk.InstallReferrerReceiver --es "referrer" "utm_medium%3Dpartner%26utm_campaign%3Dpart
     @Test

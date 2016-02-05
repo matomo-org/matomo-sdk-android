@@ -15,6 +15,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
+import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -35,10 +37,10 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("deprecation")
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class TestDispatcher {
+public class DispatcherTest {
 
     public Tracker createTracker() throws MalformedURLException {
-        TestPiwikApplication app = (TestPiwikApplication) Robolectric.application;
+        PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         return Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
     }
 

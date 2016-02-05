@@ -8,6 +8,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.plugins.CustomDimensions;
+import org.piwik.sdk.testhelper.DefaultTestCase;
+import org.piwik.sdk.testhelper.FullEnvPackageManager;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
+import org.piwik.sdk.testhelper.PiwikTestApplication;
+import org.piwik.sdk.testhelper.TestActivity;
 import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
@@ -37,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class TrackerTest extends PiwikDefaultTest {
+public class TrackerTest extends DefaultTestCase {
 
     @Test
     public void testPiwikAutoBindActivities() throws Exception {
@@ -311,7 +316,7 @@ public class TrackerTest extends PiwikDefaultTest {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = TestDispatcher.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> flattenedQueries = DispatcherTest.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             assertEquals(count, flattenedQueries.size());
             int found = 0;
             for (String query : flattenedQueries) {
@@ -485,10 +490,10 @@ public class TrackerTest extends PiwikDefaultTest {
         checkNewAppDownload(queryParams);
         Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
-        assertEquals(TestPiwikApplication.FAKE_APK_DATA_MD5, m.group(3));
-        assertEquals("http://" + TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
@@ -499,10 +504,10 @@ public class TrackerTest extends PiwikDefaultTest {
         m = REGEX_DOWNLOADTRACK.matcher(downloadParams);
         assertTrue(downloadParams, m.matches());
         assertEquals(3, m.groupCount());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
-        assertEquals("http://" + TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
@@ -514,8 +519,8 @@ public class TrackerTest extends PiwikDefaultTest {
         m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
         assertEquals(3, m.groupCount());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
         assertEquals(null, queryParams.get(QueryParams.REFERRER));
     }
