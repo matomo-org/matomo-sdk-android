@@ -4,11 +4,15 @@ import android.app.Application;
 import android.util.Pair;
 
 import org.json.JSONArray;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.plugins.CustomDimensions;
+import org.piwik.sdk.testhelper.DefaultTestCase;
+import org.piwik.sdk.testhelper.FullEnvPackageManager;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
+import org.piwik.sdk.testhelper.PiwikTestApplication;
+import org.piwik.sdk.testhelper.TestActivity;
 import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
@@ -38,23 +42,7 @@ import static org.junit.Assert.assertTrue;
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class TrackerTest {
-
-    public Tracker createTracker() throws MalformedURLException {
-        TestPiwikApplication app = (TestPiwikApplication) Robolectric.application;
-        return Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
-    }
-
-    public Piwik getPiwik() {
-        return Piwik.getInstance(Robolectric.application);
-    }
-
-    @Before
-    public void setup() {
-        Piwik.getInstance(Robolectric.application).setDryRun(true);
-        Piwik.getInstance(Robolectric.application).setOptOut(true);
-        Piwik.getInstance(Robolectric.application).getSharedPreferences().edit().clear().apply();
-    }
+public class TrackerTest extends DefaultTestCase {
 
     @Test
     public void testPiwikAutoBindActivities() throws Exception {
@@ -257,7 +245,7 @@ public class TrackerTest {
         Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
         tracker.track(trackMe);
-        assertTrue(trackMe.build().contains("res=480x800"));
+        assertTrue(trackMe.build(), trackMe.build().contains("res=480x800"));
     }
 
     @Test
@@ -328,7 +316,7 @@ public class TrackerTest {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = TestDispatcher.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> flattenedQueries = DispatcherTest.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             assertEquals(count, flattenedQueries.size());
             int found = 0;
             for (String query : flattenedQueries) {
@@ -490,46 +478,51 @@ public class TrackerTest {
 
     }
 
-    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:\\/)([\\W\\w]+)");
+    // http://org.piwik.sdk.test:1/some.package or http://org.piwik.sdk.test:1
+    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:(?:\\/)([\\W\\w]+))?");
 
     @Test
     public void testTrackNewAppDownload() throws Exception {
         Tracker tracker = createTracker();
-        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.APK_CHECKSUM);
+        tracker.trackNewAppDownload(Tracker.ExtraIdentifier.APK_CHECKSUM);
+        Thread.sleep(100); // APK checksum happens off thread
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
         Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
-        assertEquals(TestPiwikApplication.FAKE_APK_DATA_MD5, m.group(3));
-        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
-        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
+        tracker.trackNewAppDownload(Tracker.ExtraIdentifier.NONE);
         queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
-        m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
-        assertTrue(m.matches());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
-        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, m.group(3));
-        assertEquals(TestPiwikApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+        String downloadParams = queryParams.get(QueryParams.DOWNLOAD);
+        m = REGEX_DOWNLOADTRACK.matcher(downloadParams);
+        assertTrue(downloadParams, m.matches());
+        assertEquals(3, m.groupCount());
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(null, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
         FullEnvPackageManager pm = (FullEnvPackageManager) Robolectric.packageManager;
-        pm.getInstallerMap().clear();
-        tracker.trackNewAppDownload(Robolectric.application, Tracker.ExtraIdentifier.INSTALLER_PACKAGENAME);
+        pm.getInstallerMap().clear(); // The sdk tries to use the installer as referrer, if we clear this, the referrer should be null
+        tracker.trackNewAppDownload(Tracker.ExtraIdentifier.NONE);
         queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
         m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
-        assertEquals(TestPiwikApplication.PACKAGENAME, m.group(1));
-        assertEquals(TestPiwikApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
-        assertEquals("unknown", m.group(3));
-        assertEquals("unknown", queryParams.get(QueryParams.REFERRER));
+        assertEquals(3, m.groupCount());
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(null, m.group(3));
+        assertEquals(null, queryParams.get(QueryParams.REFERRER));
     }
 
     @Test

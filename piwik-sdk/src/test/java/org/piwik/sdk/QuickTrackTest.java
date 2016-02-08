@@ -12,6 +12,7 @@ import android.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;

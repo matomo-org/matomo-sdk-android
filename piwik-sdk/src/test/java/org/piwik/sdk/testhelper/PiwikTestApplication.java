@@ -1,10 +1,11 @@
-package org.piwik.sdk;
+package org.piwik.sdk.testhelper;
 
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Environment;
 
+import org.piwik.sdk.PiwikApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.TestLifecycleApplication;
 import org.robolectric.res.builder.RobolectricPackageManager;
@@ -14,7 +15,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Method;
 
-public class TestPiwikApplication extends PiwikApplication implements TestLifecycleApplication {
+public class PiwikTestApplication extends PiwikApplication implements TestLifecycleApplication {
 
     public static final String INSTALLER_PACKAGENAME = "com.android.vending users can screw with this value !$()=%ÄÖÜ";
     public static final byte[] FAKE_APK_DATA = "this is an apk, awesome right?".getBytes();
