@@ -240,7 +240,7 @@ Note though that the Tracker will not overwrite any values you set on your own T
 
 Here is the design document written by Thomas to give a brief overview of the SDK project: https://github.com/piwik/piwik-android-sdk/wiki/Design-document
 
-Piwik SDK should work fine with Android API Version >= 7 (Android 2.1.x)
+Piwik SDK should work fine with Android API Version >= 10 (Android 2.3.3+)
 
 Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
  method is available on API level >= 14.
@@ -262,7 +262,15 @@ $ ./gradlew :piwik-sdk:clean :piwik-sdk:assemble :piwik-sdk:test :piwik-sdk:jaco
 
 ## Demo application
 
-Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/exampleapp/exampleapp-debug.apk).
+Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or
+build  an .apk by running following command:
+
+```bash
+./gradlew :exampleapp:clean :exampleapp:build
+```
+Generated .apk would be placed in  ``./exampleapp/build/apk/`
+
+
 
 ## Contribute
 
@@ -272,7 +280,7 @@ Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/example
 * Add tests for your new feature
 * Make sure that everything still works by running "./gradlew clean assemble test".
 * Commit & push the changes to your repo
-* Create a pullrequest from your feature branch against the dev branch of the original repo
+* Create a pull request from your feature branch against the dev branch of the original repo
 * Explain your changes, we can see what changed, but tell us why.
 * If your PR passes the travis-ci build and has no merge conflicts, just wait, otherwise fix the code first.
 
