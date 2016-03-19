@@ -16,6 +16,7 @@ import java.util.HashMap;
 
 
 public class CustomVariables extends HashMap<String, JSONArray> {
+    private final Object mConcurentLock = new Object();
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
     /**
      * You can track up to 5 custom variables for each user to your app,
@@ -76,7 +77,9 @@ public class CustomVariables extends HashMap<String, JSONArray> {
     @Override
     public JSONArray put(String index, JSONArray values) {
         if (values.length() == 2 && index != null) {
-            return super.put(index, values);
+            synchronized (mConcurentLock) {
+                return super.put(index, values);
+            }
         }
         Logy.d(LOGGER_TAG, "value length should be equal 2");
         return null;
@@ -87,7 +90,11 @@ public class CustomVariables extends HashMap<String, JSONArray> {
         if (size() == 0) {
             return null;
         }
-        return new JSONObject(this).toString();
+        JSONObject jsonObject;
+        synchronized (mConcurentLock) {
+            jsonObject = new JSONObject(this);
+        }
+        return jsonObject.toString();
     }
 
 }
