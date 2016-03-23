@@ -60,7 +60,6 @@ public class CustomVariablesTest {
     public void testWrongIndex() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
-        cv.put(10, "name2", "value");
         cv.put(-1, "name-1", "value");
 
         assertEquals(
