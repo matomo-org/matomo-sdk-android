@@ -73,10 +73,11 @@ public class CustomVariablesTest {
         CustomVariables cv = new CustomVariables();
 
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2", "3"))));
+        assertEquals(null, cv.toString());
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2"))));
         assertEquals(
-                cv.get("test"),
-                cv.put("test", new JSONArray(Arrays.asList("4", "5")))
+                "{\"test\":[\"1\",\"2\"]}",
+                cv.toString()
         );
 
     }

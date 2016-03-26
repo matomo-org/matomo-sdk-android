@@ -14,24 +14,24 @@ import org.piwik.sdk.tools.Logy;
 import java.util.Arrays;
 import java.util.HashMap;
 
-
-public class CustomVariables extends HashMap<String, JSONArray> {
-    private final Object mConcurentLock = new Object();
+/**
+ * You can track up to 5 custom variables for each user to your app,
+ * and up to 5 custom variables for each screen view.
+ * You may configure Piwik to track more custom variables: http://piwik.org/faq/how-to/faq_17931/
+ * <p/>
+ * Desired json output:
+ * {
+ * "1":["OS","iphone 5.0"],
+ * "2":["Piwik Mobile Version","1.6.2"],
+ * "3":["Locale","en::en"],
+ * "4":["Num Accounts","2"],
+ * "5":["Level","over9k"]
+ * }
+ */
+public class CustomVariables {
+    private final Object mConcurrentLock = new Object();
+    private final HashMap<String, JSONArray> mVars = new HashMap<>();
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
-    /**
-     * You can track up to 5 custom variables for each user to your app,
-     * and up to 5 custom variables for each screen view.
-     * You may configure Piwik to track more custom variables: http://piwik.org/faq/how-to/faq_17931/
-     * <p/>
-     * Desired json output:
-     * {
-     * "1":["OS","iphone 5.0"],
-     * "2":["Piwik Mobile Version","1.6.2"],
-     * "3":["Locale","en::en"],
-     * "4":["Num Accounts","2"],
-     * "5":["Level","over9k"]
-     * }
-     */
     protected static final int MAX_LENGTH = 200;
 
     /**
@@ -72,25 +72,23 @@ public class CustomVariables extends HashMap<String, JSONArray> {
      * @param values packed key/value pair
      * @return super.put result or null if key is null or value length is not equals 2
      */
-    @Override
     public JSONArray put(String index, JSONArray values) {
         if (values.length() == 2 && index != null) {
-            synchronized (mConcurentLock) {
-                return super.put(index, values);
+            synchronized (mConcurrentLock) {
+                return mVars.put(index, values);
             }
         }
         Logy.d(LOGGER_TAG, "value length should be equal 2");
         return null;
     }
 
-    @Override
     public String toString() {
-        if (size() == 0) {
+        if (mVars.size() == 0) {
             return null;
         }
         JSONObject jsonObject;
-        synchronized (mConcurentLock) {
-            jsonObject = new JSONObject(this);
+        synchronized (mConcurrentLock) {
+            jsonObject = new JSONObject(mVars);
         }
         return jsonObject.toString();
     }
