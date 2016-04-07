@@ -12,7 +12,8 @@ import org.json.JSONObject;
 import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * You can track up to 5 custom variables for each user to your app,
@@ -29,8 +30,8 @@ import java.util.HashMap;
  * }
  */
 public class CustomVariables {
-    private final Object mConcurrentLock = new Object();
-    private final HashMap<String, JSONArray> mVars = new HashMap<>();
+    private final Map<String, JSONArray> mVars = new ConcurrentHashMap<>();
+
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
     protected static final int MAX_LENGTH = 200;
 
@@ -73,24 +74,16 @@ public class CustomVariables {
      * @return super.put result or null if key is null or value length is not equals 2
      */
     public JSONArray put(String index, JSONArray values) {
-        if (values.length() == 2 && index != null) {
-            synchronized (mConcurrentLock) {
-                return mVars.put(index, values);
-            }
+        if (values.length() != 2 || index == null) {
+            Logy.d(LOGGER_TAG, "values.length() should be equal 2");
+            return null;
         }
-        Logy.d(LOGGER_TAG, "value length should be equal 2");
-        return null;
+        return mVars.put(index, values);
     }
 
     public String toString() {
-        if (mVars.size() == 0) {
-            return null;
-        }
-        JSONObject jsonObject;
-        synchronized (mConcurrentLock) {
-            jsonObject = new JSONObject(mVars);
-        }
-        return jsonObject.toString();
+        JSONObject json = new JSONObject(mVars);
+        return json.length() > 0 ? json.toString() : null;
     }
 
 }

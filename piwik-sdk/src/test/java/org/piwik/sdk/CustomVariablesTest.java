@@ -81,34 +81,4 @@ public class CustomVariablesTest {
         );
 
     }
-
-    @Test
-    public void testConcurrency() throws Exception {
-        CustomVariables cv = new CustomVariables();
-        cv.put(1, "1", "1");
-        launchTestThreads(cv, 10);
-    }
-
-    private static void launchTestThreads(final CustomVariables cv, final int threadCount) {
-        Log.d("launchTestThreads", "Launching " + threadCount + " threads");
-        final JSONArray jsonArray = new JSONArray(Arrays.asList("1", "2"));
-        for (int i = 0; i < threadCount; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int j = 0; j < threadCount * 10000; j++) {
-                            cv.toString();
-                            cv.put("test" + j, jsonArray);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        assertFalse(true);
-                    }
-                }
-            }).start();
-        }
-        Log.d("launchTestThreads", "All launched.");
-    }
-
 }
