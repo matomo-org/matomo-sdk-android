@@ -1,5 +1,7 @@
 package org.piwik.sdk;
 
+import android.util.Log;
+
 import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -11,6 +13,7 @@ import org.robolectric.annotation.Config;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -57,7 +60,6 @@ public class CustomVariablesTest {
     public void testWrongIndex() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
-        cv.put(10, "name2", "value");
         cv.put(-1, "name-1", "value");
 
         assertEquals(
@@ -71,10 +73,11 @@ public class CustomVariablesTest {
         CustomVariables cv = new CustomVariables();
 
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2", "3"))));
+        assertEquals(null, cv.toString());
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2"))));
         assertEquals(
-                cv.get("test"),
-                cv.put("test", new JSONArray(Arrays.asList("4", "5")))
+                "{\"test\":[\"1\",\"2\"]}",
+                cv.toString()
         );
 
     }
