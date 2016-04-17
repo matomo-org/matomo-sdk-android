@@ -65,7 +65,7 @@ public class PiwikApplicationTest {
         Tracker tracker = app.getTracker();
         assertNotNull(tracker);
         tracker.setDispatchInterval(-1);
-        tracker.trackScreenView("test");
+        tracker.track(TrackHelper.track().screen("test").build());
         Thread.sleep(50);
         assertTrue(tracker.getDispatcher().getDryRunOutput().isEmpty());
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN);

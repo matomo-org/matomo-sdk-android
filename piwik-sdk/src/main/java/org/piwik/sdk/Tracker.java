@@ -9,11 +9,9 @@ package org.piwik.sdk;
 
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.ecommerce.EcommerceItems;
-import org.piwik.sdk.tools.CurrencyFormatter;
 import org.piwik.sdk.tools.DeviceHelper;
 import org.piwik.sdk.tools.Logy;
 
@@ -67,7 +65,6 @@ public class Tracker {
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
-    private final DownloadTrackingHelper mDownloadTrackingHelper;
     private final TrackMe mDefaultTrackMe = new TrackMe();
 
     /**
@@ -114,8 +111,6 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
-
-        mDownloadTrackingHelper = new DownloadTrackingHelper(this);
     }
 
     public Piwik getPiwik() {
@@ -284,314 +279,6 @@ public class Tracker {
     }
 
     /**
-     * Tracking methods
-     *
-     * @param path required tracking param, for example: "/user/settings/billing"
-     */
-    public Tracker trackScreenView(String path) {
-        return trackScreenView(path, null);
-    }
-
-    /**
-     * @param trackMe the track me objects to use
-     * @param path    required tracking param, for example: "/user/settings/billing"
-     * @return this tracker
-     */
-    public Tracker trackScreenView(TrackMe trackMe, String path) {
-        return trackScreenView(trackMe, path, null);
-    }
-
-    /**
-     * @param path  for example: "/user/settings/billing"
-     * @param title string The title of the action being tracked. It is possible to use
-     *              slashes / to set one or several categories for this action.
-     *              For example, Help / Feedback will create the Action Feedback in the category Help.
-     * @return this tracker
-     */
-    public Tracker trackScreenView(String path, String title) {
-        return trackScreenView(new TrackMe(), path, title);
-    }
-
-    /**
-     * @param trackMe the track me objects to use
-     * @param path    for example: "/user/settings/billing"
-     * @param title   string The title of the action being tracked. It is possible to use
-     *                slashes / to set one or several categories for this action.
-     *                For example, Help / Feedback will create the Action Feedback in the category Help.
-     * @return this tracker
-     */
-    public Tracker trackScreenView(TrackMe trackMe, String path, String title) {
-        if (path == null)
-            return this;
-        trackMe.set(QueryParams.URL_PATH, path);
-        trackMe.set(QueryParams.ACTION_NAME, title);
-        return track(trackMe);
-    }
-
-
-    public Tracker trackEvent(String category, String action) {
-        return track(new TrackMe()
-                .set(QueryParams.EVENT_CATEGORY, category)
-                .set(QueryParams.EVENT_ACTION, action));
-    }
-
-    public Tracker trackEvent(String category, String action, String label) {
-        return track(new TrackMe()
-                .set(QueryParams.EVENT_CATEGORY, category)
-                .set(QueryParams.EVENT_ACTION, action)
-                .set(QueryParams.EVENT_NAME, label));
-    }
-
-    /**
-     * Events are a useful way to collect data about a user's interaction with interactive components of your app,
-     * like button presses or the use of a particular item in a game.
-     *
-     * @param category (required) – this String defines the event category.
-     *                 You might define event categories based on the class of user actions,
-     *                 like clicks or gestures or voice commands, or you might define them based upon the
-     *                 features available in your application (play, pause, fast forward, etc.).
-     * @param action   (required) this String defines the specific event action within the category specified.
-     *                 In the example, we are basically saying that the category of the event is user clicks,
-     *                 and the action is a button click.
-     * @param label    defines a label associated with the event. For example, if you have multiple Button controls on a
-     *                 screen, you might use the label to specify the specific View control identifier that was clicked.
-     * @param value    defines a numeric value associated with the event. For example, if you were tracking "Buy"
-     *                 button clicks, you might log the number of items being purchased, or their total cost.
-     */
-    public Tracker trackEvent(String category, String action, String label, float value) {
-        return track(new TrackMe()
-                .set(QueryParams.EVENT_CATEGORY, category)
-                .set(QueryParams.EVENT_ACTION, action)
-                .set(QueryParams.EVENT_NAME, label)
-                .set(QueryParams.EVENT_VALUE, value));
-
-    }
-
-    /**
-     * By default, Goals in Piwik are defined as "matching" parts of the screen path or screen title.
-     * In this case a conversion is logged automatically. In some situations, you may want to trigger
-     * a conversion manually on other types of actions, for example:
-     * when a user submits a form
-     * when a user has stayed more than a given amount of time on the page
-     * when a user does some interaction in your Android application
-     *
-     * @param idGoal id of goal as defined in piwik goal settings
-     */
-    public Tracker trackGoal(int idGoal) {
-        if (idGoal < 0)
-            return this;
-        return track(new TrackMe().set(QueryParams.GOAL_ID, idGoal));
-    }
-
-    /**
-     * Tracking request will trigger a conversion for the goal of the website being tracked with this ID
-     *
-     * @param idGoal  id of goal as defined in piwik goal settings
-     * @param revenue a monetary value that was generated as revenue by this goal conversion.
-     */
-    public Tracker trackGoal(int idGoal, float revenue) {
-        if (idGoal < 0)
-            return this;
-        return track(new TrackMe()
-                .set(QueryParams.GOAL_ID, idGoal)
-                .set(QueryParams.REVENUE, revenue));
-    }
-
-    /**
-     * Tracks an  <a href="http://piwik.org/faq/new-to-piwik/faq_71/">Outlink</a>
-     *
-     * @param url HTTPS, HTTP and FTPare valid
-     * @return this Tracker for chaining
-     */
-    public Tracker trackOutlink(URL url) {
-        if (url.getProtocol().equals("http") || url.getProtocol().equals("https") || url.getProtocol().equals("ftp")) {
-            return track(new TrackMe()
-                    .set(QueryParams.LINK, url.toExternalForm())
-                    .set(QueryParams.URL_PATH, url.toExternalForm()));
-        }
-        return this;
-    }
-
-    /**
-     * Default download tracking.<br/>
-     * Calls {@link #trackAppDownload(org.piwik.sdk.Tracker.ExtraIdentifier)} with {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
-     */
-    public Tracker trackAppDownload() {
-        return trackAppDownload(ExtraIdentifier.NONE);
-    }
-
-    /**
-     * Fires a download for once per update.
-     *
-     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
-     * @return this tracker for chaining
-     */
-    public Tracker trackAppDownload(@NonNull ExtraIdentifier extra) {
-        mDownloadTrackingHelper.trackOnce(extra);
-        return this;
-    }
-
-    public enum ExtraIdentifier {
-        /**
-         * The MD5 checksum of the apk file.
-         * com.example.pkg:1/ABCDEF01234567
-         */
-        APK_CHECKSUM,
-        /**
-         * No extra identifier.
-         * com.example.pkg:1
-         */
-        NONE
-    }
-
-    /**
-     * Sends a download event for this app
-     * <p class="note">
-     * Resulting download url:<p/>
-     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM}:<br/>
-     * http://packageName:versionCode/apk-md5-checksum<br/>
-     * Usually the installer-packagename is something like "com.android.vending" (Google Play),
-     * but users can modify this value, don't be surprised by some random values.<p/>
-     * <p/>
-     * Case {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}:<br/>
-     * http://packageName:versionCode<p/>
-     *
-     * @param extra {@link org.piwik.sdk.Tracker.ExtraIdentifier#APK_CHECKSUM} or {@link org.piwik.sdk.Tracker.ExtraIdentifier#NONE}
-     * @return this tracker again, so you can chain calls
-     */
-    public Tracker trackNewAppDownload(@NonNull ExtraIdentifier extra) {
-        mDownloadTrackingHelper.trackNewAppDownload(extra);
-        return this;
-    }
-
-    /**
-     * Tracking the impressions
-     *
-     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
-     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
-     * @param contentTarget (optional) The target of the content. For instance the URL of a landing page.
-     */
-    public Tracker trackContentImpression(String contentName, String contentPiece, String contentTarget) {
-        if (contentName == null || contentName.length() < 1)
-            return this;
-        return track(new TrackMe()
-                .set(QueryParams.CONTENT_NAME, contentName)
-                .set(QueryParams.CONTENT_PIECE, contentPiece)
-                .set(QueryParams.CONTENT_TARGET, contentTarget));
-    }
-
-    /**
-     * Tracking the interactions
-     *
-     * @param interaction   The name of the interaction with the content. For instance a 'click'
-     * @param contentName   The name of the content. For instance 'Ad Foo Bar'
-     * @param contentPiece  The actual content. For instance the path to an image, video, audio, any text
-     * @param contentTarget (optional) The target the content leading to when an interaction occurs. For instance the URL of a landing page.
-     */
-    public Tracker trackContentInteraction(String interaction, String contentName, String contentPiece, String contentTarget) {
-        if (contentName == null || contentName.length() < 1 || interaction == null || interaction.length() < 1)
-            return this;
-        return track(new TrackMe()
-                .set(QueryParams.CONTENT_NAME, contentName)
-                .set(QueryParams.CONTENT_PIECE, contentPiece)
-                .set(QueryParams.CONTENT_TARGET, contentTarget)
-                .set(QueryParams.CONTENT_INTERACTION, interaction));
-    }
-
-    /**
-     * Tracks a shopping cart. Call this javascript function every time a user is adding, updating
-     * or deleting a product from the cart.
-     *
-     * @param grandTotal total value of items in cart
-     * @param items      (optional) the items included in the cart
-     */
-    public void trackEcommerceCartUpdate(int grandTotal, @Nullable EcommerceItems items) {
-        if (items == null) {
-            items = new EcommerceItems();
-        }
-
-        track(new TrackMe()
-                .set(QueryParams.GOAL_ID, 0)
-                .set(QueryParams.REVENUE, CurrencyFormatter.priceString(grandTotal))
-                .set(QueryParams.ECOMMERCE_ITEMS, items.toJson()));
-    }
-
-    /**
-     * Tracks an Ecommerce order, including any ecommerce item previously added to the order.  All
-     * monetary values should be passed as an integer number of cents (or the smallest integer unit
-     * for your currency)
-     *
-     * @param orderId    (required) A unique string identifying the order
-     * @param grandTotal (required) total amount of the order, in cents
-     * @param subTotal   (optional) the subTotal for the order, in cents
-     * @param tax        (optional) the tax for the order, in cents
-     * @param shipping   (optional) the shipping for the order, in cents
-     * @param discount   (optional) the discount for the order, in cents
-     * @param items      (optional) the items included in the order
-     */
-    public void trackEcommerceOrder(String orderId, Integer grandTotal, @Nullable Integer subTotal, @Nullable Integer tax, @Nullable Integer shipping, @Nullable Integer discount, @Nullable EcommerceItems items) {
-        if (items == null) {
-            items = new EcommerceItems();
-        }
-
-        TrackMe trackMe = new TrackMe()
-                .set(QueryParams.GOAL_ID, 0)
-                .set(QueryParams.ORDER_ID, orderId)
-                .set(QueryParams.REVENUE, CurrencyFormatter.priceString(grandTotal))
-                .set(QueryParams.ECOMMERCE_ITEMS, items.toJson());
-
-        if (subTotal != null) {
-            trackMe.set(QueryParams.SUBTOTAL, CurrencyFormatter.priceString(subTotal));
-        }
-
-        if (tax != null) {
-            trackMe.set(QueryParams.TAX, CurrencyFormatter.priceString(tax));
-        }
-
-        if (shipping != null) {
-            trackMe.set(QueryParams.SHIPPING, CurrencyFormatter.priceString(shipping));
-        }
-
-        if (discount != null) {
-            trackMe.set(QueryParams.DISCOUNT, CurrencyFormatter.priceString(discount));
-        }
-        track(trackMe);
-    }
-
-    /**
-     * Caught exceptions are errors in your app for which you've defined exception handling code,
-     * such as the occasional timeout of a network connection during a request for data.
-     * <p/>
-     * This is just a different way to define an event.
-     * Keep in mind Piwik is not a crash tracker, use this sparingly.
-     * <p/>
-     * For this to be useful you should ensure that proguard does not remove all classnames and line numbers.
-     * Also note that if this is used across different app versions and obfuscation is used, the same exception might be mapped to different obfuscated names by proguard.
-     * This would mean the same exception (event) is tracked as different events by Piwik.
-     *
-     * @param ex          exception instance
-     * @param description exception message
-     * @param isFatal     true if it's fatal exception
-     */
-    public void trackException(Throwable ex, String description, boolean isFatal) {
-        String className;
-        try {
-            StackTraceElement trace = ex.getStackTrace()[0];
-            className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
-        } catch (Exception e) {
-            Logy.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
-            className = ex.getClass().getName();
-        }
-        String actionName = "exception/" + (isFatal ? "fatal/" : "") + (className + "/") + description;
-        track(new TrackMe()
-                .set(QueryParams.ACTION_NAME, actionName)
-                .set(QueryParams.EVENT_CATEGORY, "Exception")
-                .set(QueryParams.EVENT_ACTION, className)
-                .set(QueryParams.EVENT_NAME, description)
-                .set(QueryParams.EVENT_VALUE, isFatal ? 1 : 0));
-    }
-
-    /**
      * There parameters are only interesting for the very first query.
      */
     private void injectInitialParams(TrackMe trackMe) {
@@ -691,7 +378,7 @@ public class Tracker {
         }
 
         injectBaseParams(trackMe);
-        String event = trackMe.build();
+        String event = Dispatcher.urlEncodeUTF8(trackMe.toMap());
         if (mPiwik.isOptOut()) {
             mLastEvent = event;
             Logy.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
@@ -759,15 +446,18 @@ public class Tracker {
      *
      * @return query of the event ?r=1&sideId=1..
      */
-    protected String getLastEvent() {
+    @VisibleForTesting
+    public String getLastEvent() {
         return mLastEvent;
     }
 
-    protected void clearLastEvent() {
+    @VisibleForTesting
+    public void clearLastEvent() {
         mLastEvent = null;
     }
 
-    protected Dispatcher getDispatcher() {
+    @VisibleForTesting
+    public Dispatcher getDispatcher() {
         return mDispatcher;
     }
 }

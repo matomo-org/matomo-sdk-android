@@ -255,7 +255,7 @@ public class DispatcherTest {
                                     .set(QueryParams.EVENT_VALUE, j);
 
                             tracker.track(trackMe);
-                            createdQueries.add(tracker.getAPIUrl().toString() + trackMe.build());
+                            createdQueries.add(tracker.getAPIUrl().toString() + Dispatcher.urlEncodeUTF8(trackMe.toMap()));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
