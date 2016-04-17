@@ -1,6 +1,8 @@
 package org.piwik.sdk;
 
+import android.annotation.TargetApi;
 import android.app.Application;
+import android.os.Build;
 import android.util.Pair;
 
 import org.json.JSONArray;
@@ -33,6 +35,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(FullEnvTestRunner.class)
 public class TrackHelperTest extends DefaultTestCase {
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
     public void testPiwikAutoBindActivities() throws Exception {
         Application app = Robolectric.application;
@@ -41,7 +44,7 @@ public class TrackHelperTest extends DefaultTestCase {
         piwik.setOptOut(true);
         Tracker tracker = createTracker();
         //auto attach tracking screen view
-        TrackHelper.bindToApp(app, tracker);
+        final Application.ActivityLifecycleCallbacks callbacks = TrackHelper.track().screens(app).with(tracker);
 
         // emulate default trackScreenView
         Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();
@@ -49,6 +52,13 @@ public class TrackHelperTest extends DefaultTestCase {
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         validateDefaultQuery(queryParams);
         assertEquals(queryParams.get(QueryParams.ACTION_NAME), TestActivity.getTestTitle());
+
+        app.unregisterActivityLifecycleCallbacks(callbacks);
+        tracker.clearLastEvent();
+        assertNull(tracker.getLastEvent());
+        // emulate default trackScreenView
+        Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();
+        assertNull(tracker.getLastEvent());
     }
 
     @Test
@@ -344,7 +354,7 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testPiwikExceptionHandler() throws Exception {
         Tracker tracker = createTracker();
         assertFalse(Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler);
-        TrackHelper.trackUncaughtExceptions(tracker);
+        TrackHelper.track().uncaughtExceptions().with(tracker);
         assertTrue(Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler);
         try {
             //noinspection NumericOverflow
@@ -362,7 +372,7 @@ public class TrackHelperTest extends DefaultTestCase {
 
         boolean exception = false;
         try {
-            TrackHelper.trackUncaughtExceptions(tracker);
+            TrackHelper.track().uncaughtExceptions().with(tracker);
         } catch (RuntimeException e) {
             exception = true;
         }

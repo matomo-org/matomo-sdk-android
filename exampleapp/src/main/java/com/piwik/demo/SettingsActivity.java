@@ -29,7 +29,7 @@ public class SettingsActivity extends Activity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                TrackHelper.bindToApp(getApplication(), ((PiwikApplication) getApplication()).getTracker());
+                TrackHelper.track().screens(getApplication()).with(((PiwikApplication) getApplication()).getTracker());
             }
         });
 

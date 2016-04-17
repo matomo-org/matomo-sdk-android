@@ -11,12 +11,11 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.tools.ActivityHelper;
 import org.piwik.sdk.tools.CurrencyFormatter;
 import org.piwik.sdk.tools.Logy;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class TrackHelper {
     private final TrackMe mBaseTrackMe;
@@ -53,7 +52,11 @@ public class TrackHelper {
         @Nullable
         public abstract TrackMe build();
 
-        public void with(Tracker tracker) {
+        public void with(@NonNull PiwikApplication piwikApplication) {
+            with(piwikApplication.getTracker());
+        }
+
+        public void with(@NonNull Tracker tracker) {
             TrackMe trackMe = build();
             if (trackMe != null) tracker.track(trackMe);
         }
@@ -67,6 +70,17 @@ public class TrackHelper {
      */
     public Screen screen(String path) {
         return new Screen(this, path);
+    }
+
+    /**
+     * Calls {@link #screen(String)} for an activity.
+     * Uses the activity-stack as path and activity title as names.
+     *
+     * @param activity the activity to track
+     */
+    public Screen screen(Activity activity) {
+        String breadcrumbs = ActivityHelper.getBreadcrumbs(activity);
+        return new Screen(this, ActivityHelper.breadcrumbsToPath(breadcrumbs)).title(breadcrumbs);
     }
 
     public static class Screen extends BaseEvent {
@@ -607,104 +621,99 @@ public class TrackHelper {
      * Think about how to deal with older app versions still throwing already fixed exceptions.
      * <p/>
      * See discussion here: https://github.com/piwik/piwik-sdk-android/issues/28
-     *
-     * @param tracker the tracker that should receive the exception events.
-     * @return returns the new (but already active) exception handler.
      */
-    public static Thread.UncaughtExceptionHandler trackUncaughtExceptions(Tracker tracker) {
-        if (Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler) {
-            throw new RuntimeException("Trying to wrap an existing PiwikExceptionHandler.");
+    public UncaughtExceptions uncaughtExceptions() {
+        return new UncaughtExceptions(this);
+    }
+
+    public static class UncaughtExceptions {
+        private final TrackHelper mBaseBuilder;
+
+        UncaughtExceptions(TrackHelper baseBuilder) {
+            mBaseBuilder = baseBuilder;
         }
-        Thread.UncaughtExceptionHandler handler = new PiwikExceptionHandler(tracker);
-        Thread.setDefaultUncaughtExceptionHandler(handler);
-        return handler;
+
+        /**
+         * @param tracker the tracker that should receive the exception events.
+         * @return returns the new (but already active) exception handler.
+         */
+        public Thread.UncaughtExceptionHandler with(Tracker tracker) {
+            if (Thread.getDefaultUncaughtExceptionHandler() instanceof PiwikExceptionHandler) {
+                throw new RuntimeException("Trying to wrap an existing PiwikExceptionHandler.");
+            }
+            Thread.UncaughtExceptionHandler handler = new PiwikExceptionHandler(tracker, mBaseBuilder.mBaseTrackMe);
+            Thread.setDefaultUncaughtExceptionHandler(handler);
+            return handler;
+        }
     }
 
     /**
      * This method will bind a tracker to your application,
-     * causing it to automatically track Activities within your app.
+     * causing it to automatically track Activities with {@link #screen(Activity)} within your app.
      *
-     * @param app     your app
-     * @param tracker the tracker to use
+     * @param app your app
      * @return the registered callback, you need this if you wanted to unregister the callback again
      */
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-    public static Application.ActivityLifecycleCallbacks bindToApp(final Application app, final Tracker tracker) {
-        final Application.ActivityLifecycleCallbacks callback = new Application.ActivityLifecycleCallbacks() {
-            @Override
-            public void onActivityCreated(Activity activity, Bundle bundle) {
+    public AppTracking screens(Application app) {
+        return new AppTracking(this, app);
+    }
 
-            }
+    public static class AppTracking {
+        private final Application mApplication;
+        private final TrackHelper mBaseBuilder;
 
-            @Override
-            public void onActivityStarted(Activity activity) {
+        public AppTracking(TrackHelper baseBuilder, Application application) {
+            mBaseBuilder = baseBuilder;
+            mApplication = application;
+        }
 
-            }
+        /**
+         * @param tracker the tracker to use
+         * @return the registered callback, you need this if you wanted to unregister the callback again
+         */
+        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+        public Application.ActivityLifecycleCallbacks with(final Tracker tracker) {
+            final Application.ActivityLifecycleCallbacks callback = new Application.ActivityLifecycleCallbacks() {
+                @Override
+                public void onActivityCreated(Activity activity, Bundle bundle) {
 
-            @Override
-            public void onActivityResumed(Activity activity) {
-                track(tracker, activity);
-            }
-
-            @Override
-            public void onActivityPaused(Activity activity) {
-
-            }
-
-            @Override
-            public void onActivityStopped(Activity activity) {
-                if (activity != null && activity.isTaskRoot()) {
-                    tracker.dispatch();
                 }
-            }
 
-            @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                @Override
+                public void onActivityStarted(Activity activity) {
 
-            }
+                }
 
-            @Override
-            public void onActivityDestroyed(Activity activity) {
+                @Override
+                public void onActivityResumed(Activity activity) {
+                    TrackHelper.track(mBaseBuilder.mBaseTrackMe).screen(activity).with(tracker);
+                }
 
-            }
-        };
-        app.registerActivityLifecycleCallbacks(callback);
-        return callback;
-    }
+                @Override
+                public void onActivityPaused(Activity activity) {
 
-    /**
-     * Calls {@link #screen(String)} for an activity.
-     * Uses the activity-stack as path and activity title as names.
-     *
-     * @param tracker  the tracker to track with
-     * @param activity the activity to track
-     */
-    public static void track(Tracker tracker, Activity activity) {
-        if (activity != null) {
-            String breadcrumbs = getBreadcrumbs(activity);
-            TrackHelper.track().screen(breadcrumbsToPath(breadcrumbs)).title(breadcrumbs).with(tracker);
+                }
+
+                @Override
+                public void onActivityStopped(Activity activity) {
+                    if (activity != null && activity.isTaskRoot()) {
+                        tracker.dispatch();
+                    }
+                }
+
+                @Override
+                public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+
+                }
+
+                @Override
+                public void onActivityDestroyed(Activity activity) {
+
+                }
+            };
+            mApplication.registerActivityLifecycleCallbacks(callback);
+            return callback;
         }
-    }
-
-    private static String getBreadcrumbs(final Activity activity) {
-        Activity currentActivity = activity;
-        ArrayList<String> breadcrumbs = new ArrayList<>();
-
-        while (currentActivity != null) {
-            breadcrumbs.add(currentActivity.getTitle().toString());
-            currentActivity = currentActivity.getParent();
-        }
-        return joinSlash(breadcrumbs);
-    }
-
-    private static String joinSlash(List<String> sequence) {
-        if (sequence != null && sequence.size() > 0) {
-            return TextUtils.join("/", sequence);
-        }
-        return "";
-    }
-
-    private static String breadcrumbsToPath(String breadcrumbs) {
-        return breadcrumbs.replaceAll("\\s", "");
     }
 }

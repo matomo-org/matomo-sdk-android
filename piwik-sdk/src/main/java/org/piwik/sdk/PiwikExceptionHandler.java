@@ -12,14 +12,16 @@ import org.piwik.sdk.tools.Logy;
 /**
  * An exception handler that wraps the existing exception handler and dispatches event to a {@link org.piwik.sdk.Tracker}.
  * <p/>
- * Also see documentation for {@link TrackHelper#trackUncaughtExceptions(Tracker)}
+ * Also see documentation for {@link TrackHelper#uncaughtExceptions()}
  */
 public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
     private final Tracker mTracker;
+    private final TrackMe mTrackMe;
     private final Thread.UncaughtExceptionHandler mDefaultExceptionHandler;
 
-    public PiwikExceptionHandler(Tracker tracker) {
+    public PiwikExceptionHandler(Tracker tracker, TrackMe trackMe) {
         mTracker = tracker;
+        mTrackMe = trackMe;
         mDefaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
     }
 
