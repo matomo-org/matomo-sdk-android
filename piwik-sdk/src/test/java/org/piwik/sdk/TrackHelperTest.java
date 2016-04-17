@@ -275,8 +275,8 @@ public class TrackHelperTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
-        items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
-        items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        items.addItem(new EcommerceItems.Item("fake_sku").name("fake_product").category("fake_category").price(200).quantity(2));
+        items.addItem(new EcommerceItems.Item("fake_sku_2").name("fake_product_2").category("fake_category_2").price(400).quantity(3));
         TrackHelper.track().cartUpdate(50000).items(items).with(tracker);
 
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
@@ -298,8 +298,8 @@ public class TrackHelperTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
-        items.addItem("fake_sku", "fake_product", "fake_category", 200, 2);
-        items.addItem("fake_sku_2", "fake_product_2", "fake_category_2", 400, 3);
+        items.addItem(new EcommerceItems.Item("fake_sku").name("fake_product").category("fake_category").price(200).quantity(2));
+        items.addItem(new EcommerceItems.Item("fake_sku_2").name("fake_product_2").category("fake_category_2").price(400).quantity(3));
         TrackHelper.track().order("orderId", 10020).subTotal(7002).tax(2000).shipping(1000).discount(0).items(items).with(tracker);
 
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
@@ -359,6 +359,14 @@ public class TrackHelperTest extends DefaultTestCase {
         assertTrue(queryParams.get(QueryParams.EVENT_ACTION).startsWith("org.piwik.sdk.TrackHelperTest/testPiwikExceptionHandler:"));
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), "/ by zero");
         assertEquals(queryParams.get(QueryParams.EVENT_VALUE), "1");
+
+        boolean exception = false;
+        try {
+            TrackHelper.trackUncaughtExceptions(tracker);
+        } catch (RuntimeException e) {
+            exception = true;
+        }
+        assertTrue(exception);
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {

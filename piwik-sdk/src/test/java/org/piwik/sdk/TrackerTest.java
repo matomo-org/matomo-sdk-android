@@ -5,6 +5,7 @@ import android.util.Pair;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.DispatcherTest;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.TestActivity;
@@ -324,9 +325,11 @@ public class TrackerTest extends DefaultTestCase {
     public void testTrackerEquals() throws Exception {
         Tracker tracker = createTracker();
         Tracker tracker2 = Piwik.getInstance(Robolectric.application).newTracker("http://localhost", 100);
+        Tracker tracker3 = Piwik.getInstance(Robolectric.application).newTracker("http://example.com", 1);
         assertFalse(tracker.equals(null));
-        assertFalse(tracker.equals(new String()));
+        assertFalse(tracker.equals(""));
         assertFalse(tracker.equals(tracker2));
+        assertTrue(tracker.equals(tracker3));
     }
 
     @Test

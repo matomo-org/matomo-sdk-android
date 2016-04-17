@@ -13,7 +13,6 @@ import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.TrackerBulkURLWrapper;
 import org.piwik.sdk.tools.Logy;
 
 import java.io.BufferedWriter;

@@ -7,8 +7,6 @@
 
 package org.piwik.sdk.ecommerce;
 
-import android.support.annotation.Nullable;
-
 import org.json.JSONArray;
 import org.piwik.sdk.tools.CurrencyFormatter;
 
@@ -16,40 +14,93 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EcommerceItems {
-    public Map<String, JSONArray> items = new HashMap<>();
-
+    private Map<String, JSONArray> mItems = new HashMap<>();
 
     /**
      * Adds a product into the ecommerce order. Must be called for each product in the order.
      * If the same sku is used twice, the first item is overwritten.
-     *
-     * @param sku      (required) Unique identifier for the product
-     * @param name     (optional) Product name
-     * @param category (optional) Product category
-     * @param price    (optional) Price of the product in cents
-     * @param quantity (optional) Quantity
      */
-    public void addItem(String sku, @Nullable String name, @Nullable String category, @Nullable Integer price, @Nullable Integer quantity) {
-        if (name == null) {
-            name = "";
-        }
-        if (category == null) {
-            category = "";
-        }
-        if (price == null) {
-            price = 0;
-        }
-        if (quantity == null) {
-            quantity = 1;
+    public void addItem(Item item) {
+        mItems.put(item.mSku, item.toJson());
+    }
+
+    public static class Item {
+        private final String mSku;
+        private String mCategory;
+        private Integer mPrice;
+        private Integer mQuantity;
+        private String mName;
+
+        /**
+         * If the same sku is used twice, the first item is overwritten.
+         *
+         * @param sku Unique identifier for the product
+         */
+        public Item(String sku) {
+            mSku = sku;
         }
 
-        JSONArray item = new JSONArray();
-        item.put(sku);
-        item.put(name);
-        item.put(category);
-        item.put(CurrencyFormatter.priceString(price));
-        item.put(quantity.toString());
-        items.put(sku, item);
+        /**
+         * @param name Product name
+         */
+        public Item name(String name) {
+            mName = name;
+            return this;
+        }
+
+        /**
+         * @param category Product category
+         */
+        public Item category(String category) {
+            mCategory = category;
+            return this;
+        }
+
+        /**
+         * @param price Price of the product in cents
+         */
+        public Item price(int price) {
+            mPrice = price;
+            return this;
+        }
+
+        /**
+         * @param quantity Quantity
+         */
+        public Item quantity(int quantity) {
+            mQuantity = quantity;
+            return this;
+        }
+
+        public String getSku() {
+            return mSku;
+        }
+
+        public String getCategory() {
+            return mCategory;
+        }
+
+        public Integer getPrice() {
+            return mPrice;
+        }
+
+        public Integer getQuantity() {
+            return mQuantity;
+        }
+
+        public String getName() {
+            return mName;
+        }
+
+        protected JSONArray toJson() {
+            JSONArray item = new JSONArray();
+            item.put(mSku);
+            if (mName != null) item.put(mName);
+            if (mCategory != null) item.put(mCategory);
+            if (mPrice != null) item.put(CurrencyFormatter.priceString(mPrice));
+            if (mQuantity != null) item.put(String.valueOf(mQuantity));
+            return item;
+        }
     }
 
     /**
@@ -57,21 +108,25 @@ public class EcommerceItems {
      *
      * @param sku unique identifier for the product
      */
-    public void removeItem(String sku) {
-        items.remove(sku);
+    public void remove(String sku) {
+        mItems.remove(sku);
+    }
+
+    public void remove(Item item) {
+        mItems.remove(item.mSku);
     }
 
     /**
      * Clears all items from the ecommerce order
      */
-    public void removeAll() {
-        items.clear();
+    public void clear() {
+        mItems.clear();
     }
 
     public String toJson() {
         JSONArray jsonItems = new JSONArray();
 
-        for (JSONArray item : items.values()) {
+        for (JSONArray item : mItems.values()) {
             jsonItems.put(item);
         }
         return jsonItems.toString();

@@ -45,27 +45,28 @@ public class Tracker {
     protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
     protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
 
-    /**
-     * The ID of the website we're tracking a visit/action for.
-     */
-    private final int mSiteId;
+    private final Piwik mPiwik;
 
     /**
      * Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      */
     private final URL mApiUrl;
 
-    private final Piwik mPiwik;
-    private String mLastEvent;
-    private String mApplicationDomain;
-    private long mSessionTimeout = 30 * 60 * 1000;
-    private long mSessionStartTime;
+    /**
+     * The ID of the website we're tracking a visit/action for.
+     */
+    private final int mSiteId;
+    private final String mAuthToken;
     private final Object mSessionLock = new Object();
-
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
     private final TrackMe mDefaultTrackMe = new TrackMe();
+
+    private String mLastEvent;
+    private String mApplicationDomain;
+    private long mSessionTimeout = 30 * 60 * 1000;
+    private long mSessionStartTime;
 
     /**
      * Use Piwik.newTracker() method to create new trackers
@@ -77,6 +78,7 @@ public class Tracker {
      * @throws MalformedURLException
      */
     protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
+
         String checkUrl = url;
         if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
             mApiUrl = new URL(checkUrl);
@@ -88,6 +90,7 @@ public class Tracker {
         }
         mPiwik = piwik;
         mSiteId = siteId;
+        mAuthToken = authToken;
 
         mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken);
 
@@ -117,8 +120,12 @@ public class Tracker {
         return mPiwik;
     }
 
-    protected URL getAPIUrl() {
+    public URL getAPIUrl() {
         return mApiUrl;
+    }
+
+    public String getAuthToken() {
+        return mAuthToken;
     }
 
     protected int getSiteId() {

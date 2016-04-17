@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -37,6 +38,57 @@ public class TrackMeTest extends DefaultTestCase {
         for (QueryParams param : QueryParams.values()) {
             assertEquals(base.get(param), offSpring.get(param));
         }
+    }
+
+    @Test
+    public void testSet() throws Exception {
+        TrackMe trackMe = new TrackMe();
+        trackMe.set(QueryParams.HOURS, "String");
+        assertEquals("String", trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.set(QueryParams.HOURS, 1f);
+        assertEquals(String.valueOf(1f), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.set(QueryParams.HOURS, 1L);
+        assertEquals(String.valueOf(1L), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.set(QueryParams.HOURS, 1);
+        assertEquals(String.valueOf(1), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.set(QueryParams.HOURS, null);
+        assertNull(trackMe.get(QueryParams.HOURS));
+    }
+
+    @Test
+    public void testTrySet() throws Exception {
+        TrackMe trackMe = new TrackMe();
+        trackMe.trySet(QueryParams.HOURS, "A");
+        trackMe.trySet(QueryParams.HOURS, "B");
+        assertEquals("A", trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.trySet(QueryParams.HOURS, 1f);
+        trackMe.trySet(QueryParams.HOURS, 2f);
+        assertEquals(String.valueOf(1f), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.trySet(QueryParams.HOURS, 1L);
+        trackMe.trySet(QueryParams.HOURS, 2L);
+        assertEquals(String.valueOf(1L), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.trySet(QueryParams.HOURS, 1);
+        trackMe.trySet(QueryParams.HOURS, 2);
+        assertEquals(String.valueOf(1), trackMe.get(QueryParams.HOURS));
+
+        trackMe = new TrackMe();
+        trackMe.trySet(QueryParams.HOURS, "A");
+        trackMe.trySet(QueryParams.HOURS, null);
+        assertNotNull(trackMe.get(QueryParams.HOURS));
     }
 
     @Test

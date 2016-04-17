@@ -4,7 +4,7 @@
  * @link https://github.com/piwik/piwik-android-sdk
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.util.Log;
 
@@ -13,8 +13,10 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;

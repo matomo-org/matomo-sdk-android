@@ -109,7 +109,11 @@ public class DemoActivity extends ActionBarActivity {
         int index = cartItems % 4;
         int quantity = (cartItems / 4) + 1;
 
-        items.addItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
+        items.addItem(new EcommerceItems.Item(skus.get(index))
+                .name(names.get(index))
+                .category(categories.get(index))
+                .price(prices.get(index))
+                .quantity(quantity));
         cartItems++;
     }
 
