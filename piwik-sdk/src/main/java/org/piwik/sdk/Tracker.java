@@ -113,6 +113,7 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
+        mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
 
         mDownloadTrackingHelper = new DownloadTrackingHelper(this);
     }
@@ -274,6 +275,7 @@ public class Tracker {
      */
     public Tracker setApplicationDomain(String domain) {
         mApplicationDomain = domain;
+        mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
         return this;
     }
 
@@ -651,15 +653,21 @@ public class Tracker {
 
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
-            urlPath = getApplicationBaseURL() + "/";
-        } else if (urlPath.startsWith("/")) {
-            urlPath = getApplicationBaseURL() + urlPath;
-        } else if (urlPath.startsWith("http://") || urlPath.startsWith("https://") || urlPath.startsWith("ftp://")) {
-            // URL is fine as it is
-        } else if (!urlPath.startsWith("/")) {
-            urlPath = getApplicationBaseURL() + "/" + urlPath;
+            urlPath = mDefaultTrackMe.get(QueryParams.URL_PATH);
+        } else {
+            urlPath = fixUrl(urlPath, getApplicationBaseURL());
+            mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
         }
         trackMe.set(QueryParams.URL_PATH, urlPath);
+    }
+
+    private static String fixUrl(String url, String baseUrl) {
+        if (url == null) url = baseUrl + "/";
+
+        if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("ftp://")) {
+            url = baseUrl + (url.startsWith("/") ? "" : "/") + url;
+        }
+        return url;
     }
 
     private CountDownLatch mSessionStartLatch = new CountDownLatch(0);
