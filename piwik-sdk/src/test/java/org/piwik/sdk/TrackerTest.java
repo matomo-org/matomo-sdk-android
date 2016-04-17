@@ -45,6 +45,29 @@ import static org.junit.Assert.assertTrue;
 public class TrackerTest extends DefaultTestCase {
 
     @Test
+    public void testLastScreenUrl() throws Exception {
+        Tracker tracker = createTracker();
+        assertNull(tracker.getLastEvent());
+
+        tracker.track(new TrackMe());
+        assertNotNull(tracker.getLastEvent());
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals(tracker.getApplicationBaseURL() + "/", queryParams.get(QueryParams.URL_PATH));
+
+        tracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.thing.com/foo/bar"));
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals("http://some.thing.com/foo/bar", queryParams.get(QueryParams.URL_PATH));
+
+        tracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.other/thing"));
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals("http://some.other/thing", queryParams.get(QueryParams.URL_PATH));
+
+        tracker.track(new TrackMe());
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        assertEquals("http://some.other/thing", queryParams.get(QueryParams.URL_PATH));
+    }
+
+    @Test
     public void testPiwikAutoBindActivities() throws Exception {
         Application app = Robolectric.application;
         Piwik piwik = Piwik.getInstance(app);
