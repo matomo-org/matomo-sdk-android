@@ -16,7 +16,7 @@ import android.view.View;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.TrackHelper;
 import org.piwik.sdk.Tracker;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 
@@ -39,6 +39,9 @@ public class DemoActivity extends ActionBarActivity {
         items = new EcommerceItems();
     }
 
+    private Tracker getTracker() {
+        return ((PiwikApplication) getApplication()).getTracker();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -64,36 +67,36 @@ public class DemoActivity extends ActionBarActivity {
 
     @OnClick(R.id.trackMainScreenViewButton)
     void onTrackMainScreenClicked(View view) {
-        ((PiwikApplication) getApplication()).getTracker().trackScreenView("/", "Main screen");
+        TrackHelper.track().screen("/").title("Main screen").with(getTracker());
     }
 
     @OnClick(R.id.trackCustomVarsButton)
     void onTrackCustomVarsClicked(View view) {
-        ((PiwikApplication) getApplication()).getTracker()
-                .trackScreenView(
-                        new TrackMe()
-                                .setScreenCustomVariable(1, "first", "var")
-                                .setScreenCustomVariable(2, "second", "long value"),
-                        "/custom_vars", "Custom Vars");
+        TrackHelper.track()
+                .screen("/custom_vars")
+                .title("Custom Vars")
+                .variable(1, "first", "var")
+                .variable(2, "second", "long value")
+                .with(getTracker());
     }
 
     @OnClick(R.id.raiseExceptionButton)
     void onRaiseExceptionClicked(View view) {
-        ((PiwikApplication) getApplication()).getTracker().trackException(new Exception("OnPurposeException"), "Crash button", false);
+        TrackHelper.track().exception(new Exception("OnPurposeException")).description("Crash button").fatal(false).with(getTracker());
     }
 
     @OnClick(R.id.trackGoalButton)
     void onTrackGoalClicked(View view) {
-        int revenue;
+        float revenue;
         try {
             revenue = Integer.valueOf(
                     ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
             );
         } catch (Exception e) {
-            ((PiwikApplication) getApplication()).getTracker().trackException(e, "wrong revenue", false);
+            TrackHelper.track().exception(e).description("wrong revenue").with(getTracker());
             revenue = 0;
         }
-        ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
+        TrackHelper.track().goal(1).revenue(revenue).with(getTracker());
     }
 
     @OnClick(R.id.addEcommerceItemButton)
@@ -106,20 +109,29 @@ public class DemoActivity extends ActionBarActivity {
         int index = cartItems % 4;
         int quantity = (cartItems / 4) + 1;
 
-        items.addItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
+        items.addItem(new EcommerceItems.Item(skus.get(index))
+                .name(names.get(index))
+                .category(categories.get(index))
+                .price(prices.get(index))
+                .quantity(quantity));
         cartItems++;
     }
 
     @OnClick(R.id.trackEcommerceCartUpdateButton)
     void onTrackEcommerceCartUpdateClicked(View view) {
-        Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-        tracker.trackEcommerceCartUpdate(8600, items);
+        TrackHelper.track().cartUpdate(8600).items(items).with(getTracker());
     }
 
     @OnClick(R.id.completeEcommerceOrderButton)
     void onCompleteEcommerceOrderClicked(View view) {
-        Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-        tracker.trackEcommerceOrder(String.valueOf(10000 * Math.random()), 10000, 1000, 2000, 3000, 500, items);
+        TrackHelper.track()
+                .order(String.valueOf(10000 * Math.random()), 10000)
+                .subTotal(1000)
+                .tax(2000)
+                .shipping(3000)
+                .discount(500)
+                .items(items)
+                .with(getTracker());
     }
 
 }

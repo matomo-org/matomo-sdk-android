@@ -17,7 +17,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.QuickTrack;
+import org.piwik.sdk.TrackHelper;
 import org.piwik.sdk.tools.Logy;
 
 
@@ -25,11 +25,11 @@ public class SettingsActivity extends Activity {
 
     private void refreshUI(final Activity settingsActivity) {
         // auto track button
-        Button button = (Button) findViewById(R.id.manuallyTrackSettingsScreenViewButton);
+        Button button = (Button) findViewById(R.id.bindtoapp);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                QuickTrack.track((PiwikApplication) getApplication(), settingsActivity);
+                TrackHelper.track().screens(getApplication()).with(((PiwikApplication) getApplication()).getTracker());
             }
         });
 

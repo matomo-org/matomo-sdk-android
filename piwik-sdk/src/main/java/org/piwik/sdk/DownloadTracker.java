@@ -9,33 +9,50 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
-import org.piwik.sdk.Tracker.ExtraIdentifier;
 import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.Logy;
 
 import java.io.File;
 
-class DownloadTrackingHelper {
+public class DownloadTracker {
     protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DownloadTrackingHelper";
     private static final String INSTALL_SOURCE_GOOGLE_PLAY = "com.android.vending";
     private final Tracker mTracker;
+    private final TrackMe mBaseTrackMe;
     private final Object TRACK_ONCE_LOCK = new Object();
     private final PackageManager mPackMan;
     private final String mPackageName;
     private final SharedPreferences mPreferences;
-    private final Piwik mPiwik;
     private final Context mContext;
 
-    DownloadTrackingHelper(Tracker tracker) {
+    public enum Extra {
+        /**
+         * The MD5 checksum of the apk file.
+         * com.example.pkg:1/ABCDEF01234567
+         */
+        APK_CHECKSUM,
+        /**
+         * No extra identifier.
+         * com.example.pkg:1
+         */
+        NONE
+    }
+
+    public DownloadTracker(Tracker tracker) {
+        this(tracker, new TrackMe());
+    }
+
+    public DownloadTracker(Tracker tracker, TrackMe baseTrackMe) {
         mTracker = tracker;
-        mPiwik = tracker.getPiwik();
-        mContext = mPiwik.getContext();
-        mPreferences = mPiwik.getSharedPreferences();
+        mBaseTrackMe = baseTrackMe;
+        Piwik piwik = tracker.getPiwik();
+        mPreferences = piwik.getSharedPreferences();
+        mContext = piwik.getContext();
         mPackageName = mContext.getPackageName();
         mPackMan = mContext.getPackageManager();
     }
 
-    void trackOnce(@NonNull ExtraIdentifier extra) {
+    public void trackOnce(@NonNull Extra extra) {
         try {
             PackageInfo pkgInfo = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
@@ -50,7 +67,7 @@ class DownloadTrackingHelper {
         }
     }
 
-    void trackNewAppDownload(@NonNull final ExtraIdentifier extra) {
+    public void trackNewAppDownload(@NonNull final Extra extra) {
         final Thread trackTask = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -67,7 +84,7 @@ class DownloadTrackingHelper {
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (extra == ExtraIdentifier.APK_CHECKSUM) {
+                if (extra == Extra.APK_CHECKSUM) {
                     // Don't do APK checksum on this thread, we don't want to block.
                     trackTask.start();
                 } else {
@@ -77,7 +94,7 @@ class DownloadTrackingHelper {
         }, delay ? 3000 : 0);
     }
 
-    void trackNewAppDownloadInternal(@NonNull ExtraIdentifier extra) {
+    private void trackNewAppDownloadInternal(@NonNull Extra extra) {
         Logy.d(LOGGER_TAG, "Tracking app download...");
         PackageInfo pkgInfo = null;
         try {
@@ -91,7 +108,7 @@ class DownloadTrackingHelper {
         StringBuilder installIdentifier = new StringBuilder();
         installIdentifier.append("http://").append(mPackageName).append(":").append(pkgInfo.versionCode);
 
-        if (extra == ExtraIdentifier.APK_CHECKSUM) {
+        if (extra == Extra.APK_CHECKSUM) {
             if (pkgInfo.applicationInfo != null && pkgInfo.applicationInfo.sourceDir != null) {
                 try {
                     String md5Identifier = Checksum.getMD5Checksum(new File(pkgInfo.applicationInfo.sourceDir));
@@ -119,7 +136,7 @@ class DownloadTrackingHelper {
         if (referringApp != null)
             referringApp = "http://" + referringApp;
 
-        mTracker.track(new TrackMe()
+        mTracker.track(new TrackMe(mBaseTrackMe)
                 .set(QueryParams.EVENT_CATEGORY, "Application")
                 .set(QueryParams.EVENT_ACTION, "downloaded")
                 .set(QueryParams.ACTION_NAME, "application/downloaded")

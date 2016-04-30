@@ -1,7 +1,5 @@
 package org.piwik.sdk;
 
-import android.util.Log;
-
 import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,7 +11,6 @@ import org.robolectric.annotation.Config;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -21,6 +18,19 @@ import static org.junit.Assert.assertTrue;
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class CustomVariablesTest {
+
+    @Test
+    public void testInherit() throws Exception {
+        CustomVariables ancestor = new CustomVariables();
+        ancestor.put(1, "name", "value");
+        ancestor.put(2, "name2", "uńicódę");
+
+        CustomVariables cv = new CustomVariables(ancestor);
+        String cvJson = cv.toString();
+        new JSONObject(cvJson); //Will throw exception if not valid json
+        assertTrue(cvJson.contains("\"2\":[\"name2\",\"uńicódę\"]"));
+        assertTrue(cvJson.contains("\"1\":[\"name\",\"value\"]"));
+    }
 
     @Test
     public void testToString() throws Exception {

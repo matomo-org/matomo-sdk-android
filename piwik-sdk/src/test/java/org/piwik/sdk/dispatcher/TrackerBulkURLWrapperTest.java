@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import org.json.JSONArray;
 import org.junit.Test;
@@ -12,15 +12,18 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class TrackerBulkURLWrapperTest {
 
-    private TrackerBulkURLWrapper createWrapper(String url, String... events) throws Exception{
-        if (url == null){
+    private TrackerBulkURLWrapper createWrapper(String url, String... events) throws Exception {
+        if (url == null) {
             url = "http://example.com/";
         }
         URL _url = new URL(url);
@@ -71,13 +74,13 @@ public class TrackerBulkURLWrapperTest {
 
         Iterator<TrackerBulkURLWrapper.Page> it = wrapper.iterator();
         assertTrue(it.hasNext());
-        while (it.hasNext()){
+        while (it.hasNext()) {
             TrackerBulkURLWrapper.Page page = it.next();
             assertEquals(page.elementsCount(), TrackerBulkURLWrapper.getEventsPerPage());
             JSONArray requests = wrapper.getEvents(page).getJSONArray("requests");
             assertEquals(requests.length(), TrackerBulkURLWrapper.getEventsPerPage());
             assertTrue(requests.get(0).toString().startsWith("eve"));
-            assertTrue(requests.get(TrackerBulkURLWrapper.getEventsPerPage()-1).toString().length() >= 4);
+            assertTrue(requests.get(TrackerBulkURLWrapper.getEventsPerPage() - 1).toString().length() >= 4);
             assertFalse(page.isEmpty());
         }
         assertFalse(it.hasNext());

@@ -90,8 +90,8 @@ public class YourActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((YourApplication) getApplication()).getTracker()
-            .trackScreenView("/your_activity", "Title");
+        Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+        TrackHelper.track().screen("/your_activity").title("Title").with(tracker);
     }
 }
 ```
@@ -104,7 +104,7 @@ method.
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackEvent("category", "action", "label", 1000)
+TrackHelper.track().event("category", "action").name("label").value(1000f).with(tracker);
 ```
 
 #### Track goals
@@ -115,7 +115,7 @@ Read more about what is a [Goal in Piwik](http://piwik.org/docs/tracking-goals-w
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackGoal(1, revenue);
+TrackHelper.track().goal(1).revenue(revenue).with(tracker)
 ```
 
 #### Track custom vars
@@ -130,9 +130,9 @@ More about [custom variables on piwik.org](http://piwik.org/docs/custom-variable
 
 ```java
 
-Tracker tracker = ((YourApplication) getApplication()).getTracker();
-tracker.setVisitCustomVariable(2, 'Age', '99');
-tracker.trackScreenView(new TrackMe().setScreenCustomVariable(2, 'Price', '0.99'), '/path');
+Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+tracker.setVisitCustomVariable(2, "Age", "99");
+TrackHelper.track().screen("/path").variable(2, "Price", "0.99").with(tracker);
 ```
 
 #### Track application downloads
@@ -142,7 +142,7 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackAppDownload();
+TrackHelper.track().download().with(tracker);
 ```
 
 #### Custom Dimensions
@@ -171,10 +171,10 @@ To track an Ecommerce order use `trackEcommerceOrder` method.
 
 Tracker tracker = ((YourApplication) getApplication()).getTracker();
 EcommerceItems items = new EcommerceItems();
-items.addItem("sku", "product", "category", 200, 2);
-items.addItem("sku", "product2", "category2", 400, 3);
-// grandTotal, subTotal, tax, shipping, discount, EcommerceItems
-tracker.trackEcommerceOrder("orderId", 10000, 7000, 2000, 1000, 0, items);
+items.addItem(new EcommerceItems.Item("sku").name("product").category("category").price(200).quantity(2));
+items.addItem(new EcommerceItems.Item("sku").name("product2").category("category2").price(400).quantity(3));
+
+TrackHelper.track().order("orderId", 10000).subTotal(7000).tax(2000).shipping(1000).discount(0).items(items).with(tracker);
 ```
 
 ### Advanced tracker usage

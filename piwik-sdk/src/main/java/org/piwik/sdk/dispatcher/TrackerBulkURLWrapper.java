@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,6 +14,8 @@ import android.text.TextUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.tools.Logy;
 
 import java.net.MalformedURLException;

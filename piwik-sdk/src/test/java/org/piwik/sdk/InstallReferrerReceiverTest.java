@@ -10,6 +10,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 
 
@@ -44,6 +45,29 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
         referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData2, referrerDataFromPreferences);
+    }
+
+    @Test
+    public void testGracefulFailure() throws Exception {
+        InstallReferrerReceiver receiver = new InstallReferrerReceiver();
+        Intent badIntent = new Intent("bad.action");
+        badIntent.setPackage(Robolectric.application.getPackageName());
+
+        String testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
+        badIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
+        receiver.onReceive(Robolectric.application.getApplicationContext(), badIntent);
+        String referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        assertNull(referrerDataFromPreferences);
+
+
+        Intent nullIntent = new Intent();
+        nullIntent.setPackage(Robolectric.application.getPackageName());
+
+        testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
+        nullIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
+        receiver.onReceive(Robolectric.application.getApplicationContext(), nullIntent);
+        referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        assertNull(referrerDataFromPreferences);
     }
 
 }

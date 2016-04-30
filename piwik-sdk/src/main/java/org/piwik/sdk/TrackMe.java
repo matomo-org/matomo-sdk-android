@@ -9,9 +9,8 @@ package org.piwik.sdk;
 
 import android.support.annotation.NonNull;
 
-import org.piwik.sdk.dispatcher.Dispatcher;
-
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This objects represents one query to Piwik.
@@ -20,7 +19,13 @@ import java.util.HashMap;
 public class TrackMe {
     private static final int DEFAULT_QUERY_CAPACITY = 14;
     private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
-    private final CustomVariables mScreenCustomVariable = new CustomVariables();
+
+    public TrackMe() {
+    }
+
+    public TrackMe(TrackMe trackMe) {
+        mQueryParams.putAll(trackMe.mQueryParams);
+    }
 
     protected synchronized TrackMe set(@NonNull String key, String value) {
         if (value == null)
@@ -109,28 +114,14 @@ public class TrackMe {
     /**
      * The tracker calls this to build the final query to be sent via HTTP
      *
-     * @return the query, but without the base URL
+     * @return the parameter map, but without the base URL
      */
-    public synchronized String build() {
-        set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mScreenCustomVariable.toString());
-        return Dispatcher.urlEncodeUTF8(mQueryParams);
+    public synchronized Map<String, String> toMap() {
+        return new HashMap<>(mQueryParams);
     }
 
     public synchronized String get(@NonNull QueryParams queryParams) {
         return mQueryParams.get(queryParams.toString());
-    }
-
-    /**
-     * Just like {@link Tracker#setVisitCustomVariable(int, String, String)} but only valid per screen.
-     * Only takes effect when setting prior to tracking the screen view.
-     */
-    public synchronized TrackMe setScreenCustomVariable(int index, String name, String value) {
-        mScreenCustomVariable.put(index, name, value);
-        return this;
-    }
-
-    public synchronized CustomVariables getScreenCustomVariable() {
-        return mScreenCustomVariable;
     }
 
 }

@@ -35,6 +35,14 @@ public class CustomVariables {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomVariables";
     protected static final int MAX_LENGTH = 200;
 
+    public CustomVariables() {
+
+    }
+
+    public CustomVariables(CustomVariables variables) {
+        mVars.putAll(variables.mVars);
+    }
+
     /**
      * Custom variable names and values are limited to 200 characters in length each.
      *
