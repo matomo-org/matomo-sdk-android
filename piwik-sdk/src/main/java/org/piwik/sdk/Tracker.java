@@ -413,6 +413,30 @@ public class Tracker {
     public Tracker trackAppDownload() {
         return trackAppDownload(mPiwik.getContext(), ExtraIdentifier.INSTALLER_PACKAGENAME);
     }
+    
+    /**
+     * Fires a download for this app once per update.
+     * The install will be tracked as:<p/>
+     * 'http://packageName:versionCode/installerPackagename'
+     * <p/>
+     * Also see {@link #trackNewAppDownload(android.content.Context, org.piwik.sdk.Tracker.ExtraIdentifier)}
+     *
+     * @return this tracker again for chaining
+     */
+    public Tracker trackAppDownload(String version) {
+        Context app = mPiwik.getContext(); 
+        try {
+            PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
+            String firedKey = "downloaded:" + pkgInfo.packageName + ":" + version;
+            if (!getSharedPreferences().getBoolean(firedKey, false)) {
+                trackNewAppDownload(app, extra);
+                getSharedPreferences().edit().putBoolean(firedKey, true).apply();
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return this;
+    }
 
     /**
      * Fires a download for an arbitrary app once per update.
