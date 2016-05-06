@@ -425,6 +425,7 @@ public class Tracker {
      */
     public Tracker trackAppDownload(String version) {
         Context app = mPiwik.getContext(); 
+        ExtraIdentifier extra = ExtraIdentifier.INSTALLER_PACKAGENAME
         try {
             PackageInfo pkgInfo = app.getPackageManager().getPackageInfo(app.getPackageName(), 0);
             String firedKey = "downloaded:" + pkgInfo.packageName + ":" + version;
