@@ -24,6 +24,8 @@ public class DownloadTracker {
     private final String mPackageName;
     private final SharedPreferences mPreferences;
     private final Context mContext;
+    private String mVersion;
+    private PackageInfo mPkgInfo;
 
     public enum Extra {
         /**
@@ -42,6 +44,18 @@ public class DownloadTracker {
         this(tracker, new TrackMe());
     }
 
+    public void setVersion(String version) {
+        mVersion = version;
+    }
+    
+    public String getVersion(){
+        if (mVersion != null){
+            return mVersion;
+        }
+        mVersion = Integer.toString(mPkgInfo.versionCode);
+        return mVersion;
+    }
+    
     public DownloadTracker(Tracker tracker, TrackMe baseTrackMe) {
         mTracker = tracker;
         mBaseTrackMe = baseTrackMe;
@@ -50,20 +64,20 @@ public class DownloadTracker {
         mContext = piwik.getContext();
         mPackageName = mContext.getPackageName();
         mPackMan = mContext.getPackageManager();
+        try {
+            mPkgInfo = mPackMan.getPackageInfo(mPackageName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public void trackOnce(@NonNull Extra extra) {
-        try {
-            PackageInfo pkgInfo = mContext.getPackageManager().getPackageInfo(mContext.getPackageName(), 0);
-            String firedKey = "downloaded:" + pkgInfo.packageName + ":" + pkgInfo.versionCode;
-            synchronized (TRACK_ONCE_LOCK) {
-                if (!mPreferences.getBoolean(firedKey, false)) {
-                    mPreferences.edit().putBoolean(firedKey, true).apply();
-                    trackNewAppDownload(extra);
-                }
+        String firedKey = "downloaded:" + mPackageName + ":" + getVersion();
+        synchronized (TRACK_ONCE_LOCK) {
+            if (!mPreferences.getBoolean(firedKey, false)) {
+                mPreferences.edit().putBoolean(firedKey, true).apply();
+                trackNewAppDownload(extra);
             }
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
         }
     }
 
@@ -96,22 +110,16 @@ public class DownloadTracker {
 
     private void trackNewAppDownloadInternal(@NonNull Extra extra) {
         Logy.d(LOGGER_TAG, "Tracking app download...");
-        PackageInfo pkgInfo = null;
-        try {
-            pkgInfo = mPackMan.getPackageInfo(mPackageName, 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        if (pkgInfo == null)
+        if (mPkgInfo == null)
             return;
 
         StringBuilder installIdentifier = new StringBuilder();
-        installIdentifier.append("http://").append(mPackageName).append(":").append(pkgInfo.versionCode);
+        installIdentifier.append("http://").append(mPackageName).append(":").append(getVersion());
 
         if (extra == Extra.APK_CHECKSUM) {
-            if (pkgInfo.applicationInfo != null && pkgInfo.applicationInfo.sourceDir != null) {
+            if (mPkgInfo.applicationInfo != null && mPkgInfo.applicationInfo.sourceDir != null) {
                 try {
-                    String md5Identifier = Checksum.getMD5Checksum(new File(pkgInfo.applicationInfo.sourceDir));
+                    String md5Identifier = Checksum.getMD5Checksum(new File(mPkgInfo.applicationInfo.sourceDir));
                     if (md5Identifier != null)
                         installIdentifier.append("/").append(md5Identifier);
                 } catch (Exception e) {
