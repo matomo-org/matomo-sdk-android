@@ -87,6 +87,7 @@ public class DownloadTrackerTest extends DefaultTestCase {
 
         tracker.clearLastEvent();
 
+        downloadTracker = new DownloadTracker(tracker);
         FullEnvPackageManager pm = (FullEnvPackageManager) Robolectric.packageManager;
         pm.getInstallerMap().clear(); // The sdk tries to use the installer as referrer, if we clear this, the referrer should be null
         downloadTracker.trackNewAppDownload(DownloadTracker.Extra.NONE);
@@ -99,6 +100,39 @@ public class DownloadTrackerTest extends DefaultTestCase {
         assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
         assertEquals(null, queryParams.get(QueryParams.REFERRER));
+        
+    }
+    
+    @Test
+    public void testTrackNewAppDownloadWithVersion() throws Exception {
+        Tracker tracker = createTracker();
+        DownloadTracker downloadTracker = new DownloadTracker(tracker);
+        downloadTracker.setVersion("2");
+        downloadTracker.trackNewAppDownload(DownloadTracker.Extra.APK_CHECKSUM);
+        Thread.sleep(100); // APK checksum happens off thread
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
+        assertTrue(m.matches());
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals("2", m.group(2));
+        assertEquals("2", downloadTracker.getVersion());
+        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+        
+        tracker.clearLastEvent();
+        
+        downloadTracker.setVersion(null);       
+        downloadTracker.trackNewAppDownload(DownloadTracker.Extra.APK_CHECKSUM);
+        Thread.sleep(100); // APK checksum happens off thread
+        queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
+        assertTrue(m.matches());
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
     }
 
     private static class QueryHashMap<String, V> extends HashMap<String, V> {
