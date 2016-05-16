@@ -700,7 +700,7 @@ public class TrackHelper {
 
                 @Override
                 public void onActivityResumed(Activity activity) {
-                    TrackHelper.track(mBaseBuilder.mBaseTrackMe).screen(activity).with(tracker);
+                    mBaseBuilder.screen(activity).with(tracker);
                 }
 
                 @Override
