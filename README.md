@@ -247,6 +247,12 @@ Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blo
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
 
+#### Debugging
+
+Piwik uses [Timber](https://github.com/JakeWharton/timber).
+If you don't use Timber in your own app call `Timber.plant(new Timber.DebugTree());`, if you do use Timber in your app then Piwik should automatically participate in your logging efforts.
+For more information see [Timbers GitHub](https://github.com/JakeWharton/timber)
+
 ### Check SDK
 
 Following command will clean, build, test, generate documentation, do coverage reports and then create a jar.
