@@ -7,7 +7,7 @@
 
 package org.piwik.sdk;
 
-import org.piwik.sdk.tools.Logy;
+import timber.log.Timber;
 
 /**
  * An exception handler that wraps the existing exception handler and dispatches event to a {@link org.piwik.sdk.Tracker}.
@@ -31,7 +31,6 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
 
     /**
      * This will give you the previous exception handler that is now wrapped.
-     *
      */
     public Thread.UncaughtExceptionHandler getDefaultExceptionHandler() {
         return mDefaultExceptionHandler;
@@ -45,7 +44,7 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
             // Immediately dispatch as the app might be dying after rethrowing the exception
             getTracker().dispatch();
         } catch (Exception e) {
-            Logy.e(Tracker.LOGGER_TAG, "Couldn't track uncaught exception", e);
+            Timber.tag(Tracker.LOGGER_TAG).e(e, "Couldn't track uncaught exception");
         } finally {
             // re-throw critical exception further to the os (important)
             if (getDefaultExceptionHandler() != null && getDefaultExceptionHandler() != this) {

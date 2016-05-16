@@ -11,6 +11,8 @@ import org.piwik.sdk.DownloadTracker;
 import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.TrackHelper;
 
+import timber.log.Timber;
+
 public class DemoApp extends PiwikApplication {
 
     @Override
@@ -32,7 +34,7 @@ public class DemoApp extends PiwikApplication {
 
     private void initPiwik() {
         // Print debug output when working on an app.
-        getPiwik().setDebug(BuildConfig.DEBUG);
+        Timber.plant(new Timber.DebugTree());
 
         // When working on an app we don't want to skew tracking results.
         getPiwik().setDryRun(BuildConfig.DEBUG);

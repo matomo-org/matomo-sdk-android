@@ -54,7 +54,6 @@ public class DispatcherTest {
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(false);
-        Piwik.getInstance(Robolectric.application).setDebug(false);
     }
 
     @Test

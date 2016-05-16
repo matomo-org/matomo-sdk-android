@@ -13,7 +13,6 @@ import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.tools.DeviceHelper;
-import org.piwik.sdk.tools.Logy;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,6 +24,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import timber.log.Timber;
 
 /**
  * Main tracking class
@@ -388,10 +389,10 @@ public class Tracker {
         String event = Dispatcher.urlEncodeUTF8(trackMe.toMap());
         if (mPiwik.isOptOut()) {
             mLastEvent = event;
-            Logy.d(Tracker.LOGGER_TAG, String.format("URL omitted due to opt out: %s", event));
+            Timber.tag(LOGGER_TAG).d("URL omitted due to opt out: %s", event);
         } else {
-            Logy.d(Tracker.LOGGER_TAG, String.format("URL added to the queue: %s", event));
             mDispatcher.submit(event);
+            Timber.tag(LOGGER_TAG).d("URL added to the queue: %s", event);
         }
 
         // we did a first transmission, let the other through.

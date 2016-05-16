@@ -13,7 +13,6 @@ import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.tools.Logy;
 
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
@@ -30,6 +29,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import timber.log.Timber;
 
 /**
  * Sends json POST request to tracking url http://piwik.example.com/piwik.php with body
@@ -144,7 +145,7 @@ public class Dispatcher {
                 int count = 0;
                 List<String> availableEvents = new ArrayList<>();
                 mDispatchQueue.drainTo(availableEvents);
-                Logy.d(LOGGER_TAG, "Drained " + availableEvents.size() + " events.");
+                Timber.tag(LOGGER_TAG).d("Drained %s events.", availableEvents.size());
                 TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(mApiUrl, availableEvents, mAuthToken);
                 Iterator<TrackerBulkURLWrapper.Page> pageIterator = wrapper.iterator();
                 while (pageIterator.hasNext()) {
@@ -165,7 +166,7 @@ public class Dispatcher {
                             count += 1;
                     }
                 }
-                Logy.d(LOGGER_TAG, "Dispatched " + count + " events.");
+                Timber.tag(LOGGER_TAG).d("Dispatched %s events.", count);
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
                     if (mDispatchQueue.isEmpty() || mDispatchInterval < 0) {
@@ -187,7 +188,7 @@ public class Dispatcher {
 
         if (mPiwik.isDryRun()) {
             mDryRunOutput.add(packet);
-            Logy.d(LOGGER_TAG, "DryRun, stored HttpRequest, now " + mDryRunOutput.size());
+            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
             return true;
         }
 
@@ -216,11 +217,11 @@ public class Dispatcher {
             }
 
             int statusCode = urlConnection.getResponseCode();
-            Logy.d(LOGGER_TAG, String.format("status code %s", statusCode));
+            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
             return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
         } catch (Exception e) {
             // Broad but an analytics app shouldn't impact it's host app.
-            Logy.w(LOGGER_TAG, "Cannot send request", e);
+            Timber.tag(LOGGER_TAG).w(e, "Cannot send request");
         }
         return false;
     }
@@ -235,7 +236,7 @@ public class Dispatcher {
         try {
             return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
         } catch (UnsupportedEncodingException e) {
-            Logy.w(LOGGER_TAG, String.format("Cannot encode %s", param), e);
+            Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
             return "";
         } catch (NullPointerException e) {
             return "";
