@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -150,6 +151,39 @@ public class TrackHelperTest extends DefaultTestCase {
         queryParams = parseEventUrl(tracker.getLastEvent());
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
+    }
+
+    @Test
+    public void testDownloadTrackForced() throws Exception {
+        Tracker tracker = createTracker();
+        assertNull(tracker.getLastEvent());
+
+        TrackHelper.track().download().with(tracker);
+        assertNotNull(tracker.getLastEvent());
+
+        tracker.clearLastEvent();
+
+        TrackHelper.track().download().with(tracker);
+        assertNull(tracker.getLastEvent());
+
+        TrackHelper.track().download().force().with(tracker);
+        assertNotNull(tracker.getLastEvent());
+    }
+
+    @Test
+    public void testDownloadCustomVersion() throws Exception {
+        Tracker tracker = createTracker();
+        assertNull(tracker.getLastEvent());
+
+        String version = UUID.randomUUID().toString();
+        TrackHelper.track().download().version(version).with(tracker);
+        assertNotNull(tracker.getLastEvent());
+        QueryHashMap<String, String> map = parseEventUrl(tracker.getLastEvent());
+        assertTrue(map.get(QueryParams.DOWNLOAD).endsWith(version));
+
+        tracker.clearLastEvent();
+        TrackHelper.track().download().version(version).with(tracker);
+        assertNull(tracker.getLastEvent());
     }
 
     @Test
