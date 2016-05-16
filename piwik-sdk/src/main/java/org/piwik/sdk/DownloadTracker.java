@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.Logy;
@@ -55,15 +56,13 @@ public class DownloadTracker {
         }
     }
 
-    public void setVersion(String version) {
+    public void setVersion(@Nullable String version) {
         mVersion = version;
     }
 
     public String getVersion() {
         if (mVersion != null) return mVersion;
-
-        mVersion = Integer.toString(mPkgInfo.versionCode);
-        return mVersion;
+        return Integer.toString(mPkgInfo.versionCode);
     }
 
     public void trackOnce(@NonNull Extra extra) {
@@ -105,12 +104,12 @@ public class DownloadTracker {
 
     private void trackNewAppDownloadInternal(@NonNull Extra extra) {
         Logy.d(LOGGER_TAG, "Tracking app download...");
-        if (mPkgInfo == null) return;
 
         StringBuilder installIdentifier = new StringBuilder();
         installIdentifier.append("http://").append(mPackageName).append(":").append(getVersion());
 
         if (extra == Extra.APK_CHECKSUM) {
+            if (mPkgInfo == null) return;
             if (mPkgInfo.applicationInfo != null && mPkgInfo.applicationInfo.sourceDir != null) {
                 try {
                     String md5Identifier = Checksum.getMD5Checksum(new File(mPkgInfo.applicationInfo.sourceDir));
