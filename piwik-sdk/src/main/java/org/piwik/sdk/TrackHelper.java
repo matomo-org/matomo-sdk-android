@@ -291,6 +291,7 @@ public class TrackHelper {
         private final TrackHelper mBaseBuilder;
         private DownloadTracker.Extra mExtra = DownloadTracker.Extra.NONE;
         private boolean mForced = false;
+        private String mVersion;
 
         Download(TrackHelper baseBuilder) {
             mBaseBuilder = baseBuilder;
@@ -319,8 +320,20 @@ public class TrackHelper {
             return this;
         }
 
+        /**
+         * To track specific app versions. Useful if the app can change without the apk being updated (e.g. hybrid apps/web apps).
+         *
+         * @param version by default {@link android.content.pm.PackageInfo#versionCode} is used.
+         * @return this object, to chain calls.
+         */
+        public Download version(String version) {
+            mVersion = version;
+            return this;
+        }
+
         public void with(Tracker tracker) {
             final DownloadTracker downloadTracker = new DownloadTracker(tracker, mBaseBuilder.mBaseTrackMe);
+            if (mVersion != null) downloadTracker.setVersion(mVersion);
             if (mForced) {
                 downloadTracker.trackNewAppDownload(mExtra);
             } else {
