@@ -320,7 +320,7 @@ public class TrackHelper {
         }
 
         public void with(Tracker tracker) {
-            final DownloadTracker downloadTracker = new DownloadTracker(tracker);
+            final DownloadTracker downloadTracker = new DownloadTracker(tracker, mBaseBuilder.mBaseTrackMe);
             if (mForced) {
                 downloadTracker.trackNewAppDownload(mExtra);
             } else {
