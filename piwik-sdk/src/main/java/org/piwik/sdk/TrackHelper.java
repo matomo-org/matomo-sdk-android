@@ -13,9 +13,10 @@ import android.text.TextUtils;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.tools.ActivityHelper;
 import org.piwik.sdk.tools.CurrencyFormatter;
-import org.piwik.sdk.tools.Logy;
 
 import java.net.URL;
+
+import timber.log.Timber;
 
 public class TrackHelper {
     private final TrackMe mBaseTrackMe;
@@ -613,7 +614,7 @@ public class TrackHelper {
                 StackTraceElement trace = mThrowable.getStackTrace()[0];
                 className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
             } catch (java.lang.Exception e) {
-                Logy.w(Tracker.LOGGER_TAG, "Couldn't get stack info", e);
+                Timber.tag(Tracker.LOGGER_TAG).w(e, "Couldn't get stack info");
                 className = mThrowable.getClass().getName();
             }
             String actionName = "exception/" + (mIsFatal ? "fatal/" : "") + (className + "/") + mDescription;

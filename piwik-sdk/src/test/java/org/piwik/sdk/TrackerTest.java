@@ -253,7 +253,6 @@ public class TrackerTest extends DefaultTestCase {
         for (int retry = 0; retry < 5; retry++) {
             getPiwik().setOptOut(false);
             getPiwik().setDryRun(true);
-            getPiwik().setDebug(true);
             final Tracker tracker = createTracker();
             tracker.setDispatchInterval(0);
             int count = 20;

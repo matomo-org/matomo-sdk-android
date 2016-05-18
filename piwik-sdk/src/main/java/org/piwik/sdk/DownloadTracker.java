@@ -10,9 +10,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.piwik.sdk.tools.Checksum;
-import org.piwik.sdk.tools.Logy;
 
 import java.io.File;
+
+import timber.log.Timber;
 
 public class DownloadTracker {
     protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DownloadTrackingHelper";
@@ -86,7 +87,7 @@ public class DownloadTracker {
         boolean delay = INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPackageName));
         if (delay) {
             // Delay tracking incase we were called from within Application.onCreate
-            Logy.d(LOGGER_TAG, "Google Play is install source, deferring tracking.");
+            Timber.tag(LOGGER_TAG).d("Google Play is install source, deferring tracking.");
         }
 
         new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
@@ -103,7 +104,7 @@ public class DownloadTracker {
     }
 
     private void trackNewAppDownloadInternal(@NonNull Extra extra) {
-        Logy.d(LOGGER_TAG, "Tracking app download...");
+        Timber.tag(LOGGER_TAG).d("Tracking app download...");
 
         StringBuilder installIdentifier = new StringBuilder();
         installIdentifier.append("http://").append(mPackageName).append(":").append(getVersion());
@@ -141,6 +142,6 @@ public class DownloadTracker {
                 .set(QueryParams.DOWNLOAD, installIdentifier.toString())
                 .set(QueryParams.REFERRER, referringApp)); // Can be null in which case the TrackMe removes the REFERRER parameter.
 
-        Logy.d(LOGGER_TAG, "... app download tracked.");
+        Timber.tag(LOGGER_TAG).d("... app download tracked.");
     }
 }

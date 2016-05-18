@@ -68,19 +68,15 @@ public class PiwikTest {
 
         piwik.setDryRun(true);
         piwik.setOptOut(true);
-        piwik.setDebug(true);
 
         assertTrue(piwik.isDryRun());
         assertTrue(piwik.isOptOut());
-        assertTrue(piwik.isDebug());
 
         piwik.setDryRun(false);
         piwik.setOptOut(false);
-        piwik.setDebug(false);
 
         assertFalse(piwik.isDryRun());
         assertFalse(piwik.isOptOut());
-        assertFalse(piwik.isDebug());
     }
 
     @Test

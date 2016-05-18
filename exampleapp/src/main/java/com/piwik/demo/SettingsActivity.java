@@ -18,7 +18,8 @@ import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.TrackHelper;
-import org.piwik.sdk.tools.Logy;
+
+import timber.log.Timber;
 
 
 public class SettingsActivity extends Activity {
@@ -67,7 +68,7 @@ public class SettingsActivity extends Activity {
                             ((PiwikApplication) getApplication()).getTracker()
                                     .setDispatchInterval(interval);
                         } catch (NumberFormatException e) {
-                            Logy.d("not a number", charSequence.toString());
+                            Timber.d("not a number: %s", charSequence.toString());
                         }
                     }
 
@@ -98,7 +99,7 @@ public class SettingsActivity extends Activity {
                                     .setSessionTimeout(timeoutMin * 60);
                         } catch (NumberFormatException e) {
                             ((EditText) settingsActivity.findViewById(R.id.sessionTimeoutInput)).setText("30");
-                            Logy.d("not a number", charSequence.toString());
+                            Timber.d("not a number: %s", charSequence.toString());
                         }
                     }
 

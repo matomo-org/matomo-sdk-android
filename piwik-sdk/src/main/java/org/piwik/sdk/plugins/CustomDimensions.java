@@ -1,8 +1,9 @@
 package org.piwik.sdk.plugins;
 
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.tools.Logy;
 import org.piwik.sdk.TrackMe;
+
+import timber.log.Timber;
 
 /**
  * This plugins allows you to track any Custom Dimensions.
@@ -21,11 +22,11 @@ public class CustomDimensions extends TrackMe {
      */
     public synchronized CustomDimensions set(int dimensionId, String dimensionValue) {
         if (dimensionId < 1){
-            Logy.w(LOGGER_TAG, "dimensionId should be great than 0");
+            Timber.tag(LOGGER_TAG).w("dimensionId should be great than 0");
             return this;
         }
         if (dimensionValue != null && dimensionValue.length() > 255){
-            Logy.w(LOGGER_TAG, "dimensionValue will be truncated to 255 chars");
+            Timber.tag(LOGGER_TAG).w("dimensionValue will be truncated to 255 chars");
             dimensionValue = dimensionValue.substring(0, 255);
         }
         set("dimension" + dimensionId, dimensionValue);
