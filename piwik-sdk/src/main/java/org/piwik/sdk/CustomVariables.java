@@ -9,11 +9,12 @@ package org.piwik.sdk;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.piwik.sdk.tools.Logy;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import timber.log.Timber;
 
 /**
  * You can track up to 5 custom variables for each user to your app,
@@ -61,18 +62,18 @@ public class CustomVariables {
         if (index > 0 && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) {
-                Logy.w(LOGGER_TAG, String.format("Name is too long %s", name));
+                Timber.tag(LOGGER_TAG).w("Name is too long %s", name);
                 name = name.substring(0, MAX_LENGTH);
             }
 
             if (value.length() > MAX_LENGTH) {
-                Logy.w(LOGGER_TAG, String.format("Value is too long %s", value));
+                Timber.tag(LOGGER_TAG).w("Value is too long %s", value);
                 value = value.substring(0, MAX_LENGTH);
             }
 
             return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
         }
-        Logy.d(LOGGER_TAG, "Index is out of range or name/value is null");
+        Timber.tag(LOGGER_TAG).w("Index is out of range or name/value is null");
         return null;
     }
 
@@ -83,7 +84,7 @@ public class CustomVariables {
      */
     public JSONArray put(String index, JSONArray values) {
         if (values.length() != 2 || index == null) {
-            Logy.d(LOGGER_TAG, "values.length() should be equal 2");
+            Timber.tag(LOGGER_TAG).w("values.length() should be equal 2");
             return null;
         }
         return mVars.put(index, values);
