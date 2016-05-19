@@ -50,14 +50,10 @@ public class DownloadTrackerTest extends DefaultTestCase {
         downloadTracker = new DownloadTracker(tracker);
         downloadTracker.trackOnce(DownloadTracker.Extra.NONE);
         assertNull(tracker.getLastEvent());
-
     }
 
-    // http://org.piwik.sdk.test:1/some.package or http://org.piwik.sdk.test:1
-    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:(?:\\/)([\\W\\w]+))?");
-
     @Test
-    public void testTrackNewAppDownload() throws Exception {
+    public void testTrackIdentifier() throws Exception {
         Tracker tracker = createTracker();
         DownloadTracker downloadTracker = new DownloadTracker(tracker);
         downloadTracker.trackNewAppDownload(DownloadTracker.Extra.APK_CHECKSUM);
@@ -84,6 +80,27 @@ public class DownloadTrackerTest extends DefaultTestCase {
         assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
         assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
+    }
+
+    // http://org.piwik.sdk.test:1/some.package or http://org.piwik.sdk.test:1
+    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:(?:\\/)([\\W\\w]+))?");
+
+    @Test
+    public void testTrackReferrer() throws Exception {
+        Tracker tracker = createTracker();
+
+        DownloadTracker downloadTracker = new DownloadTracker(tracker);
+        downloadTracker.trackNewAppDownload(DownloadTracker.Extra.NONE);
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        checkNewAppDownload(queryParams);
+        String downloadParams = queryParams.get(QueryParams.DOWNLOAD);
+        Matcher m = REGEX_DOWNLOADTRACK.matcher(downloadParams);
+        assertTrue(downloadParams, m.matches());
+        assertEquals(3, m.groupCount());
+        assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
+        assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
+        assertEquals(null, m.group(3));
+        assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
 
         tracker.clearLastEvent();
 
@@ -100,16 +117,14 @@ public class DownloadTrackerTest extends DefaultTestCase {
         assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
         assertEquals(null, queryParams.get(QueryParams.REFERRER));
-        
     }
-    
+
     @Test
     public void testTrackNewAppDownloadWithVersion() throws Exception {
         Tracker tracker = createTracker();
         DownloadTracker downloadTracker = new DownloadTracker(tracker);
         downloadTracker.setVersion("2");
-        downloadTracker.trackNewAppDownload(DownloadTracker.Extra.APK_CHECKSUM);
-        Thread.sleep(100); // APK checksum happens off thread
+        downloadTracker.trackOnce(DownloadTracker.Extra.NONE);
         QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
         Matcher m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
@@ -117,21 +132,20 @@ public class DownloadTrackerTest extends DefaultTestCase {
         assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
         assertEquals("2", m.group(2));
         assertEquals("2", downloadTracker.getVersion());
-        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
         assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
-        
+
         tracker.clearLastEvent();
-        
-        downloadTracker.setVersion(null);       
-        downloadTracker.trackNewAppDownload(DownloadTracker.Extra.APK_CHECKSUM);
-        Thread.sleep(100); // APK checksum happens off thread
+        downloadTracker.trackOnce(DownloadTracker.Extra.NONE);
+        assertNull(tracker.getLastEvent());
+
+        downloadTracker.setVersion(null);
+        downloadTracker.trackOnce(DownloadTracker.Extra.NONE);
         queryParams = parseEventUrl(tracker.getLastEvent());
         checkNewAppDownload(queryParams);
         m = REGEX_DOWNLOADTRACK.matcher(queryParams.get(QueryParams.DOWNLOAD));
         assertTrue(m.matches());
         assertEquals(PiwikTestApplication.PACKAGENAME, m.group(1));
         assertEquals(PiwikTestApplication.VERSION_CODE, Integer.parseInt(m.group(2)));
-        assertEquals(PiwikTestApplication.FAKE_APK_DATA_MD5, m.group(3));
         assertEquals("http://" + PiwikTestApplication.INSTALLER_PACKAGENAME, queryParams.get(QueryParams.REFERRER));
     }
 
