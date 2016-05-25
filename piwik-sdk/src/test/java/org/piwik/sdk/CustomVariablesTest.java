@@ -20,6 +20,19 @@ import static org.junit.Assert.assertTrue;
 public class CustomVariablesTest {
 
     @Test
+    public void testInherit() throws Exception {
+        CustomVariables ancestor = new CustomVariables();
+        ancestor.put(1, "name", "value");
+        ancestor.put(2, "name2", "uńicódę");
+
+        CustomVariables cv = new CustomVariables(ancestor);
+        String cvJson = cv.toString();
+        new JSONObject(cvJson); //Will throw exception if not valid json
+        assertTrue(cvJson.contains("\"2\":[\"name2\",\"uńicódę\"]"));
+        assertTrue(cvJson.contains("\"1\":[\"name\",\"value\"]"));
+    }
+
+    @Test
     public void testToString() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
@@ -57,7 +70,6 @@ public class CustomVariablesTest {
     public void testWrongIndex() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
-        cv.put(10, "name2", "value");
         cv.put(-1, "name-1", "value");
 
         assertEquals(
@@ -71,10 +83,11 @@ public class CustomVariablesTest {
         CustomVariables cv = new CustomVariables();
 
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2", "3"))));
+        assertEquals(null, cv.toString());
         assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2"))));
         assertEquals(
-                cv.get("test"),
-                cv.put("test", new JSONArray(Arrays.asList("4", "5")))
+                "{\"test\":[\"1\",\"2\"]}",
+                cv.toString()
         );
 
     }

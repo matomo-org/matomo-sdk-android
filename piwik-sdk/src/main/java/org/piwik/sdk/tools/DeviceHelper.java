@@ -18,6 +18,8 @@ import org.piwik.sdk.Piwik;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
+import timber.log.Timber;
+
 /**
  * Helper class to gain information about the device we are running on
  */
@@ -67,7 +69,7 @@ public class DeviceHelper {
             WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             display = wm.getDefaultDisplay();
         } catch (NullPointerException e) {
-            Logy.e(LOGGER_TAG, "Window service was not available from this context");
+            Timber.tag(LOGGER_TAG).e(e, "Window service was not available from this context");
             return null;
         }
 
@@ -85,7 +87,7 @@ public class DeviceHelper {
                 width = (int) getRawWidth.invoke(display);
                 height = (int) getRawHeight.invoke(display);
             } catch (Exception e) {
-                Logy.w(LOGGER_TAG, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
+                Timber.tag(LOGGER_TAG).w(e, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
             }
         }
 

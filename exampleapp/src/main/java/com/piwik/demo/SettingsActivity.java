@@ -17,19 +17,20 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.QuickTrack;
-import org.piwik.sdk.tools.Logy;
+import org.piwik.sdk.TrackHelper;
+
+import timber.log.Timber;
 
 
 public class SettingsActivity extends Activity {
 
     private void refreshUI(final Activity settingsActivity) {
         // auto track button
-        Button button = (Button) findViewById(R.id.manuallyTrackSettingsScreenViewButton);
+        Button button = (Button) findViewById(R.id.bindtoapp);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                QuickTrack.track((PiwikApplication) getApplication(), settingsActivity);
+                TrackHelper.track().screens(getApplication()).with(((PiwikApplication) getApplication()).getTracker());
             }
         });
 
@@ -67,7 +68,7 @@ public class SettingsActivity extends Activity {
                             ((PiwikApplication) getApplication()).getTracker()
                                     .setDispatchInterval(interval);
                         } catch (NumberFormatException e) {
-                            Logy.d("not a number", charSequence.toString());
+                            Timber.d("not a number: %s", charSequence.toString());
                         }
                     }
 
@@ -98,7 +99,7 @@ public class SettingsActivity extends Activity {
                                     .setSessionTimeout(timeoutMin * 60);
                         } catch (NumberFormatException e) {
                             ((EditText) settingsActivity.findViewById(R.id.sessionTimeoutInput)).setText("30");
-                            Logy.d("not a number", charSequence.toString());
+                            Timber.d("not a number: %s", charSequence.toString());
                         }
                     }
 

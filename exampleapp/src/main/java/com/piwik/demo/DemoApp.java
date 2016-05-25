@@ -7,8 +7,11 @@
 
 package com.piwik.demo;
 
+import org.piwik.sdk.DownloadTracker;
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.Tracker;
+import org.piwik.sdk.TrackHelper;
+
+import timber.log.Timber;
 
 public class DemoApp extends PiwikApplication {
 
@@ -31,7 +34,7 @@ public class DemoApp extends PiwikApplication {
 
     private void initPiwik() {
         // Print debug output when working on an app.
-        getPiwik().setDebug(BuildConfig.DEBUG);
+        Timber.plant(new Timber.DebugTree());
 
         // When working on an app we don't want to skew tracking results.
         getPiwik().setDryRun(BuildConfig.DEBUG);
@@ -43,9 +46,9 @@ public class DemoApp extends PiwikApplication {
 
         // Track this app install, this will only trigger once per app version.
         // i.e. "http://com.piwik.demo:1/185DECB5CFE28FDB2F45887022D668B4"
-        getTracker().trackAppDownload(this, Tracker.ExtraIdentifier.APK_CHECKSUM);
+        TrackHelper.track().download().identifier(DownloadTracker.Extra.APK_CHECKSUM).with(getTracker());
         // Alternative:
         // i.e. "http://com.piwik.demo:1/com.android.vending"
-        // getTracker().trackAppDownload();
+        // getTracker().download();
     }
 }

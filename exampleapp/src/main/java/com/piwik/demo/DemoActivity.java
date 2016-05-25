@@ -13,16 +13,18 @@ import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.TrackHelper;
 import org.piwik.sdk.Tracker;
 import org.piwik.sdk.ecommerce.EcommerceItems;
 
 import java.util.Arrays;
 import java.util.List;
+
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 public class DemoActivity extends ActionBarActivity {
@@ -33,10 +35,13 @@ public class DemoActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_demo);
+        ButterKnife.bind(this);
         items = new EcommerceItems();
-        initTrackViewListeners();
     }
 
+    private Tracker getTracker() {
+        return ((PiwikApplication) getApplication()).getTracker();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -60,92 +65,73 @@ public class DemoActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    protected void initTrackViewListeners() {
-        // simple track view
-        Button button = (Button) findViewById(R.id.trackMainScreenViewButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker().trackScreenView("/", "Main screen");
-            }
-        });
-
-        // custom vars track view
-        button = (Button) findViewById(R.id.trackCustomVarsButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker()
-                        .trackScreenView(
-                                new TrackMe()
-                                        .setScreenCustomVariable(1, "first", "var")
-                                        .setScreenCustomVariable(2, "second", "long value"),
-                                "/custom_vars", "Custom Vars");
-            }
-        });
-
-        // exception tracking
-        button = (Button) findViewById(R.id.raiseExceptionButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getTracker().trackException(new Exception("OnPurposeException"), "Crash button", false);
-            }
-        });
-
-        // goal tracking
-        button = (Button) findViewById(R.id.trackGoalButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int revenue;
-                try {
-                    revenue = Integer.valueOf(
-                            ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
-                    );
-                } catch (Exception e) {
-                    ((PiwikApplication) getApplication()).getTracker().trackException(e, "wrong revenue", false);
-                    revenue = 0;
-                }
-                ((PiwikApplication) getApplication()).getTracker().trackGoal(1, revenue);
-            }
-        });
-
-        //ecommerce tracking
-        button = (Button) findViewById(R.id.addEcommerceItemButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<String> skus = Arrays.asList("00001", "00002", "00003", "00004");
-                List<String> names = Arrays.asList("Silly Putty", "Fishing Rod", "Rubber Boots", "Cool Ranch Doritos");
-                List<String> categories = Arrays.asList("Toys & Games", "Hunting & Fishing", "Footwear", "Grocery");
-                List<Integer> prices = Arrays.asList(449, 3495, 2450, 250);
-
-                int index = cartItems % 4;
-                int quantity = (cartItems / 4) + 1;
-
-                items.addItem(skus.get(index), names.get(index), categories.get(index), prices.get(index), quantity);
-                cartItems++;
-            }
-        });
-
-        button = (Button) findViewById(R.id.trackEcommerceCartUpdateButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-                tracker.trackEcommerceCartUpdate(8600, items);
-            }
-        });
-
-        button = (Button) findViewById(R.id.completeEcommerceOrderButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-                tracker.trackEcommerceOrder(String.valueOf(10000 * Math.random()), 10000, 1000, 2000, 3000, 500, items);
-            }
-        });
-
+    @OnClick(R.id.trackMainScreenViewButton)
+    void onTrackMainScreenClicked(View view) {
+        TrackHelper.track().screen("/").title("Main screen").with(getTracker());
     }
+
+    @OnClick(R.id.trackCustomVarsButton)
+    void onTrackCustomVarsClicked(View view) {
+        TrackHelper.track()
+                .screen("/custom_vars")
+                .title("Custom Vars")
+                .variable(1, "first", "var")
+                .variable(2, "second", "long value")
+                .with(getTracker());
+    }
+
+    @OnClick(R.id.raiseExceptionButton)
+    void onRaiseExceptionClicked(View view) {
+        TrackHelper.track().exception(new Exception("OnPurposeException")).description("Crash button").fatal(false).with(getTracker());
+    }
+
+    @OnClick(R.id.trackGoalButton)
+    void onTrackGoalClicked(View view) {
+        float revenue;
+        try {
+            revenue = Integer.valueOf(
+                    ((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
+            );
+        } catch (Exception e) {
+            TrackHelper.track().exception(e).description("wrong revenue").with(getTracker());
+            revenue = 0;
+        }
+        TrackHelper.track().goal(1).revenue(revenue).with(getTracker());
+    }
+
+    @OnClick(R.id.addEcommerceItemButton)
+    void onAddEcommerceItemClicked(View view) {
+        List<String> skus = Arrays.asList("00001", "00002", "00003", "00004");
+        List<String> names = Arrays.asList("Silly Putty", "Fishing Rod", "Rubber Boots", "Cool Ranch Doritos");
+        List<String> categories = Arrays.asList("Toys & Games", "Hunting & Fishing", "Footwear", "Grocery");
+        List<Integer> prices = Arrays.asList(449, 3495, 2450, 250);
+
+        int index = cartItems % 4;
+        int quantity = (cartItems / 4) + 1;
+
+        items.addItem(new EcommerceItems.Item(skus.get(index))
+                .name(names.get(index))
+                .category(categories.get(index))
+                .price(prices.get(index))
+                .quantity(quantity));
+        cartItems++;
+    }
+
+    @OnClick(R.id.trackEcommerceCartUpdateButton)
+    void onTrackEcommerceCartUpdateClicked(View view) {
+        TrackHelper.track().cartUpdate(8600).items(items).with(getTracker());
+    }
+
+    @OnClick(R.id.completeEcommerceOrderButton)
+    void onCompleteEcommerceOrderClicked(View view) {
+        TrackHelper.track()
+                .order(String.valueOf(10000 * Math.random()), 10000)
+                .subTotal(1000)
+                .tax(2000)
+                .shipping(3000)
+                .discount(500)
+                .items(items)
+                .with(getTracker());
+    }
+
 }

@@ -90,8 +90,8 @@ public class YourActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((YourApplication) getApplication()).getTracker()
-            .trackScreenView("/your_activity", "Title");
+        Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+        TrackHelper.track().screen("/your_activity").title("Title").with(tracker);
     }
 }
 ```
@@ -104,7 +104,7 @@ method.
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackEvent("category", "action", "label", 1000)
+TrackHelper.track().event("category", "action").name("label").value(1000f).with(tracker);
 ```
 
 #### Track goals
@@ -115,7 +115,7 @@ Read more about what is a [Goal in Piwik](http://piwik.org/docs/tracking-goals-w
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackGoal(1, revenue);
+TrackHelper.track().goal(1).revenue(revenue).with(tracker)
 ```
 
 #### Track custom vars
@@ -130,9 +130,9 @@ More about [custom variables on piwik.org](http://piwik.org/docs/custom-variable
 
 ```java
 
-Tracker tracker = ((YourApplication) getApplication()).getTracker();
-tracker.setVisitCustomVariable(2, 'Age', '99');
-tracker.trackScreenView(new TrackMe().setScreenCustomVariable(2, 'Price', '0.99'), '/path');
+Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+tracker.setVisitCustomVariable(2, "Age", "99");
+TrackHelper.track().screen("/path").variable(2, "Price", "0.99").with(tracker);
 ```
 
 #### Track application downloads
@@ -142,7 +142,7 @@ This method uses ``SharedPreferences`` to ensures that tracking application down
 
 ```java
 
-((YourApplication) getApplication()).getTracker().trackAppDownload();
+TrackHelper.track().download().with(tracker);
 ```
 
 #### Custom Dimensions
@@ -171,10 +171,10 @@ To track an Ecommerce order use `trackEcommerceOrder` method.
 
 Tracker tracker = ((YourApplication) getApplication()).getTracker();
 EcommerceItems items = new EcommerceItems();
-items.addItem("sku", "product", "category", 200, 2);
-items.addItem("sku", "product2", "category2", 400, 3);
-// grandTotal, subTotal, tax, shipping, discount, EcommerceItems
-tracker.trackEcommerceOrder("orderId", 10000, 7000, 2000, 1000, 0, items);
+items.addItem(new EcommerceItems.Item("sku").name("product").category("category").price(200).quantity(2));
+items.addItem(new EcommerceItems.Item("sku").name("product2").category("category2").price(400).quantity(3));
+
+TrackHelper.track().order("orderId", 10000).subTotal(7000).tax(2000).shipping(1000).discount(0).items(items).with(tracker);
 ```
 
 ### Advanced tracker usage
@@ -240,12 +240,18 @@ Note though that the Tracker will not overwrite any values you set on your own T
 
 Here is the design document written by Thomas to give a brief overview of the SDK project: https://github.com/piwik/piwik-android-sdk/wiki/Design-document
 
-Piwik SDK should work fine with Android API Version >= 7 (Android 2.1.x)
+Piwik SDK should work fine with Android API Version >= 10 (Android 2.3.3+)
 
 Optional [``autoBindActivities``](https://github.com/piwik/piwik-sdk-android/blob/master/piwik-sdk/src/main/java/org/piwik/sdk/QuickTrack.java)
  method is available on API level >= 14.
 
 Check out the full [API documentation](http://piwik.github.io/piwik-sdk-android/).
+
+#### Debugging
+
+Piwik uses [Timber](https://github.com/JakeWharton/timber).
+If you don't use Timber in your own app call `Timber.plant(new Timber.DebugTree());`, if you do use Timber in your app then Piwik should automatically participate in your logging efforts.
+For more information see [Timbers GitHub](https://github.com/JakeWharton/timber)
 
 ### Check SDK
 
@@ -262,7 +268,15 @@ $ ./gradlew :piwik-sdk:clean :piwik-sdk:assemble :piwik-sdk:test :piwik-sdk:jaco
 
 ## Demo application
 
-Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or download [apk](https://github.com/piwik/piwik-sdk-android/raw/master/exampleapp/exampleapp-debug.apk).
+Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp) or
+build  an .apk by running following command:
+
+```bash
+./gradlew :exampleapp:clean :exampleapp:build
+```
+Generated .apk would be placed in  ``./exampleapp/build/apk/`
+
+
 
 ## Contribute
 
@@ -272,7 +286,7 @@ Browse [the code](https://github.com/piwik/piwik-sdk-android/tree/master/example
 * Add tests for your new feature
 * Make sure that everything still works by running "./gradlew clean assemble test".
 * Commit & push the changes to your repo
-* Create a pullrequest from your feature branch against the dev branch of the original repo
+* Create a pull request from your feature branch against the dev branch of the original repo
 * Explain your changes, we can see what changed, but tell us why.
 * If your PR passes the travis-ci build and has no merge conflicts, just wait, otherwise fix the code first.
 

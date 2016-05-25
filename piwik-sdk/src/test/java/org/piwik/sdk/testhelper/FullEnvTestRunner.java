@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.testhelper;
 
 import org.junit.runners.model.InitializationError;
 import org.robolectric.RobolectricTestRunner;

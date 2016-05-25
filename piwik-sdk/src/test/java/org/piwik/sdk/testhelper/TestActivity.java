@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.testhelper;
 
 import android.app.Activity;
 import android.os.Bundle;

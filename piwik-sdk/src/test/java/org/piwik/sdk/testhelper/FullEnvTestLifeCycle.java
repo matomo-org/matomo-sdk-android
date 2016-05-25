@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.testhelper;
 
 import android.app.Application;
 import android.content.pm.PackageInfo;
@@ -31,6 +31,6 @@ public class FullEnvTestLifeCycle extends DefaultTestLifecycle {
         for (PackageInfo pkg : oldManager.getInstalledPackages(0))
             newManager.addPackage(pkg);
         Robolectric.packageManager = newManager;
-        return new TestPiwikApplication();
+        return new PiwikTestApplication();
     }
 }

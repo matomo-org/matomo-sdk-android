@@ -4,7 +4,7 @@
  * @link https://github.com/piwik/piwik-android-sdk
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.util.Log;
 
@@ -13,8 +13,12 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
+import org.piwik.sdk.testhelper.FullEnvTestRunner;
+import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -35,10 +39,10 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("deprecation")
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class TestDispatcher {
+public class DispatcherTest {
 
     public Tracker createTracker() throws MalformedURLException {
-        TestPiwikApplication app = (TestPiwikApplication) Robolectric.application;
+        PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         return Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
     }
 
@@ -50,21 +54,32 @@ public class TestDispatcher {
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(false);
-        Piwik.getInstance(Robolectric.application).setDebug(false);
     }
 
     @Test
-    public void testSetTimeout() throws Exception {
+    public void testDefaultConnectionTimeout() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(100);
-        assertEquals(dispatcher.getTimeOut(), 100);
+        assertEquals(Dispatcher.DEFAULT_CONNECTION_TIMEOUT, dispatcher.getConnectionTimeOut());
+    }
+
+    @Test
+    public void testSetConnectionTimeout() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        dispatcher.setConnectionTimeOut(100);
+        assertEquals(100, dispatcher.getConnectionTimeOut());
+    }
+
+    @Test
+    public void testDefaultDispatchInterval() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        assertEquals(Dispatcher.DEFAULT_DISPATCH_INTERVAL, dispatcher.getDispatchInterval());
     }
 
     @Test
     public void testForceDispatchTwice() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
         dispatcher.setDispatchInterval(-1);
-        dispatcher.setTimeOut(20);
+        dispatcher.setConnectionTimeOut(20);
         dispatcher.submit("url");
 
         assertTrue(dispatcher.forceDispatch());
@@ -74,7 +89,7 @@ public class TestDispatcher {
     @Test
     public void testDoPostFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(1);
+        dispatcher.setConnectionTimeOut(1);
         assertFalse(dispatcher.dispatch(new Packet(null, null)));
         assertFalse(dispatcher.dispatch(new Packet(new URL("http://test/?s=^test"), new JSONObject())));
     }
@@ -82,7 +97,7 @@ public class TestDispatcher {
     @Test
     public void testDoGetFailed() throws Exception {
         Dispatcher dispatcher = createTracker().getDispatcher();
-        dispatcher.setTimeOut(1);
+        dispatcher.setConnectionTimeOut(1);
         assertFalse(dispatcher.dispatch(new Packet(null)));
     }
 
@@ -241,7 +256,7 @@ public class TestDispatcher {
                                     .set(QueryParams.EVENT_VALUE, j);
 
                             tracker.track(trackMe);
-                            createdQueries.add(tracker.getAPIUrl().toString() + trackMe.build());
+                            createdQueries.add(tracker.getAPIUrl().toString() + Dispatcher.urlEncodeUTF8(trackMe.toMap()));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

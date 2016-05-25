@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.dispatcher;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,12 +14,15 @@ import android.text.TextUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.piwik.sdk.tools.Logy;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
+
+import timber.log.Timber;
 
 
 public class TrackerBulkURLWrapper {
@@ -91,7 +94,7 @@ public class TrackerBulkURLWrapper {
         List<String> pageElements = mEvents.subList(page.fromIndex, page.toIndex);
 
         if (pageElements.size() == 0) {
-            Logy.w(LOGGER_TAG, "Empty page");
+            Timber.tag(LOGGER_TAG).w("Empty page");
             return null;
         }
 
@@ -103,8 +106,7 @@ public class TrackerBulkURLWrapper {
                 params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), mAuthtoken);
             }
         } catch (JSONException e) {
-            Logy.w(LOGGER_TAG, "Cannot create json object", e);
-            Logy.i(LOGGER_TAG, TextUtils.join(", ", pageElements));
+            Timber.tag(LOGGER_TAG).w(e, "Cannot create json object:\n%s", TextUtils.join(", ", pageElements));
             return null;
         }
         return params;
