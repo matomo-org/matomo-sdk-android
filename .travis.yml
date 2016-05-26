@@ -11,4 +11,4 @@ android:
 
 script: ./gradlew :piwik-sdk:assemble :piwik-sdk:testDebugUnitTest
 
-after_success: ./gradlew :piwik-sdk:jacocoTestReport piwik-sdk:coveralls
+after_success: ./gradlew :piwik-sdk:jacocoTestReport :piwik-sdk:coveralls
