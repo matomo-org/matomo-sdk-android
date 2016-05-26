@@ -18,6 +18,9 @@ android {
 }
 
 dependencies {
+    repositories {
+        jcenter()
+    }
     compile project(":piwik-sdk")
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.android.support:support-v4:23.4.0'
