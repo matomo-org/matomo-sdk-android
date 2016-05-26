@@ -101,6 +101,10 @@ makeJar.dependsOn(clearJar, build)
 apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
 
+jacoco {
+    toolVersion = "0.7.1.201405082137"
+}
+
 buildscript {
     repositories {
         mavenCentral()
