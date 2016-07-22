@@ -10,12 +10,16 @@ package org.piwik.sdk.tools;
 import android.support.annotation.Nullable;
 
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 public class CurrencyFormatter {
     @Nullable
     public static String priceString(@Nullable Integer cents) {
         if (cents == null) return null;
-        DecimalFormat form = new DecimalFormat("0.00");
+        NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+        numberFormat.setMinimumFractionDigits(2);
+        DecimalFormat form = (DecimalFormat) numberFormat;
         return form.format(cents / 100.);
     }
 }
