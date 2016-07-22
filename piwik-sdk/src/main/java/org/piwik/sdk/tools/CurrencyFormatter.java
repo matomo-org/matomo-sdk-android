@@ -9,7 +9,6 @@ package org.piwik.sdk.tools;
 
 import android.support.annotation.Nullable;
 
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -19,7 +18,6 @@ public class CurrencyFormatter {
         if (cents == null) return null;
         NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
         numberFormat.setMinimumFractionDigits(2);
-        DecimalFormat form = (DecimalFormat) numberFormat;
-        return form.format(cents / 100.);
+        return numberFormat.format(cents / 100.);
     }
 }

@@ -11,18 +11,18 @@ import static org.junit.Assert.assertEquals;
 @RunWith(FullEnvTestRunner.class)
 public class CurrencyFormatterTest {
 
-	@Test
-	public void testCurrencyFormat() throws Exception {
-		String currency = CurrencyFormatter.priceString(1000);
-		assertEquals(currency, "10.00");
+    @Test
+    public void testCurrencyFormat() throws Exception {
+        String currency = CurrencyFormatter.priceString(1000);
+        assertEquals("10.00", currency);
 
-		currency = CurrencyFormatter.priceString(3950);
-		assertEquals(currency, "39.50");
+        currency = CurrencyFormatter.priceString(3950);
+        assertEquals("39.50", currency);
 
-		currency = CurrencyFormatter.priceString(1);
-		assertEquals(currency, "0.01");
+        currency = CurrencyFormatter.priceString(1);
+        assertEquals("0.01", currency);
 
-		currency = CurrencyFormatter.priceString(25034);
-		assertEquals(currency, "250.34");
-	}
+        currency = CurrencyFormatter.priceString(25034);
+        assertEquals("250.34", currency);
+    }
 }
