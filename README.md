@@ -23,9 +23,14 @@ Integrating Piwik into your Android app
 ### Include library
 Add this to your apps build.gradle file:
 
-```java
-
-compile 'org.piwik.sdk:piwik-sdk:1.0.1'
+```groovy
+dependencies {
+    repositories {
+        jcenter()
+    }
+    // ...
+    compile 'org.piwik.sdk:piwik-sdk:1.0.1'
+}
 ```
 
 
