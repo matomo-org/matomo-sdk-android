@@ -29,7 +29,7 @@ dependencies {
         jcenter()
     }
     // ...
-    compile 'org.piwik.sdk:piwik-sdk:1.0.1'
+    compile 'org.piwik.sdk:piwik-sdk:1.0.2'
 }
 ```
 
