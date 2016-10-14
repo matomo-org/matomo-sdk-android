@@ -67,7 +67,7 @@ public class YourApplication extends Application {
             return null;
         }
 
-        return piwikTracker;
+        return mPiwikTracker;
     }
     //...
 }
