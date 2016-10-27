@@ -237,7 +237,7 @@ public class Dispatcher {
 
                 } else {
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                    writer.write(packet.getJSONObject().toString());
+                    writer.write(toPost);
                     writer.flush();
                     writer.close();
                 }
