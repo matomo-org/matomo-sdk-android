@@ -212,6 +212,16 @@ public class Tracker {
     }
 
     /**
+     * Defines if when dispatched, posted JSON must be Gzipped.
+     * Need to be handle from web server side with mod_deflate/APACHE lua_zlib/NGINX.
+     * @param dispatchGzipped boolean
+     */
+    public Tracker setDispatchGzipped(boolean dispatchGzipped) {
+        mDispatcher.setDispatchGzipped(dispatchGzipped);
+        return this;
+    }
+
+    /**
      * @return in milliseconds
      */
     public long getDispatchInterval() {
