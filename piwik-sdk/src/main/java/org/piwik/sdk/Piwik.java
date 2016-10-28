@@ -46,7 +46,7 @@ public class Piwik {
      * @param siteId     (required) id of site
      * @param authToken  (optional) could be null or valid auth token.
      * @return Tracker object
-     * @throws MalformedURLException
+     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
      */
     @Deprecated
@@ -58,7 +58,7 @@ public class Piwik {
      * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId     (required) id of site
      * @return Tracker object
-     * @throws MalformedURLException
+     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
     public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId) throws MalformedURLException {
         return new Tracker(trackerUrl, siteId, null, this);

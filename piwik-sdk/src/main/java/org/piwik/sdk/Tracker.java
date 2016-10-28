@@ -77,19 +77,21 @@ public class Tracker {
      * @param siteId    (required) id of site
      * @param authToken (optional) could be null
      * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
-     * @throws MalformedURLException
+     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) throws MalformedURLException {
-
+    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) {
         String checkUrl = url;
-        if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
-            mApiUrl = new URL(checkUrl);
-        } else {
-            if (!checkUrl.endsWith("/")) {
-                checkUrl += "/";
+        try {
+            if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
+                mApiUrl = new URL(checkUrl);
+            } else {
+                if (!checkUrl.endsWith("/")) {
+                    checkUrl += "/";
+                }
+                mApiUrl = new URL(checkUrl + "piwik.php");
             }
-            mApiUrl = new URL(checkUrl + "piwik.php");
-        }
+        } catch (MalformedURLException e) { throw new RuntimeException(e); }
+
         mPiwik = piwik;
         mSiteId = siteId;
         mAuthToken = authToken;
@@ -215,6 +217,7 @@ public class Tracker {
     /**
      * Defines if when dispatched, posted JSON must be Gzipped.
      * Need to be handle from web server side with mod_deflate/APACHE lua_zlib/NGINX.
+     *
      * @param dispatchGzipped boolean
      */
     public Tracker setDispatchGzipped(boolean dispatchGzipped) {
