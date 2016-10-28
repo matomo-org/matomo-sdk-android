@@ -35,12 +35,12 @@ ext {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.3'
+    compileSdkVersion project.ext.globalCompileSdkVersion
+    buildToolsVersion project.ext.globalBuildToolsVersion
 
     defaultConfig {
-        minSdkVersion 10
-        targetSdkVersion 23
+        minSdkVersion project.ext.globalMinSdkVersion
+        targetSdkVersion project.ext.globalTargetSdkVersion
         versionCode myVersionCode
         versionName myVersionName
     }
@@ -50,8 +50,9 @@ dependencies {
     repositories {
         jcenter()
     }
-    compile 'com.android.support:support-annotations:23.4.0'
-    compile 'com.jakewharton.timber:timber:4.1.2'
+    compile "com.android.support:support-annotations:${supportLibVersion}"
+    compile "com.jakewharton.timber:timber:${timberVersion}"
+
     // Espresso
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.0')
     androidTestCompile('com.android.support.test:testing-support-lib:0.1')

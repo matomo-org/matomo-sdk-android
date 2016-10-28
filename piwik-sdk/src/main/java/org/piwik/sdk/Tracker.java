@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -212,6 +213,16 @@ public class Tracker {
     }
 
     /**
+     * Defines if when dispatched, posted JSON must be Gzipped.
+     * Need to be handle from web server side with mod_deflate/APACHE lua_zlib/NGINX.
+     * @param dispatchGzipped boolean
+     */
+    public Tracker setDispatchGzipped(boolean dispatchGzipped) {
+        mDispatcher.setDispatchGzipped(dispatchGzipped);
+        return this;
+    }
+
+    /**
      * @return in milliseconds
      */
     public long getDispatchInterval() {
@@ -223,7 +234,7 @@ public class Tracker {
      * User ID is any non empty unique string identifying the user (such as an email address or a username).
      * To access this value, users must be logged-in in your system so you can
      * fetch this user ID from your system, and pass it to Piwik.
-     * <p/>
+     * <p>
      * When specified, the User ID will be "enforced".
      * This means that if there is no recent visit with this User ID, a new one will be created.
      * If a visit is found in the last 30 minutes with your specified User ID,
@@ -338,7 +349,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.RECORD, DEFAULT_RECORD_VALUE);
         trackMe.trySet(QueryParams.API_VERSION, DEFAULT_API_VERSION_VALUE);
         trackMe.trySet(QueryParams.RANDOM_NUMBER, mRandomAntiCachingValue.nextInt(100000));
-        trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ").format(new Date()));
+        trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ", Locale.US).format(new Date()));
         trackMe.trySet(QueryParams.SEND_IMAGE, "0");
 
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
@@ -452,7 +463,7 @@ public class Tracker {
     /**
      * For testing purposes
      *
-     * @return query of the event ?r=1&sideId=1..
+     * @return query of the event
      */
     @VisibleForTesting
     public String getLastEvent() {

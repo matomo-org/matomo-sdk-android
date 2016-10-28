@@ -26,7 +26,7 @@ import java.util.Map;
 
 /**
  * Because we need to fake things that RobolectricPackageManager does not offer.
- * Currently:<p/>
+ * Currently:<p>
  * {@link org.robolectric.res.builder.RobolectricPackageManager#setInstallerPackageName(String, String)}
  */
 public class FullEnvPackageManager extends RobolectricPackageManager {
@@ -38,7 +38,7 @@ public class FullEnvPackageManager extends RobolectricPackageManager {
     }
 
     @Override
-    public boolean isPermissionRevokedByPolicy(String permName, String pkgName) {
+    public boolean isPermissionRevokedByPolicy(@NonNull String permName, @NonNull String pkgName) {
         return false;
     }
 

@@ -15,11 +15,13 @@ import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,21 +31,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import timber.log.Timber;
 
 /**
- * Sends json POST request to tracking url http://piwik.example.com/piwik.php with body
- * <p/>
- * {
- * "requests": [
- * "?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
- * "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"
- * ],
- * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
- * }
+ * Responsible for transmitting packets to a server
  */
-@SuppressWarnings("deprecation")
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
     private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
@@ -60,6 +54,7 @@ public class Dispatcher {
 
     public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
+    private boolean mDispatchGzipped = false;
 
     public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
         mPiwik = piwik;
@@ -99,6 +94,20 @@ public class Dispatcher {
 
     public long getDispatchInterval() {
         return mDispatchInterval;
+    }
+
+    /**
+     * Packets are collected and dispatched in batches. This boolean sets if post must be
+     * gzipped or not. Use of gzip needs mod_deflate/Apache ou lua_zlib/NGINX
+     *
+     * @param dispatchGzipped boolean
+     */
+    public void setDispatchGzipped(boolean dispatchGzipped) {
+        mDispatchGzipped = dispatchGzipped;
+    }
+
+    public boolean getDispatchGzipped() {
+        return mDispatchGzipped;
     }
 
     private boolean launch() {
@@ -207,10 +216,23 @@ public class Dispatcher {
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("charset", "utf-8");
 
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                writer.write(packet.getJSONObject().toString());
-                writer.flush();
-                writer.close();
+                String toPost = packet.getJSONObject().toString();
+
+                if (getDispatchGzipped()) {
+                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
+                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+                    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
+                    gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                    gzipOutputStream.close();
+                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
+
+                } else {
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                    writer.write(toPost);
+                    writer.flush();
+                    writer.close();
+                }
+
             } else {
                 // GET
                 urlConnection.setDoOutput(false); // Defaults to false, but for readability
@@ -244,10 +266,7 @@ public class Dispatcher {
     }
 
     /**
-     * For bulk tracking purposes
-     *
-     * @param map query map
-     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
+     * URL encodes a key-value map
      */
     public static String urlEncodeUTF8(Map<String, String> map) {
         StringBuilder sb = new StringBuilder(100);

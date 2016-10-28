@@ -34,7 +34,7 @@ public class TrackHelper {
         return new TrackHelper();
     }
 
-    public static TrackHelper track(@NonNull TrackMe base) {
+    public static TrackHelper track(@Nullable TrackMe base) {
         return new TrackHelper(base);
     }
 
@@ -270,17 +270,17 @@ public class TrackHelper {
 
     /**
      * Sends a download event for this app.
-     * This only triggers an event once per app version unless you force it.<p/>
+     * This only triggers an event once per app version unless you force it.<p>
      * {@link Download#force()}
      * <p class="note">
-     * Resulting download url:<p/>
-     * Case {@link DownloadTracker.Extra#APK_CHECKSUM}:<br/>
-     * http://packageName:versionCode/apk-md5-checksum<br/>
+     * Resulting download url:<p>
+     * Case {@link DownloadTracker.Extra#APK_CHECKSUM}:<br>
+     * http://packageName:versionCode/apk-md5-checksum<br>
      * Usually the installer-packagename is something like "com.android.vending" (Google Play),
-     * but users can modify this value, don't be surprised by some random values.<p/>
-     * <p/>
-     * Case {@link DownloadTracker.Extra#NONE}:<br/>
-     * http://packageName:versionCode<p/>
+     * but users can modify this value, don't be surprised by some random values.<p>
+     * <p>
+     * Case {@link DownloadTracker.Extra#NONE}:<br>
+     * http://packageName:versionCode<p>
      *
      * @return this object, to chain calls.
      */
@@ -390,7 +390,7 @@ public class TrackHelper {
     }
 
     /**
-     * Tracking the interactions</p>
+     * Tracking the interactions<p>
      * To map an interaction to an impression make sure to set the same value for contentName and contentPiece as
      * the impression has.
      *
@@ -566,10 +566,10 @@ public class TrackHelper {
     /**
      * Caught exceptions are errors in your app for which you've defined exception handling code,
      * such as the occasional timeout of a network connection during a request for data.
-     * <p/>
+     * <p>
      * This is just a different way to define an event.
      * Keep in mind Piwik is not a crash tracker, use this sparingly.
-     * <p/>
+     * <p>
      * For this to be useful you should ensure that proguard does not remove all classnames and line numbers.
      * Also note that if this is used across different app versions and obfuscation is used, the same exception might be mapped to different obfuscated names by proguard.
      * This would mean the same exception (event) is tracked as different events by Piwik.
@@ -630,10 +630,10 @@ public class TrackHelper {
     /**
      * This will create an exception handler that wraps any existing exception handler.
      * Exceptions will be caught, tracked, dispatched and then rethrown to the previous exception handler.
-     * <p/>
+     * <p>
      * Be wary of relying on this for complete crash tracking..
      * Think about how to deal with older app versions still throwing already fixed exceptions.
-     * <p/>
+     * <p>
      * See discussion here: https://github.com/piwik/piwik-sdk-android/issues/28
      */
     public UncaughtExceptions uncaughtExceptions() {

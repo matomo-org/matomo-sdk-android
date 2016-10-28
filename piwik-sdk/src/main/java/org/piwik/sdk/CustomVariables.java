@@ -20,7 +20,7 @@ import timber.log.Timber;
  * You can track up to 5 custom variables for each user to your app,
  * and up to 5 custom variables for each screen view.
  * You may configure Piwik to track more custom variables: http://piwik.org/faq/how-to/faq_17931/
- * <p/>
+ * <p>
  * Desired json output:
  * {
  * "1":["OS","iphone 5.0"],
