@@ -20,9 +20,6 @@ public class Checksum {
 
     /**
      * Transforms byte into hex representation.
-     *
-     * @param raw
-     * @return
      */
     public static String getHex(byte[] raw) {
         if (raw == null)
@@ -35,10 +32,6 @@ public class Checksum {
 
     /**
      * MD5-Checksum for a string.
-     *
-     * @param string
-     * @return
-     * @throws Exception
      */
     public static String getMD5Checksum(String string) throws Exception {
         MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
@@ -49,10 +42,6 @@ public class Checksum {
 
     /**
      * MD5-Checksum for a file.
-     *
-     * @param file
-     * @return
-     * @throws Exception
      */
     public static String getMD5Checksum(File file) throws Exception {
         if (!file.isFile())

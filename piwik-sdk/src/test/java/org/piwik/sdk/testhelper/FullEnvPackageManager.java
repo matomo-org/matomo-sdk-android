@@ -38,7 +38,7 @@ public class FullEnvPackageManager extends RobolectricPackageManager {
     }
 
     @Override
-    public boolean isPermissionRevokedByPolicy(String permName, String pkgName) {
+    public boolean isPermissionRevokedByPolicy(@NonNull String permName, @NonNull String pkgName) {
         return false;
     }
 
