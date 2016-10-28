@@ -15,19 +15,19 @@ public enum QueryParams {
     //Required parameters
     /**
      * The ID of the website we're tracking a visit/action for.
-     * <p/>
+     * <p>
      * (required)
      */
     SITE_ID("idsite"),
     /**
-     * Required for tracking, must be set to one, eg, &rec=1.
-     * <p/>
+     * Required for tracking, must be set to one, eg, rec=1.
+     * <p>
      * (required)
      */
     RECORD("rec"),
     /**
      * The full URL for the current action.
-     * <p/>
+     * <p>
      * (required)
      */
     URL_PATH("url"),
@@ -38,7 +38,7 @@ public enum QueryParams {
      * The title of the action being tracked.<p>
      * It is possible to <a href="http://piwik.org/faq/how-to/#faq_62">use slashes / to set one or several categories for this action.</a>
      * For example, Help / Feedback will create the Action Feedback in the category Help.
-     * <p/>
+     * <p>
      * (recommended)
      */
     ACTION_NAME("action_name"),
@@ -46,20 +46,20 @@ public enum QueryParams {
      * The unique visitor ID, must be a 16 characters hexadecimal string.<p>
      * Every unique visitor must be assigned a different ID and this ID must not change after it is assigned.
      * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
-     * <p/>
+     * <p>
      * (recommended)
      */
     VISITOR_ID("_id"),
     /**
      * Meant to hold a random value that is generated before each request.<p>
      * Using it helps avoid the tracking request being cached by the browser or a proxy.
-     * <p/>
+     * <p>
      * (recommended)
      */
     RANDOM_NUMBER("rand"),
     /**
-     * The parameter &apiv=1 defines the api version to use (currently always set to 1)
-     * <p/>
+     * The parameter apiv=1 defines the api version to use (currently always set to 1)
+     * <p>
      * (recommended)
      */
     API_VERSION("apiv"),
@@ -80,29 +80,29 @@ public enum QueryParams {
      * The current count of visits for this visitor.<p>
      * To set this value correctly, it would be required to store the value for each visitor in your application (using sessions or persisting in a database).
      * Then you would manually increment the counts by one on each new visit or "session", depending on how you choose to define a visit.
-     * This value is used to populate the report Visitors > Engagement > Visits by visit number.
+     * This value is used to populate the report Visitors &gt; Engagement &gt; Visits by visit number.
      */
     TOTAL_NUMBER_OF_VISITS("_idvc"),
     /**
      * The UNIX timestamp of this visitor's previous visit (seconds since Jan 01 1970. (UTC)).<p>
-     * This parameter is used to populate the report Visitors > Engagement > Visits by days since last visit.
+     * This parameter is used to populate the report Visitors &gt; Engagement &gt; Visits by days since last visit.
      */
     PREVIOUS_VISIT_TIMESTAMP("_viewts"),
     /**
      * The UNIX timestamp of this visitor's first visit (seconds since Jan 01 1970. (UTC)).<p>
      * This could be set to the date where the user first started using your software/app, or when he/she created an account.
-     * This parameter is used to populate the Goals > Days to Conversion report.
+     * This parameter is used to populate the Goals &gt; Days to Conversion report.
      */
     FIRST_VISIT_TIMESTAMP("_idts"),
     /**
      * The Campaign name (see <a href="http://piwik.org/docs/tracking-campaigns/">Tracking Campaigns</a>).<p>
-     * Used to populate the Referrers > Campaigns report.
+     * Used to populate the Referrers &gt; Campaigns report.
      * Note: this parameter will only be used for the first pageview of a visit.
      */
     CAMPAIGN_NAME("_rcn"),
     /**
      * The Campaign Keyword (see <a href="http://piwik.org/docs/tracking-campaigns/">Tracking Campaigns</a>).<p>
-     * Used to populate the Referrers > Campaigns report (clicking on a campaign loads all keywords for this campaign).
+     * Used to populate the Referrers &gt; Campaigns report (clicking on a campaign loads all keywords for this campaign).
      * Note: this parameter will only be used for the first pageview of a visit.
      */
     CAMPAIGN_KEYWORD("_rck"),

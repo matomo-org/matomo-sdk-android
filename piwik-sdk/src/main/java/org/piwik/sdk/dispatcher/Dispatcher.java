@@ -36,17 +36,8 @@ import java.util.zip.GZIPOutputStream;
 import timber.log.Timber;
 
 /**
- * Sends json POST request to tracking url http://piwik.example.com/piwik.php with body
- * <p/>
- * {
- * "requests": [
- * "?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
- * "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"
- * ],
- * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
- * }
+ * Responsible for transmitting packets to a server
  */
-@SuppressWarnings("deprecation")
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
     private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
@@ -275,10 +266,7 @@ public class Dispatcher {
     }
 
     /**
-     * For bulk tracking purposes
-     *
-     * @param map query map
-     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
+     * URL encodes a key-value map
      */
     public static String urlEncodeUTF8(Map<String, String> map) {
         StringBuilder sb = new StringBuilder(100);

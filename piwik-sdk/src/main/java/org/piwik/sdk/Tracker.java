@@ -233,7 +233,7 @@ public class Tracker {
      * User ID is any non empty unique string identifying the user (such as an email address or a username).
      * To access this value, users must be logged-in in your system so you can
      * fetch this user ID from your system, and pass it to Piwik.
-     * <p/>
+     * <p>
      * When specified, the User ID will be "enforced".
      * This means that if there is no recent visit with this User ID, a new one will be created.
      * If a visit is found in the last 30 minutes with your specified User ID,
@@ -462,7 +462,7 @@ public class Tracker {
     /**
      * For testing purposes
      *
-     * @return query of the event ?r=1&sideId=1..
+     * @return query of the event
      */
     @VisibleForTesting
     public String getLastEvent() {
