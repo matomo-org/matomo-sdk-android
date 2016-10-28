@@ -22,6 +22,7 @@ import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,6 +35,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("deprecation")
@@ -54,6 +59,40 @@ public class DispatcherTest {
     public void setup() {
         Piwik.getInstance(Robolectric.application).setDryRun(true);
         Piwik.getInstance(Robolectric.application).setOptOut(false);
+    }
+
+    @Test
+    public void testSetGzipDispatching() throws Exception {
+        Dispatcher dispatcher = createTracker().getDispatcher();
+        assertFalse(dispatcher.getDispatchGzipped());
+        dispatcher.setDispatchGzipped(true);
+        assertTrue(dispatcher.getDispatchGzipped());
+    }
+
+    @Test
+    public void testDispatch_gzip() throws Exception {
+        getPiwik().setDryRun(false);
+        Dispatcher dispatcher = createTracker().getDispatcher();
+
+        Packet packet = mock(Packet.class);
+
+        URL url = new URL("http://example.com");
+        when(packet.getTargetURL()).thenReturn(url);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("test", "test");
+        when(packet.getJSONObject()).thenReturn(jsonObject);
+
+        HttpURLConnection urlConnection = mock(HttpURLConnection.class);
+        when(packet.openConnection()).thenReturn(urlConnection);
+
+        dispatcher.setDispatchGzipped(false);
+        dispatcher.dispatch(packet);
+        verify(urlConnection, never()).addRequestProperty("Content-Encoding", "gzip");
+
+        dispatcher.setDispatchGzipped(true);
+        dispatcher.dispatch(packet);
+        verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
     }
 
     @Test
