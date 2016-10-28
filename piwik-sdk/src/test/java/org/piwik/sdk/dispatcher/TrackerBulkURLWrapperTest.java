@@ -66,7 +66,7 @@ public class TrackerBulkURLWrapperTest {
 
     @Test
     public void testPage() throws Exception {
-        List<String> events = new LinkedList<String>();
+        List<String> events = new LinkedList<>();
         for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() * 2; i++) {
             events.add("eve" + i);
         }
@@ -107,7 +107,7 @@ public class TrackerBulkURLWrapperTest {
 
     @Test
     public void testGetEventUrl() throws Exception {
-        List<String> events = new LinkedList<String>();
+        List<String> events = new LinkedList<>();
         for (int i = 0; i < TrackerBulkURLWrapper.getEventsPerPage() + 1; i++) {
             events.add("?eve" + i);
         }

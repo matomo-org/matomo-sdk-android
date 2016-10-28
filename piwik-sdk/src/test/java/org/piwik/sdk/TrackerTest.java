@@ -325,8 +325,7 @@ public class TrackerTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         Tracker tracker2 = Piwik.getInstance(Robolectric.application).newTracker("http://localhost", 100);
         Tracker tracker3 = Piwik.getInstance(Robolectric.application).newTracker("http://example.com", 1);
-        assertFalse(tracker.equals(null));
-        assertFalse(tracker.equals(""));
+        assertNotNull(tracker);
         assertFalse(tracker.equals(tracker2));
         assertTrue(tracker.equals(tracker3));
     }
