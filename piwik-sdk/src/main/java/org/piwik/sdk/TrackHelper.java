@@ -34,7 +34,7 @@ public class TrackHelper {
         return new TrackHelper();
     }
 
-    public static TrackHelper track(@NonNull TrackMe base) {
+    public static TrackHelper track(@Nullable TrackMe base) {
         return new TrackHelper(base);
     }
 

@@ -7,6 +7,9 @@
 
 package org.piwik.sdk;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import timber.log.Timber;
 
 /**
@@ -19,7 +22,7 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
     private final TrackMe mTrackMe;
     private final Thread.UncaughtExceptionHandler mDefaultExceptionHandler;
 
-    public PiwikExceptionHandler(Tracker tracker, TrackMe trackMe) {
+    public PiwikExceptionHandler(@NonNull Tracker tracker, @Nullable TrackMe trackMe) {
         mTracker = tracker;
         mTrackMe = trackMe;
         mDefaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
@@ -40,7 +43,7 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread thread, Throwable ex) {
         try {
             String excInfo = ex.getMessage();
-            TrackHelper.track().exception(ex).description(excInfo).fatal(true).with(getTracker());
+            TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(getTracker());
             // Immediately dispatch as the app might be dying after rethrowing the exception
             getTracker().dispatch();
         } catch (Exception e) {
