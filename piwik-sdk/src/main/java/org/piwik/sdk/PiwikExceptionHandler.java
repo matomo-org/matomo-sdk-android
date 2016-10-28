@@ -14,7 +14,7 @@ import timber.log.Timber;
 
 /**
  * An exception handler that wraps the existing exception handler and dispatches event to a {@link org.piwik.sdk.Tracker}.
- * <p/>
+ * <p>
  * Also see documentation for {@link TrackHelper#uncaughtExceptions()}
  */
 public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {

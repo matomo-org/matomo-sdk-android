@@ -66,7 +66,7 @@ public class Piwik {
 
     /**
      * Use this to disable Piwik, e.g. if the user opted out of tracking.
-     * Piwik will persist the choice and remain disable on next instance creation.</p>
+     * Piwik will persist the choice and remain disable on next instance creation.<p>
      * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
      *
      * @param optOut true to disable reporting
