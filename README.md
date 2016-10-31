@@ -237,7 +237,7 @@ Those JSON datas may be dispatched using a Gzipped output. This may be set at ap
 
 ```
 
-Gzipped input must be set on Piwik server side using mod_deflate/APACHE our lua_zlib/NGINX ([lua_zlib](https://github.com/brimworks/lua-zlib) - [lua-nginx-module](https://github.com/openresty/lua-nginx-module/) - [inflate.lua samples](https://gist.github.com/davidcaste/05b2f9461ebe4a3bb3fc) - [inflate.lua samples](https://github.com/piwik/piwik-sdk-android/pull/123)).
+Gzipped input must be set on Piwik server side using mod_deflate/APACHE our lua_zlib/NGINX ([lua_zlib](https://github.com/brimworks/lua-zlib) - [lua-nginx-module](https://github.com/openresty/lua-nginx-module/) - [inflate.lua samples](https://gist.github.com/davidcaste/05b2f9461ebe4a3bb3fc) - [inflate.lua simplified Piwik sample](https://github.com/piwik/piwik-sdk-android/pull/123)).
 
 
 
