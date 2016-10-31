@@ -12,7 +12,9 @@ import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * Data that can be send to the backend API via the Dispatcher
@@ -40,8 +42,13 @@ public class Packet {
     }
 
     @NonNull
-    public URL getTargetURL() {
+    protected URL getTargetURL() {
         return mTargetURL;
+    }
+
+    @NonNull
+    URLConnection openConnection() throws IOException {
+        return mTargetURL.openConnection();
     }
 
     /**

@@ -190,10 +190,8 @@ public class Dispatcher {
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) {
         // Some error checking
-        if (packet.getTargetURL() == null)
-            return false;
-        if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0)
-            return false;
+        if (packet.getTargetURL() == null) return false;
+        if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0) return false;
 
         if (mPiwik.isDryRun()) {
             mDryRunOutput.add(packet);
@@ -201,11 +199,10 @@ public class Dispatcher {
             return true;
         }
 
-        if (!mDryRunOutput.isEmpty())
-            mDryRunOutput.clear();
+        if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
         try {
-            HttpURLConnection urlConnection = (HttpURLConnection) packet.getTargetURL().openConnection();
+            HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
             urlConnection.setConnectTimeout(mTimeOut);
             urlConnection.setReadTimeout(mTimeOut);
 
@@ -218,7 +215,7 @@ public class Dispatcher {
 
                 String toPost = packet.getJSONObject().toString();
 
-                if (getDispatchGzipped()) {
+                if (mDispatchGzipped) {
                     urlConnection.addRequestProperty("Content-Encoding", "gzip");
                     ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
                     GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);

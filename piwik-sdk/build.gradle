@@ -61,6 +61,10 @@ dependencies {
     testCompile 'org.hamcrest:hamcrest-core:1.3'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
+
+    // Mocktio
+    testCompile 'org.mockito:mockito-core:2.2.9'
+
     testCompile('org.robolectric:robolectric:2.4') {
         exclude module: 'classworlds'
         exclude module: 'commons-logging'
