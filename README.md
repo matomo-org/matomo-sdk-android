@@ -201,6 +201,8 @@ tracker.track(trackMe);
 
 The tracker by default will dispatch any pending events every 120 seconds.
 
+If 0 is used, any event will be dispatched immediatly.
+
 If a negative value is used the dispatch timer will never run, a manual dispatch must be used:
 
 ```java
@@ -217,6 +219,25 @@ If a negative value is used the dispatch timer will never run, a manual dispatch
     }
     
 ```
+
+When there is more than one event in queue, dispatch is done using a POST request with JSON data (Bulktracking).
+
+JSON datas may be dispatched using a Gzipped output. This may be set at app init time as follows :
+
+```java
+
+    private void initPiwik() {
+      ...
+        
+        //set dispatcher to json gzip
+        getTracker().setDispatchGzipped(true);
+
+      ...
+    }
+
+```
+
+Gzipped input must be set on Piwik server side using mod_deflate/APACHE or lua_zlib/NGINX ([lua_zlib](https://github.com/brimworks/lua-zlib) - [lua-nginx-module](https://github.com/openresty/lua-nginx-module/) - [inflate.lua samples](https://gist.github.com/davidcaste/05b2f9461ebe4a3bb3fc) - [inflate.lua simplified Piwik sample](https://github.com/piwik/piwik-sdk-android/pull/123)).
 
 #### User ID
 
