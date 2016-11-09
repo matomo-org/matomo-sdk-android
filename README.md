@@ -201,7 +201,7 @@ tracker.track(trackMe);
 
 The tracker by default will dispatch any pending events every 120 seconds.
 
-If 0 is used, any event will be dispatch immediatly.
+If 0 is used, any event will be dispatched immediatly.
 
 If a negative value is used the dispatch timer will never run, a manual dispatch must be used:
 
@@ -222,7 +222,7 @@ If a negative value is used the dispatch timer will never run, a manual dispatch
 
 When there is more than one event in queue, dispatch is done using a POST request with JSON data (Bulktracking).
 
-Those JSON datas may be dispatched using a Gzipped output. This may be set at app init time as this :
+JSON datas may be dispatched using a Gzipped output. This may be set at app init time as follows :
 
 ```java
 
