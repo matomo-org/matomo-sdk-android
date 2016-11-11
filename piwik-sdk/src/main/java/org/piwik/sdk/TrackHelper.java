@@ -269,6 +269,58 @@ public class TrackHelper {
     }
 
     /**
+     * Tracks an  <a href="http://piwik.org/docs/site-search/">site search</a>
+     *
+     * @param keyword Searched query in the app
+     * @return this Tracker for chaining
+     */
+    public Search search(String keyword) {
+        return new Search(this, keyword);
+    }
+
+    public static class Search extends BaseEvent {
+        private final String mKeyword;
+        private String mCategory;
+        private Integer mCount;
+
+        Search(TrackHelper baseBuilder, String keyword) {
+            super(baseBuilder);
+            mKeyword = keyword;
+        }
+
+        /**
+         * You can optionally specify a search category with this parameter.
+         *
+         * @return this object, to chain calls.
+         */
+        public Search category(String category) {
+            mCategory = category;
+            return this;
+        }
+
+        /**
+         * We recommend to set the search count to the number of search results displayed on the results page.
+         * When keywords are tracked with a count of 0, they will appear in the "No Result Search Keyword" report.
+         *
+         * @return this object, to chain calls.
+         */
+        public Search count(Integer count) {
+            mCount = count;
+            return this;
+        }
+
+        @Nullable
+        @Override
+        public TrackMe build() {
+            TrackMe trackMe = new TrackMe(getBaseTrackMe())
+                    .set(QueryParams.SEARCH_KEYWORD, mKeyword)
+                    .set(QueryParams.SEARCH_CATEGORY, mCategory);
+            if (mCount != null) trackMe.set(QueryParams.SEARCH_NUMBER_OF_HITS, mCount);
+            return trackMe;
+        }
+    }
+
+    /**
      * Sends a download event for this app.
      * This only triggers an event once per app version unless you force it.<p>
      * {@link Download#force()}
