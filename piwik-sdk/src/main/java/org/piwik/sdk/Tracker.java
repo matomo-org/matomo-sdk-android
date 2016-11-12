@@ -12,6 +12,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.EventCache;
+import org.piwik.sdk.dispatcher.EventDiskCache;
 import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
@@ -96,7 +98,7 @@ public class Tracker {
         mSiteId = siteId;
         mAuthToken = authToken;
 
-        mDispatcher = new Dispatcher(mPiwik, mApiUrl, authToken);
+        mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)));
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {

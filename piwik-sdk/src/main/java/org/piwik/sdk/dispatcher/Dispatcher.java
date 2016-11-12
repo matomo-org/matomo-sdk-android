@@ -11,24 +11,20 @@ import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
-import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
+import org.piwik.sdk.Tracker;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -40,12 +36,10 @@ import timber.log.Timber;
  */
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
-    private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
     private final Object mThreadControl = new Object();
+    private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
     private final Piwik mPiwik;
-    private final URL mApiUrl;
-    private final String mAuthToken;
 
     private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
     public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
@@ -55,11 +49,12 @@ public class Dispatcher {
     public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private boolean mDispatchGzipped = false;
+    private final PacketFactory packetFactory;
 
-    public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
-        mPiwik = piwik;
-        mApiUrl = apiUrl;
-        mAuthToken = authToken;
+    public Dispatcher(Tracker tracker, EventCache eventCache) {
+        mPiwik = tracker.getPiwik();
+        packetFactory = new PacketFactory(tracker.getAPIUrl(), tracker.getAuthToken());
+        mEventCache = eventCache;
     }
 
     /**
@@ -134,9 +129,8 @@ public class Dispatcher {
     }
 
     public void submit(String query) {
-        mDispatchQueue.add(query);
-        if (mDispatchInterval != -1)
-            launch();
+        mEventCache.add(query);
+        if (mDispatchInterval != -1) launch();
     }
 
     private Runnable mLoop = new Runnable() {
@@ -152,33 +146,23 @@ public class Dispatcher {
                 }
 
                 int count = 0;
-                List<String> availableEvents = new ArrayList<>();
-                mDispatchQueue.drainTo(availableEvents);
-                Timber.tag(LOGGER_TAG).d("Drained %s events.", availableEvents.size());
-                TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(mApiUrl, availableEvents, mAuthToken);
-                Iterator<TrackerBulkURLWrapper.Page> pageIterator = wrapper.iterator();
-                while (pageIterator.hasNext()) {
-                    TrackerBulkURLWrapper.Page page = pageIterator.next();
-
-                    // use doGET when only event on current page
-                    if (page.elementsCount() > 1) {
-                        JSONObject eventData = wrapper.getEvents(page);
-                        if (eventData == null)
-                            continue;
-                        if (dispatch(new Packet(wrapper.getApiUrl(), eventData)))
-                            count += page.elementsCount();
+                List<String> drainedEvents = new ArrayList<>();
+                mEventCache.drain(drainedEvents);
+                Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
+                for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
+                    if (packet == null) continue;
+                    if (dispatch(packet)) {
+                        count += packet.getEventCount();
+                        mEventCache.clearFailedFlag();
                     } else {
-                        URL targetURL = wrapper.getEventUrl(page);
-                        if (targetURL == null)
-                            continue;
-                        if (dispatch(new Packet(targetURL)))
-                            count += 1;
+                        mEventCache.postpone(drainedEvents.subList(count, drainedEvents.size()));
+                        break;
                     }
                 }
-                Timber.tag(LOGGER_TAG).d("Dispatched %s events.", count);
+                Timber.tag(LOGGER_TAG).d("Dispatched %d events.", count);
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
-                    if (mDispatchQueue.isEmpty() || mDispatchInterval < 0) {
+                    if (mEventCache.isEmpty() || mDispatchInterval < 0) {
                         mRunning = false;
                         break;
                     }
@@ -189,10 +173,6 @@ public class Dispatcher {
 
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) {
-        // Some error checking
-        if (packet.getTargetURL() == null) return false;
-        if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0) return false;
-
         if (mPiwik.isDryRun()) {
             mDryRunOutput.add(packet);
             Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
@@ -207,14 +187,13 @@ public class Dispatcher {
             urlConnection.setReadTimeout(mTimeOut);
 
             // IF there is json data we want to do a post
-            if (packet.getJSONObject() != null) {
+            if (packet.getPostData() != null) {
                 // POST
                 urlConnection.setDoOutput(true); // Forces post
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("charset", "utf-8");
 
-                String toPost = packet.getJSONObject().toString();
-
+                String toPost = packet.getPostData().toString();
                 if (mDispatchGzipped) {
                     urlConnection.addRequestProperty("Content-Encoding", "gzip");
                     ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
@@ -222,7 +201,6 @@ public class Dispatcher {
                     gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
                     gzipOutputStream.close();
                     urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
-
                 } else {
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
                     writer.write(toPost);

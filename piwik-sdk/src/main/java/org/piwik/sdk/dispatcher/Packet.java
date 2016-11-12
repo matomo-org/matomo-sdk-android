@@ -22,22 +22,24 @@ import java.net.URLConnection;
 @VisibleForTesting
 public class Packet {
     private final URL mTargetURL;
-    private final JSONObject mJSONObject;
+    private final JSONObject mPostData;
     private final long mTimeStamp;
+    private final int mEventCount;
 
     /**
      * Constructor for GET requests
      */
     public Packet(@NonNull URL targetURL) {
-        this(targetURL, null);
+        this(targetURL, null, 1);
     }
 
     /**
      * Constructor for POST requests
      */
-    public Packet(@NonNull URL targetURL, @Nullable JSONObject JSONObject) {
+    public Packet(@NonNull URL targetURL, @Nullable JSONObject JSONObject, int eventCount) {
         mTargetURL = targetURL;
-        mJSONObject = JSONObject;
+        mPostData = JSONObject;
+        mEventCount = eventCount;
         mTimeStamp = System.currentTimeMillis();
     }
 
@@ -55,8 +57,8 @@ public class Packet {
      * @return may be null if it is a GET request
      */
     @Nullable
-    public JSONObject getJSONObject() {
-        return mJSONObject;
+    public JSONObject getPostData() {
+        return mPostData;
     }
 
     /**
@@ -64,5 +66,9 @@ public class Packet {
      */
     public long getTimeStamp() {
         return mTimeStamp;
+    }
+
+    public int getEventCount() {
+        return mEventCount;
     }
 }

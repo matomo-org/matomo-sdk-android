@@ -37,7 +37,7 @@ public class DemoApp extends PiwikApplication {
         Timber.plant(new Timber.DebugTree());
 
         // When working on an app we don't want to skew tracking results.
-        getPiwik().setDryRun(BuildConfig.DEBUG);
+//        getPiwik().setDryRun(BuildConfig.DEBUG);
 
         // If you want to set a specific userID other than the random UUID token, do it NOW to ensure all future actions use that token.
         // Changing it later will track new events as belonging to a different user.
