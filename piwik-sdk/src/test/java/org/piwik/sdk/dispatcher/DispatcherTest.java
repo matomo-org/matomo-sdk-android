@@ -6,6 +6,9 @@
  */
 package org.piwik.sdk.dispatcher;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -13,6 +16,7 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.piwik.sdk.Piwik;
@@ -20,9 +24,9 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -52,6 +56,9 @@ public class DispatcherTest {
     @Mock Piwik piwik;
     @Mock EventDiskCache eventDiskCache;
     @Mock Tracker tracker;
+    @Mock ConnectivityManager connectivityManager;
+    @Mock Context context;
+    @Mock NetworkInfo networkInfo;
 
     @Before
     public void setup() throws Exception {
@@ -59,7 +66,10 @@ public class DispatcherTest {
         when(tracker.getPiwik()).thenReturn(piwik);
         when(tracker.getAPIUrl()).thenReturn(new URL("http://example.com"));
         when(piwik.isDryRun()).thenReturn(true);
-        when(piwik.getContext()).thenReturn(Robolectric.application);
+        when(piwik.getContext()).thenReturn(context);
+        when(context.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(connectivityManager);
+        when(connectivityManager.getActiveNetworkInfo()).thenReturn(networkInfo);
+        when(networkInfo.isConnected()).thenReturn(true);
 
         when(eventDiskCache.isEmpty()).thenReturn(true);
         eventCache = spy(new EventCache(eventDiskCache));
@@ -67,8 +77,18 @@ public class DispatcherTest {
     }
 
     @Test
-    public void testEventCache_postpone() throws Exception {
-        // TODO
+    public void testConnectivityChange() throws Exception {
+        when(eventDiskCache.isEmpty()).thenReturn(false);
+        when(networkInfo.isConnected()).thenReturn(false);
+        dispatcher.submit("Test");
+        dispatcher.forceDispatch();
+        Thread.sleep(50);
+        verify(eventDiskCache, never()).uncache();
+        verify(eventDiskCache).cache(ArgumentMatchers.<String>anyList());
+        when(networkInfo.isConnected()).thenReturn(true);
+        dispatcher.forceDispatch();
+        Thread.sleep(50);
+        verify(eventDiskCache).uncache();
     }
 
     @Test
@@ -86,6 +106,8 @@ public class DispatcherTest {
 
         HttpURLConnection urlConnection = mock(HttpURLConnection.class);
         when(packet.openConnection()).thenReturn(urlConnection);
+        OutputStream outputStream = mock(OutputStream.class);
+        when(urlConnection.getOutputStream()).thenReturn(outputStream);
 
         dispatcher.setDispatchGzipped(false);
         dispatcher.dispatch(packet);

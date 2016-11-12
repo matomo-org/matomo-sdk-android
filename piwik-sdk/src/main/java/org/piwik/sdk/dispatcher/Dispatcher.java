@@ -7,6 +7,9 @@
 
 package org.piwik.sdk.dispatcher;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
@@ -16,6 +19,7 @@ import org.piwik.sdk.Tracker;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -40,6 +44,7 @@ public class Dispatcher {
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
     private final Piwik mPiwik;
+    private final ConnectivityManager mConnectivityManager;
 
     private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
     public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
@@ -53,6 +58,7 @@ public class Dispatcher {
 
     public Dispatcher(Tracker tracker, EventCache eventCache) {
         mPiwik = tracker.getPiwik();
+        mConnectivityManager = (ConnectivityManager) mPiwik.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         packetFactory = new PacketFactory(tracker.getAPIUrl(), tracker.getAuthToken());
         mEventCache = eventCache;
     }
@@ -83,8 +89,7 @@ public class Dispatcher {
      */
     public void setDispatchInterval(long dispatchInterval) {
         mDispatchInterval = dispatchInterval;
-        if (mDispatchInterval != -1)
-            launch();
+        if (mDispatchInterval != -1) launch();
     }
 
     public long getDispatchInterval() {
@@ -144,22 +149,27 @@ public class Dispatcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-                int count = 0;
-                List<String> drainedEvents = new ArrayList<>();
-                mEventCache.drain(drainedEvents);
-                Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
-                for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
-                    if (packet == null) continue;
-                    if (dispatch(packet)) {
-                        count += packet.getEventCount();
-                        mEventCache.clearFailedFlag();
-                    } else {
-                        mEventCache.postpone(drainedEvents.subList(count, drainedEvents.size()));
-                        break;
+                boolean connected = isConnected();
+                mEventCache.updateState(connected);
+                if (connected) {
+                    int count = 0;
+                    List<String> drainedEvents = new ArrayList<>();
+                    mEventCache.drain(drainedEvents);
+                    Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
+                    for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
+                        try {
+                            if (dispatch(packet)) count += packet.getEventCount();
+                        } catch (IOException e) {
+                            // While rapidly dispatching, it's possible that we are connected, but can't resolve hostnames yet
+                            // java.net.UnknownHostException: Unable to resolve host "...": No address associated with hostname
+                            Timber.tag(LOGGER_TAG).w(e, "Dispatch failed, assuming OFFLINE, requeuing events.");
+                            mEventCache.updateState(false);
+                            mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                            break;
+                        }
                     }
+                    Timber.tag(LOGGER_TAG).d("Dispatched %d events.", count);
                 }
-                Timber.tag(LOGGER_TAG).d("Dispatched %d events.", count);
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
                     if (mEventCache.isEmpty() || mDispatchInterval < 0) {
@@ -171,8 +181,17 @@ public class Dispatcher {
         }
     };
 
+    private boolean isConnected() {
+        NetworkInfo activeNetwork = mConnectivityManager.getActiveNetworkInfo();
+        return activeNetwork != null && activeNetwork.isConnected();
+    }
+
+    /**
+     * @param packet to dispatch
+     * @return true if dispatch was successful
+     */
     @VisibleForTesting
-    public boolean dispatch(@NonNull Packet packet) {
+    public boolean dispatch(@NonNull Packet packet) throws IOException {
         if (mPiwik.isDryRun()) {
             mDryRunOutput.add(packet);
             Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
@@ -181,46 +200,41 @@ public class Dispatcher {
 
         if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
-        try {
-            HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
-            urlConnection.setConnectTimeout(mTimeOut);
-            urlConnection.setReadTimeout(mTimeOut);
+        HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
+        urlConnection.setConnectTimeout(mTimeOut);
+        urlConnection.setReadTimeout(mTimeOut);
 
-            // IF there is json data we want to do a post
-            if (packet.getPostData() != null) {
-                // POST
-                urlConnection.setDoOutput(true); // Forces post
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("charset", "utf-8");
+        // IF there is json data we want to do a post
+        if (packet.getPostData() != null) {
+            // POST
+            urlConnection.setDoOutput(true); // Forces post
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("charset", "utf-8");
 
-                String toPost = packet.getPostData().toString();
-                if (mDispatchGzipped) {
-                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
-                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-                    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
-                    gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                    gzipOutputStream.close();
-                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
-                } else {
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                    writer.write(toPost);
-                    writer.flush();
-                    writer.close();
-                }
-
+            String toPost = packet.getPostData().toString();
+            if (mDispatchGzipped) {
+                urlConnection.addRequestProperty("Content-Encoding", "gzip");
+                ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+                GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
+                gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                gzipOutputStream.close();
+                urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
             } else {
-                // GET
-                urlConnection.setDoOutput(false); // Defaults to false, but for readability
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                writer.write(toPost);
+                writer.flush();
+                writer.close();
             }
 
-            int statusCode = urlConnection.getResponseCode();
-            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
-            return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
-        } catch (Exception e) {
-            // Broad but an analytics app shouldn't impact it's host app.
-            Timber.tag(LOGGER_TAG).w(e, "Cannot send request");
+        } else {
+            // GET
+            urlConnection.setDoOutput(false); // Defaults to false, but for readability
         }
-        return false;
+
+        int statusCode = urlConnection.getResponseCode();
+        Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
+        return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
+
     }
 
     /**

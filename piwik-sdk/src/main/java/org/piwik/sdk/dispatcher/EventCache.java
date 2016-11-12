@@ -1,45 +1,51 @@
 package org.piwik.sdk.dispatcher;
 
 
-import android.support.annotation.NonNull;
-
 import org.piwik.sdk.Piwik;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class EventCache {
     private static final String TAG = Piwik.LOGGER_PREFIX + "EventCache";
-    private final LinkedBlockingDeque<String> mDispatchQueue = new LinkedBlockingDeque<>();
-    private final EventDiskCache mCache;
-    private boolean mLastFailed = false;
+    private final LinkedBlockingDeque<String> mQueue = new LinkedBlockingDeque<>();
+    private final EventDiskCache mDiskCache;
 
     public EventCache(EventDiskCache cache) {
-        mCache = cache;
+        mDiskCache = cache;
     }
 
     public void add(String query) {
-        mDispatchQueue.add(query);
+        mQueue.add(query);
     }
 
     public void drain(List<String> drainedEvents) {
-        if (!mLastFailed && !mCache.isEmpty()) {
-            drainedEvents.addAll(mCache.uncache());
-        } else {
-            mDispatchQueue.drainTo(drainedEvents);
-        }
-    }
-
-    public void clearFailedFlag() {
-        mLastFailed = false;
-    }
-
-    public void postpone(@NonNull List<String> failedEvents) {
-        mCache.cache(failedEvents);
-        mLastFailed = true;
+        mQueue.drainTo(drainedEvents);
     }
 
     public boolean isEmpty() {
-        return mDispatchQueue.isEmpty() && mCache.isEmpty();
+        return mQueue.isEmpty() && mDiskCache.isEmpty();
+    }
+
+    public void updateState(boolean online) {
+        if (online && !mDiskCache.isEmpty()) {
+            final List<String> uncache = mDiskCache.uncache();
+            ListIterator<String> it = uncache.listIterator(uncache.size());
+            while (it.hasPrevious()) {
+                mQueue.offerFirst(it.previous());
+            }
+        } else if (!online && !mQueue.isEmpty()) {
+            List<String> toCache = new ArrayList<>();
+            mQueue.drainTo(toCache);
+            mDiskCache.cache(toCache);
+        }
+    }
+
+    public void requeue(List<String> events) {
+        for (String e : events) {
+            mQueue.offerFirst(e);
+        }
     }
 }
