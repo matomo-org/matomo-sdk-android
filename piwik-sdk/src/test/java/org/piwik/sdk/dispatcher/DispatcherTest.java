@@ -84,7 +84,7 @@ public class DispatcherTest {
         dispatcher.forceDispatch();
         Thread.sleep(50);
         verify(eventDiskCache, never()).uncache();
-        verify(eventDiskCache).cache(ArgumentMatchers.<String>anyList());
+        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
         when(networkInfo.isConnected()).thenReturn(true);
         dispatcher.forceDispatch();
         Thread.sleep(50);

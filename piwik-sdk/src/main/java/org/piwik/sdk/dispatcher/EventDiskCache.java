@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -24,40 +25,110 @@ import timber.log.Timber;
 public class EventDiskCache {
     private static final String TAG = Piwik.LOGGER_PREFIX + "EventDiskCache";
     private static final String CACHE_DIR_NAME = "piwik_cache";
-    // We can send old events without authtokens for up 4 hours, and the default dispatch interval is 2 minutes.
-    private static final int FILE_LIMIT = 4 * 60 / 2;
     private static final String VERSION = "1";
     private final LinkedBlockingQueue<File> mEventContainer = new LinkedBlockingQueue<>();
     private final File mCacheDir;
+    private final long mMaxAge;
+    private final long mMaxSize;
+    private long mCurrentSize = 0;
 
     public EventDiskCache(Tracker tracker) {
+        mMaxAge = tracker.getOfflineCacheAge();
+        mMaxSize = tracker.getOfflineCacheSize();
         File baseDir = new File(tracker.getPiwik().getContext().getCacheDir(), CACHE_DIR_NAME);
         mCacheDir = new File(baseDir, tracker.getAPIUrl().getHost());
         File[] storedContainers = mCacheDir.listFiles();
         if (storedContainers != null) {
             Arrays.sort(storedContainers);
-            mEventContainer.addAll(Arrays.asList(storedContainers));
+            for (File container : storedContainers) {
+                mCurrentSize += container.length();
+                mEventContainer.add(container);
+            }
         } else {
             if (!mCacheDir.mkdirs()) Timber.tag(TAG).e("Failed to make disk-cache dir %s", mCacheDir);
         }
     }
 
-    public synchronized void cache(@NonNull List<String> toCache) {
+    private void checkCacheLimits() {
         long startTime = System.currentTimeMillis();
-        File container = writeEventFile(toCache);
-        mEventContainer.add(container);
-        if (mEventContainer.size() > FILE_LIMIT) {
-            final File oldest = mEventContainer.poll();
-            if (!oldest.delete()) Timber.tag(TAG).e("Failed to delete cache container %s", oldest.getPath());
+        if (mMaxAge < 0) {
+            Timber.tag(TAG).d("Caching is disabled.");
+            while (!mEventContainer.isEmpty()) {
+                File head = mEventContainer.poll();
+                if (head.delete()) {
+                    Timber.tag(TAG).e("Deleted cache container %s", head.getPath());
+                }
+            }
+        } else if (mMaxAge > 0) {
+            final Iterator<File> iterator = mEventContainer.iterator();
+            while (iterator.hasNext()) {
+                File head = iterator.next();
+                long timestamp;
+                try {
+                    final String[] split = head.getName().split("_");
+                    timestamp = Long.valueOf(split[1]);
+                } catch (Exception e) {
+                    Timber.tag(TAG).e(e, null);
+                    timestamp = 0;
+                }
+                if (timestamp < (System.currentTimeMillis() - mMaxAge)) {
+                    if (head.delete()) Timber.tag(TAG).e("Deleted cache container %s", head.getPath());
+                    else Timber.tag(TAG).e("Failed to delete cache container %s", head.getPath());
+                    iterator.remove();
+                } else {
+                    // List is sorted by age
+                    break;
+                }
+            }
+        }
+        if (mMaxSize != 0) {
+            final Iterator<File> iterator = mEventContainer.iterator();
+            while (iterator.hasNext() && mCurrentSize > mMaxSize) {
+                File head = iterator.next();
+                mCurrentSize -= head.length();
+                iterator.remove();
+                if (head.delete()) Timber.tag(TAG).e("Deleted cache container %s", head.getPath());
+                else Timber.tag(TAG).e("Failed to delete cache container %s", head.getPath());
+            }
         }
         long stopTime = System.currentTimeMillis();
-        Timber.tag(TAG).d("Caching of %d events took %dms", toCache.size(), (stopTime - startTime));
+        Timber.tag(TAG).d("Cache check took %dms", (stopTime - startTime));
+    }
+
+    private boolean isCachingEnabled() {
+        return mMaxAge >= 0;
+    }
+
+    public synchronized void cache(@NonNull List<Event> toCache) {
+        checkCacheLimits();
+        if (!isCachingEnabled() || toCache.isEmpty()) return;
+
+        long startTime = System.currentTimeMillis();
+
+        long cutoffTime = System.currentTimeMillis() - mMaxAge;
+        int cutoffIndex = 0;
+        for (int i = 0; i < toCache.size(); i++) {
+            if (toCache.get(i).getTimeStamp() >= cutoffTime) {
+                cutoffIndex = i;
+                break;
+            }
+        }
+        File container = writeEventFile(toCache.subList(cutoffIndex, toCache.size()));
+        if (container != null) {
+            mEventContainer.add(container);
+            mCurrentSize += container.length();
+        }
+        long stopTime = System.currentTimeMillis();
+        Timber.tag(TAG).d("Caching of %d events took %dms (%s)", toCache.size(), (stopTime - startTime), container);
     }
 
     @NonNull
-    public synchronized List<String> uncache() {
+    public synchronized List<Event> uncache() {
+        List<Event> events = new ArrayList<>();
+        checkCacheLimits();
+        if (!isCachingEnabled()) return events;
+
         long startTime = System.currentTimeMillis();
-        List<String> events = new ArrayList<>();
         while (!mEventContainer.isEmpty()) {
             File head = mEventContainer.poll();
             if (head != null) {
@@ -65,6 +136,7 @@ public class EventDiskCache {
                 if (!head.delete()) Timber.tag(TAG).e("Failed to delete cache container %s", head.getPath());
             }
         }
+
         long stopTime = System.currentTimeMillis();
         Timber.tag(TAG).d("Uncaching of %d events took %dms", events.size(), (stopTime - startTime));
         return events;
@@ -74,11 +146,10 @@ public class EventDiskCache {
         return mEventContainer.isEmpty();
     }
 
-    private List<String> readEventFile(@NonNull File file) {
-        List<String> events = new ArrayList<>();
-        if (!file.exists()) {
-            return events;
-        }
+    private List<Event> readEventFile(@NonNull File file) {
+        List<Event> events = new ArrayList<>();
+        if (!file.exists()) return events;
+
         InputStream in = null;
         try {
             in = new FileInputStream(file);
@@ -88,26 +159,19 @@ public class EventDiskCache {
             String versionLine = bufferedReader.readLine();
             if (!VERSION.equals(versionLine)) return events;
 
-            String timestampLine = bufferedReader.readLine();
-            if (timestampLine == null) return events;
-            try {
-                long timestamp = Long.parseLong(timestampLine);
-                // after 4 hours it needs an authtoken, which is not encouraged
-                // https://developer.piwik.org/api-reference/tracking-api
-                if (System.currentTimeMillis() - timestamp > 4 * 60 * 60 * 1000) {
-                    return events;
-                }
-            } catch (NumberFormatException e) {
-                Timber.tag(TAG).e(e, null);
-                return events;
-            }
-
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                events.add(line);
+                final int split = line.indexOf(" ");
+                if (split == -1) continue;
+
+                try {
+                    long timestamp = Long.parseLong(line.substring(0, split));
+                    String query = line.substring(split + 1);
+                    events.add(new Event(timestamp, query));
+                } catch (Exception e) { Timber.tag(TAG).e(e, null); }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Timber.tag(TAG).e(e, null);
         } finally {
             if (in != null) {
                 try { in.close(); } catch (IOException e) { Timber.tag(TAG).e(e, null); }
@@ -119,20 +183,19 @@ public class EventDiskCache {
     }
 
     @Nullable
-    private File writeEventFile(@NonNull List<String> events) {
-        File newFile = new File(mCacheDir, "events_" + System.currentTimeMillis());
+    private File writeEventFile(@NonNull List<Event> events) {
+        File newFile = new File(mCacheDir, "events_" + events.get(0).getTimeStamp());
         FileWriter out = null;
         try {
             out = new FileWriter(newFile);
             out.append(VERSION).append("\n");
-            out.append(String.valueOf(System.currentTimeMillis())).append("\n");
-            for (String event : events) {
-                out.append(event).append("\n");
+            for (Event event : events) {
+                out.append(String.valueOf(event.getTimeStamp())).append(" ").append(event.getQuery()).append("\n");
             }
             Timber.tag(TAG).d("Saved %d events to %s", events.size(), newFile.getPath());
             return newFile;
         } catch (IOException e) {
-            e.printStackTrace();
+            Timber.tag(TAG).e(e, null);
         } finally {
             if (out != null) {
                 try { out.close(); } catch (IOException e) { Timber.tag(TAG).e(e, null); }

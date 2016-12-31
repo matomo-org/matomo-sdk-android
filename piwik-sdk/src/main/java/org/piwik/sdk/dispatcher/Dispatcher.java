@@ -134,7 +134,7 @@ public class Dispatcher {
     }
 
     public void submit(String query) {
-        mEventCache.add(query);
+        mEventCache.add(new Event(query));
         if (mDispatchInterval != -1) launch();
     }
 
@@ -153,8 +153,8 @@ public class Dispatcher {
                 mEventCache.updateState(connected);
                 if (connected) {
                     int count = 0;
-                    List<String> drainedEvents = new ArrayList<>();
-                    mEventCache.drain(drainedEvents);
+                    List<Event> drainedEvents = new ArrayList<>();
+                    mEventCache.drainTo(drainedEvents);
                     Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
                     for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
                         try {

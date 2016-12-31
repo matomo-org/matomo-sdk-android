@@ -38,96 +38,94 @@ public class EventCacheTest {
     @Test
     public void testDrain_simple() throws Exception {
         assertTrue(eventCache.isEmpty());
-        eventCache.add("test");
+        eventCache.add(new Event("test"));
         assertFalse(eventCache.isEmpty());
-        List<String> events = new ArrayList<>();
-        eventCache.drain(events);
-        assertEquals("test", events.get(0));
+        List<Event> events = new ArrayList<>();
+        eventCache.drainTo(events);
+        assertEquals("test", events.get(0).getQuery());
         assertTrue(eventCache.isEmpty());
     }
 
     @Test
     public void testDrain_empty() throws Exception {
-        List<String> events = new ArrayList<>();
-        eventCache.drain(events);
+        List<Event> events = new ArrayList<>();
+        eventCache.drainTo(events);
         assertTrue(events.isEmpty());
     }
 
     @Test
     public void testDrain_diskCache_empty() throws Exception {
-        List<String> events = new ArrayList<>();
-        eventCache.drain(events);
+        List<Event> events = new ArrayList<>();
+        eventCache.drainTo(events);
         verify(eventDiskCache, never()).uncache();
         assertTrue(events.isEmpty());
     }
 
     @Test
     public void testDrain_diskCache_nonempty() throws Exception {
-        List<String> events = new ArrayList<>();
+        List<Event> events = new ArrayList<>();
         when(eventDiskCache.isEmpty()).thenReturn(false);
-        when(eventDiskCache.uncache()).thenReturn(Collections.singletonList("test"));
+        when(eventDiskCache.uncache()).thenReturn(Collections.singletonList(new Event("test")));
         eventCache.updateState(true);
-        eventCache.drain(events);
+        eventCache.drainTo(events);
         verify(eventDiskCache).uncache();
         assertFalse(events.isEmpty());
     }
 
     @Test
     public void testDrain_diskCache_first() throws Exception {
-        eventCache.add("3");
-        List<String> events = new ArrayList<>();
+        eventCache.add(new Event("3"));
+        List<Event> events = new ArrayList<>();
         when(eventDiskCache.isEmpty()).thenReturn(false);
-        when(eventDiskCache.uncache()).thenReturn(Arrays.asList("1", "2"));
+        when(eventDiskCache.uncache()).thenReturn(Arrays.asList(new Event("1"), new Event("2")));
         eventCache.updateState(true);
-        eventCache.drain(events);
+        eventCache.drainTo(events);
         verify(eventDiskCache).uncache();
         assertFalse(events.isEmpty());
-        assertEquals("1", events.get(0));
-        assertEquals("2", events.get(1));
-        assertEquals("3", events.get(2));
+        assertEquals("1", events.get(0).getQuery());
+        assertEquals("2", events.get(1).getQuery());
+        assertEquals("3", events.get(2).getQuery());
     }
 
     @Test
     public void testUpdateState_online() throws Exception {
-        when(eventDiskCache.isEmpty()).thenReturn(true);
         verify(eventDiskCache, never()).uncache();
         eventCache.updateState(true);
-        verify(eventDiskCache).isEmpty();
         when(eventDiskCache.isEmpty()).thenReturn(false);
         eventCache.updateState(true);
-        verify(eventDiskCache).uncache();
-        verify(eventDiskCache, times(2)).isEmpty();
+        verify(eventDiskCache, times(2)).uncache();
     }
 
     @Test
     public void testUpdateState_offline() throws Exception {
         assertTrue(eventCache.isEmpty());
-        eventCache.add("test");
+        eventCache.add(new Event("test"));
         assertFalse(eventCache.isEmpty());
         eventCache.updateState(false);
-        verify(eventDiskCache).cache(ArgumentMatchers.<String>anyList());
+        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
 
         eventCache.updateState(false);
-        verify(eventDiskCache).cache(ArgumentMatchers.<String>anyList());
-        eventCache.add("test");
+        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+        eventCache.add(new Event("test"));
         eventCache.updateState(false);
-        verify(eventDiskCache, times(2)).cache(ArgumentMatchers.<String>anyList());
+        verify(eventDiskCache, times(2)).cache(ArgumentMatchers.<Event>anyList());
     }
 
     @Test
-    public void testIsEmpty() {
-        when(eventDiskCache.isEmpty()).thenReturn(true);
+    public void testUpdateState_offline_ordering() throws Exception {
         assertTrue(eventCache.isEmpty());
+        eventCache.add(new Event("test2"));
+        when(eventDiskCache.uncache()).thenReturn(Arrays.asList(new Event("test0"), new Event("test1")));
         when(eventDiskCache.isEmpty()).thenReturn(false);
-        assertFalse(eventCache.isEmpty());
+        eventCache.updateState(true);
 
-        when(eventDiskCache.isEmpty()).thenReturn(true);
-        assertTrue(eventCache.isEmpty());
-        eventCache.add("test");
-        assertFalse(eventCache.isEmpty());
+        List<Event> restoredEvents = new ArrayList<>();
+        eventCache.drainTo(restoredEvents);
 
-        when(eventDiskCache.isEmpty()).thenReturn(false);
-        assertFalse(eventCache.isEmpty());
+        assertEquals(3, restoredEvents.size());
+        assertEquals("test0", restoredEvents.get(0).getQuery());
+        assertEquals("test1", restoredEvents.get(1).getQuery());
+        assertEquals("test2", restoredEvents.get(2).getQuery());
     }
 
 }

@@ -48,6 +48,8 @@ public class Tracker {
     protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
     protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
     protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
+    protected static final String PREFERENCE_KEY_OFFLINE_CACHE_AGE = "tracker.cache.age";
+    protected static final String PREFERENCE_KEY_OFFLINE_CACHE_SIZE = "tracker.cache.size";
 
     private final Piwik mPiwik;
 
@@ -232,6 +234,54 @@ public class Tracker {
      */
     public long getDispatchInterval() {
         return mDispatcher.getDispatchInterval();
+    }
+
+    /**
+     * For how long events should be stored if they could not be send.
+     * Events older than the set limit will be discarded on the next dispatch attempt.<br>
+     * The Piwik backend accepts backdated events for up to 24 hours by default.
+     * <p>
+     * >0 = limit in ms<br>
+     * 0 = unlimited<br>
+     * -1 = disabled offline cache<br>
+     *
+     * @param age in milliseconds
+     */
+    public void setOfflineCacheAge(long age) {
+        getSharedPreferences().edit().putLong(PREFERENCE_KEY_OFFLINE_CACHE_AGE, age).apply();
+    }
+
+    /**
+     * See {@link #setOfflineCacheAge(long)}
+     *
+     * @return maximum cache age in milliseconds
+     */
+    public long getOfflineCacheAge() {
+        return getSharedPreferences().getLong(PREFERENCE_KEY_OFFLINE_CACHE_AGE, 24 * 60 * 60 * 1000);
+    }
+
+    /**
+     * How large the offline cache may be.
+     * If the limit is reached the oldest files will be deleted first.
+     * Events older than the set limit will be discarded on the next dispatch attempt.<br>
+     * The Piwik backend accepts backdated events for up to 24 hours by default.
+     * <p>
+     * >0 = limit in byte<br>
+     * 0 = unlimited<br>
+     *
+     * @param size in byte
+     */
+    public void setOfflineCacheSize(long size) {
+        getSharedPreferences().edit().putLong(PREFERENCE_KEY_OFFLINE_CACHE_SIZE, size).apply();
+    }
+
+    /**
+     * Maximum size the offline cache is allowed to grow to.
+     *
+     * @return size in byte
+     */
+    public long getOfflineCacheSize() {
+        return getSharedPreferences().getLong(PREFERENCE_KEY_OFFLINE_CACHE_SIZE, 4 * 1024 * 1024);
     }
 
     /**

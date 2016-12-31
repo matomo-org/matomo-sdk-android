@@ -112,6 +112,32 @@ public class TrackerTest extends DefaultTestCase {
     }
 
     @Test
+    public void testGetOfflineCacheAge_defaultValue() throws Exception {
+        Tracker tracker = createTracker();
+        assertEquals(24 * 60 * 60 * 1000, tracker.getOfflineCacheAge());
+    }
+
+    @Test
+    public void testSetOfflineCacheAge() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.setOfflineCacheAge(80085);
+        assertEquals(80085, tracker.getOfflineCacheAge());
+    }
+
+    @Test
+    public void testGetOfflineCacheSize_defaultValue() throws Exception {
+        Tracker tracker = createTracker();
+        assertEquals(4 * 1024 * 1024, tracker.getOfflineCacheSize());
+    }
+
+    @Test
+    public void testSetOfflineCacheSize() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.setOfflineCacheSize(16 * 1000 * 1000);
+        assertEquals(16 * 1000 * 1000, tracker.getOfflineCacheSize());
+    }
+
+    @Test
     public void testGetSiteId() throws Exception {
         assertEquals(createTracker().getSiteId(), 1);
     }

@@ -26,7 +26,7 @@ public class PacketFactoryTest {
     public void testPOST_authtoken() throws Exception {
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, "token");
-        List<Packet> packets = factory.buildPackets(Arrays.asList("straw", "berries"));
+        List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
         for (Packet p : packets) {
             assertEquals("token", p.getPostData().getString(QueryParams.AUTHENTICATION_TOKEN.toString()));
         }
@@ -36,7 +36,7 @@ public class PacketFactoryTest {
     public void testPOST_apiUrl() throws Exception {
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);
-        List<Packet> packets = factory.buildPackets(Arrays.asList("straw", "berries"));
+        List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
         for (Packet p : packets) {
             assertEquals(url, p.getTargetURL());
         }
@@ -46,7 +46,7 @@ public class PacketFactoryTest {
     public void testPOST_data() throws Exception {
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);
-        List<Packet> packets = factory.buildPackets(Arrays.asList("straw", "berries"));
+        List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
         assertEquals("straw", packets.get(0).getPostData().getJSONArray("requests").get(0));
         assertEquals("berries", packets.get(0).getPostData().getJSONArray("requests").get(1));
     }
@@ -55,27 +55,27 @@ public class PacketFactoryTest {
     public void testGET_apiUrl() throws Exception {
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);
-        List<Packet> packets = factory.buildPackets(Collections.singletonList("strawberries"));
+        List<Packet> packets = factory.buildPackets(Collections.singletonList(new Event("strawberries")));
         assertTrue(packets.get(0).getTargetURL().toExternalForm().startsWith(url.toExternalForm()));
     }
 
     @Test
     public void testGET_badUrl() throws Exception {
         PacketFactory factory = new PacketFactory(new URL("http://example.com/"), null);
-        assertTrue(factory.buildPackets(Collections.singletonList("")).isEmpty());
+        assertTrue(factory.buildPackets(Collections.singletonList(new Event(""))).isEmpty());
     }
 
     @Test
     public void testEmptyEvents() throws Exception {
         PacketFactory factory = new PacketFactory(new URL("http://example.com/"), null);
-        assertTrue(factory.buildPackets(Collections.<String>emptyList()).isEmpty());
+        assertTrue(factory.buildPackets(Collections.<Event>emptyList()).isEmpty());
     }
 
     @Test
     public void testPacking_rest() throws Exception {
-        List<String> events = new LinkedList<>();
+        List<Event> events = new LinkedList<>();
         for (int i = 1; i <= PacketFactory.PAGE_SIZE + 1; i++) {
-            events.add("?eve" + i);
+            events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);
@@ -92,9 +92,9 @@ public class PacketFactoryTest {
 
     @Test
     public void testPacking_notfull() throws Exception {
-        List<String> events = new LinkedList<>();
+        List<Event> events = new LinkedList<>();
         for (int i = 0; i < PacketFactory.PAGE_SIZE * 2 - 2; i++) {
-            events.add("?eve" + i);
+            events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);
@@ -111,9 +111,9 @@ public class PacketFactoryTest {
 
     @Test
     public void testPacking_even() throws Exception {
-        List<String> events = new LinkedList<>();
+        List<Event> events = new LinkedList<>();
         for (int i = 0; i < PacketFactory.PAGE_SIZE * 3; i++) {
-            events.add("?eve" + i);
+            events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
         PacketFactory factory = new PacketFactory(url, null);

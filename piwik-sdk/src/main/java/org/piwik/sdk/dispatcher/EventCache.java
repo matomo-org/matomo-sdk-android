@@ -8,20 +8,22 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import timber.log.Timber;
+
 public class EventCache {
     private static final String TAG = Piwik.LOGGER_PREFIX + "EventCache";
-    private final LinkedBlockingDeque<String> mQueue = new LinkedBlockingDeque<>();
+    private final LinkedBlockingDeque<Event> mQueue = new LinkedBlockingDeque<>();
     private final EventDiskCache mDiskCache;
 
     public EventCache(EventDiskCache cache) {
         mDiskCache = cache;
     }
 
-    public void add(String query) {
-        mQueue.add(query);
+    public void add(Event event) {
+        mQueue.add(event);
     }
 
-    public void drain(List<String> drainedEvents) {
+    public void drainTo(List<Event> drainedEvents) {
         mQueue.drainTo(drainedEvents);
     }
 
@@ -30,22 +32,26 @@ public class EventCache {
     }
 
     public void updateState(boolean online) {
-        if (online && !mDiskCache.isEmpty()) {
-            final List<String> uncache = mDiskCache.uncache();
-            ListIterator<String> it = uncache.listIterator(uncache.size());
+        if (online) {
+            final List<Event> uncache = mDiskCache.uncache();
+            ListIterator<Event> it = uncache.listIterator(uncache.size());
             while (it.hasPrevious()) {
+                // Anything from  disk cache is older then what the queue could currently contain.
                 mQueue.offerFirst(it.previous());
             }
-        } else if (!online && !mQueue.isEmpty()) {
-            List<String> toCache = new ArrayList<>();
+            Timber.tag(TAG).d("Switched state to ONLINE, uncached %d events from disk.", uncache.size());
+        } else if (!mQueue.isEmpty()) {
+            List<Event> toCache = new ArrayList<>();
             mQueue.drainTo(toCache);
             mDiskCache.cache(toCache);
+            Timber.tag(TAG).d("Switched state to OFFLINE, caching %d events to disk.", toCache.size());
         }
     }
 
-    public void requeue(List<String> events) {
-        for (String e : events) {
+    public void requeue(List<Event> events) {
+        for (Event e : events) {
             mQueue.offerFirst(e);
         }
     }
+
 }
