@@ -31,6 +31,7 @@ public class EventDiskCache {
     private final long mMaxAge;
     private final long mMaxSize;
     private long mCurrentSize = 0;
+    private boolean mDelayedClear = false;
 
     public EventDiskCache(Tracker tracker) {
         mMaxAge = tracker.getOfflineCacheAge();
@@ -100,20 +101,13 @@ public class EventDiskCache {
     }
 
     public synchronized void cache(@NonNull List<Event> toCache) {
-        checkCacheLimits();
         if (!isCachingEnabled() || toCache.isEmpty()) return;
+
+        checkCacheLimits();
 
         long startTime = System.currentTimeMillis();
 
-        long cutoffTime = System.currentTimeMillis() - mMaxAge;
-        int cutoffIndex = 0;
-        for (int i = 0; i < toCache.size(); i++) {
-            if (toCache.get(i).getTimeStamp() >= cutoffTime) {
-                cutoffIndex = i;
-                break;
-            }
-        }
-        File container = writeEventFile(toCache.subList(cutoffIndex, toCache.size()));
+        File container = writeEventFile(toCache);
         if (container != null) {
             mEventContainer.add(container);
             mCurrentSize += container.length();
@@ -125,8 +119,9 @@ public class EventDiskCache {
     @NonNull
     public synchronized List<Event> uncache() {
         List<Event> events = new ArrayList<>();
-        checkCacheLimits();
         if (!isCachingEnabled()) return events;
+
+        checkCacheLimits();
 
         long startTime = System.currentTimeMillis();
         while (!mEventContainer.isEmpty()) {
@@ -143,6 +138,10 @@ public class EventDiskCache {
     }
 
     public synchronized boolean isEmpty() {
+        if (!mDelayedClear) {
+            checkCacheLimits();
+            mDelayedClear = true;
+        }
         return mEventContainer.isEmpty();
     }
 
@@ -159,6 +158,7 @@ public class EventDiskCache {
             String versionLine = bufferedReader.readLine();
             if (!VERSION.equals(versionLine)) return events;
 
+            final long cutoff = System.currentTimeMillis() - mMaxAge;
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 final int split = line.indexOf(" ");
@@ -166,6 +166,8 @@ public class EventDiskCache {
 
                 try {
                     long timestamp = Long.parseLong(line.substring(0, split));
+                    if (mMaxAge > 0 && timestamp < cutoff) continue;
+
                     String query = line.substring(split + 1);
                     events.add(new Event(timestamp, query));
                 } catch (Exception e) { Timber.tag(TAG).e(e, null); }
@@ -184,24 +186,40 @@ public class EventDiskCache {
 
     @Nullable
     private File writeEventFile(@NonNull List<Event> events) {
-        File newFile = new File(mCacheDir, "events_" + events.get(0).getTimeStamp());
+        if (events.isEmpty()) return null;
+
+        File newFile = new File(mCacheDir, "events_" + events.get(events.size() - 1).getTimeStamp());
         FileWriter out = null;
+        boolean dataWritten = false;
         try {
             out = new FileWriter(newFile);
             out.append(VERSION).append("\n");
+
+            final long cutoff = System.currentTimeMillis() - mMaxAge;
             for (Event event : events) {
+                if (mMaxAge > 0 && event.getTimeStamp() < cutoff) continue;
                 out.append(String.valueOf(event.getTimeStamp())).append(" ").append(event.getQuery()).append("\n");
+                dataWritten = true;
             }
-            Timber.tag(TAG).d("Saved %d events to %s", events.size(), newFile.getPath());
-            return newFile;
         } catch (IOException e) {
             Timber.tag(TAG).e(e, null);
+            newFile.deleteOnExit();
+            return null;
         } finally {
             if (out != null) {
                 try { out.close(); } catch (IOException e) { Timber.tag(TAG).e(e, null); }
             }
         }
-        return null;
+
+        Timber.tag(TAG).d("Saved %d events to %s", events.size(), newFile.getPath());
+
+        // If just version data was written delete the file.
+        if (dataWritten) return newFile;
+        else {
+            //noinspection ResultOfMethodCallIgnored
+            newFile.delete();
+            return null;
+        }
     }
 
 }

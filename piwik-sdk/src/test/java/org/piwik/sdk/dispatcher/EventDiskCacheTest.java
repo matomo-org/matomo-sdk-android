@@ -73,8 +73,8 @@ public class EventDiskCacheTest {
 
     @Test
     public void testCacheFileName() throws Exception {
-        mDiskCache.cache(Collections.singletonList(new Event(1234567890, "test")));
-        File cacheFile = new File(mHostFolder, "events_1234567890");
+        mDiskCache.cache(Arrays.asList(new Event(1234567890, "test"), new Event(987654321, "test2")));
+        File cacheFile = new File(mHostFolder, "events_987654321");
         assertTrue(cacheFile.exists());
         mDiskCache.uncache();
         assertFalse(cacheFile.exists());
@@ -113,56 +113,106 @@ public class EventDiskCacheTest {
     }
 
     @Test
-    public void testMaxAge_positive() throws Exception {
+    public void testMaxAge_positive_allStale() throws Exception {
+        when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
+        mDiskCache = new EventDiskCache(mTracker);
+        Event event1 = new Event(1, "test");
+        Event event2 = new Event(2, "test");
+        mDiskCache.cache(Arrays.asList(event1, event2));
+        assertEquals(0, mHostFolder.listFiles().length);
+        final List<Event> events = mDiskCache.uncache();
+        assertEquals(0, events.size());
+    }
+
+    @Test
+    public void testMaxAge_positive_singleContainer() throws Exception {
         when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event1 = new Event(System.currentTimeMillis() - 60 * 1000, "test");
         Event event2 = new Event(System.currentTimeMillis(), "test");
-        mDiskCache.cache(Arrays.asList(event1, event2));
+        Event event3 = new Event(2 * System.currentTimeMillis(), "test");
+        mDiskCache.cache(Arrays.asList(event1, event2, event3));
         final List<Event> events = mDiskCache.uncache();
-        assertEquals(1, events.size());
+        assertEquals(2, events.size());
         assertEquals(event2, events.get(0));
+        assertEquals(event3, events.get(1));
+    }
+
+    @Test
+    public void testMaxAge_positive_multipleContainer() throws Exception {
+        when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
+        mDiskCache = new EventDiskCache(mTracker);
+        Event event1 = new Event(System.currentTimeMillis() - 20 * 1000, "test");
+        Event event2 = new Event(System.currentTimeMillis() - 15 * 1000, "test");
+        mDiskCache.cache(Arrays.asList(event1, event2));
+        Event event3 = new Event(System.currentTimeMillis() - 5 * 1000, "test");
+        Event event4 = new Event(System.currentTimeMillis() - 2 * 1000, "test");
+        mDiskCache.cache(Arrays.asList(event3, event4));
+        final List<Event> events = mDiskCache.uncache();
+        assertEquals(2, events.size());
+        assertEquals(event3, events.get(0));
+        assertEquals(event4, events.get(1));
     }
 
     @Test
     public void testMaxAge_unlimited() throws Exception {
         when(mTracker.getOfflineCacheAge()).thenReturn(0L);
         mDiskCache = new EventDiskCache(mTracker);
-        Event event1 = new Event(0, "test");
-        Event event2 = new Event(System.currentTimeMillis(), "test");
-        mDiskCache.cache(Arrays.asList(event1, event2));
+        Event event1 = new Event(-System.currentTimeMillis(), "test1");
+        Event event2 = new Event(0, "test2");
+        Event event3 = new Event(System.currentTimeMillis(), "test3");
+        Event event4 = new Event(2 * System.currentTimeMillis(), "test3");
+        mDiskCache.cache(Arrays.asList(event1, event2, event3, event4));
         final List<Event> events = mDiskCache.uncache();
-        assertEquals(1, events.size());
-        assertEquals(event2, events.get(0));
+        assertEquals(4, events.size());
+        assertEquals(event1, events.get(0));
+        assertEquals(event2, events.get(1));
+        assertEquals(event3, events.get(2));
+        assertEquals(event4, events.get(3));
     }
 
     @Test
-    public void testMaxAge_disabled() throws Exception {
+    public void testMaxAge_negative_cachingDisabled() throws Exception {
         when(mTracker.getOfflineCacheAge()).thenReturn(-1L);
         mDiskCache = new EventDiskCache(mTracker);
+        Event event0 = new Event(-System.currentTimeMillis(), "test");
         Event event1 = new Event(0, "test");
         Event event2 = new Event(System.currentTimeMillis(), "test");
-        mDiskCache.cache(Arrays.asList(event1, event2));
+        Event event3 = new Event(2 * System.currentTimeMillis(), "test");
+        mDiskCache.cache(Arrays.asList(event0, event1, event2, event3));
         final List<Event> events = mDiskCache.uncache();
         assertEquals(0, events.size());
     }
 
     @Test
-    public void testMaxSize_limited() throws Exception {
-        when(mTracker.getOfflineCacheSize()).thenReturn(600 * 1024L);
+    public void testClearDataOnceEvenIfDisabled() throws Exception {
+        Event event1 = new Event(0, "test");
+        Event event2 = new Event(System.currentTimeMillis(), "test");
+        mDiskCache.cache(Arrays.asList(event1, event2));
+        assertFalse(mDiskCache.isEmpty());
         mDiskCache = new EventDiskCache(mTracker);
-        for (int j = 0; j < 10; j++) {
+        assertFalse(mDiskCache.isEmpty());
+        when(mTracker.getOfflineCacheAge()).thenReturn(-1L);
+        mDiskCache = new EventDiskCache(mTracker);
+        assertTrue(mDiskCache.isEmpty());
+    }
+
+    @Test
+    public void testMaxSize_limited() throws Exception {
+        when(mTracker.getOfflineCacheSize()).thenReturn(500 * 1024L);
+        mDiskCache = new EventDiskCache(mTracker);
+        for (int j = 0; j < 4; j++) {
             List<Event> events = new ArrayList<>();
-            for (int k = 0; k < 2000; k++) {
+            for (int k = 0; k < 4000; k++) {
                 events.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
             }
-            // About 103KB
+            // About 206KB
             mDiskCache.cache(events);
         }
 
-        assertEquals(6, mHostFolder.listFiles().length);
+        assertEquals(3, mHostFolder.listFiles().length);
         final List<Event> events = mDiskCache.uncache();
-        assertEquals(10000, events.size());
+        assertEquals(8000, events.size());
     }
 
     @Test
