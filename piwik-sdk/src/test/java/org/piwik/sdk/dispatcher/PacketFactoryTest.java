@@ -131,26 +131,4 @@ public class PacketFactoryTest {
         assertNotNull(third.getPostData());
     }
 
-    @Test
-    public void testPacking() throws Exception {
-//        List<String> events = new LinkedList<>();
-//        for (int i = 0; i < PacketFactory.getPageSize() * 2; i++) {
-//            events.add("eve" + i);
-//        }
-//        PacketFactory wrapper = new PacketFactory(new URL("http://example.com/"), events, null);
-//
-//        Iterator<PacketFactory.Page> it = wrapper.iterator();
-//        assertTrue(it.hasNext());
-//        while (it.hasNext()) {
-//            PacketFactory.Page page = it.next();
-//            assertEquals(page.elementsCount(), PacketFactory.getPageSize());
-//            JSONArray requests = wrapper.getPacket(page).getPostData().getJSONArray("requests");
-//            assertEquals(requests.length(), PacketFactory.getPageSize());
-//            assertTrue(requests.get(0).toString().startsWith("eve"));
-//            assertTrue(requests.get(PacketFactory.getPageSize() - 1).toString().length() >= 4);
-//            assertFalse(page.isEmpty());
-//        }
-//        assertFalse(it.hasNext());
-//        assertNull(it.next());
-    }
 }
