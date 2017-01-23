@@ -23,8 +23,8 @@ allprojects {
         globalMinSdkVersion = 10
         globalTargetSdkVersion = 25
         globalCompileSdkVersion = 25
-        globalBuildToolsVersion = '25.0.0'
-        supportLibVersion = '25.0.0'
-        timberVersion = '4.3.1'
+        globalBuildToolsVersion = '25.0.2'
+        supportLibVersion = '25.1.0'
+        timberVersion = '4.5.0'
     }
 }

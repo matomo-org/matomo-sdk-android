@@ -216,8 +216,8 @@ public enum QueryParams {
      * The expected format is: 2011-04-05 00:11:42 (remember to URL encode the value!).
      * The datetime must be sent in UTC timezone.
      * Note: if you record data in the past, you will need to <a href="http://piwik.org/faq/how-to/#faq_59">force Piwik to re-process reports for the past dates.</a>
-     * If you set cdt to a datetime older than four hours then token_auth must be set.
-     * If you set cdt with a datetime in the last four hours then you don't need to pass {@link #AUTHENTICATION_TOKEN}.
+     * If you set cdt to a datetime older than 24 hours then token_auth must be set.
+     * If you set cdt with a datetime in the last 24 hours then you don't need to pass {@link #AUTHENTICATION_TOKEN}.
      */
     DATETIME_OF_REQUEST("cdt"),
 

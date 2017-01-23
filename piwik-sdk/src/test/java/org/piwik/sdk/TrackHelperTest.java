@@ -268,6 +268,25 @@ public class TrackHelperTest extends DefaultTestCase {
     }
 
     @Test
+    public void testTrackSiteSearch() throws Exception {
+        Tracker tracker = createTracker();
+        TrackHelper.track().search("keyword").category("category").count(1337).with(tracker);
+        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+
+        assertEquals(queryParams.get(QueryParams.SEARCH_KEYWORD), "keyword");
+        assertEquals(queryParams.get(QueryParams.SEARCH_CATEGORY), "category");
+        assertEquals(queryParams.get(QueryParams.SEARCH_NUMBER_OF_HITS), String.valueOf(1337));
+        validateDefaultQuery(queryParams);
+
+        TrackHelper.track().search("keyword2").with(tracker);
+        queryParams = parseEventUrl(tracker.getLastEvent());
+
+        assertEquals(queryParams.get(QueryParams.SEARCH_KEYWORD), "keyword2");
+        assertNull(queryParams.get(QueryParams.SEARCH_CATEGORY));
+        assertNull(queryParams.get(QueryParams.SEARCH_NUMBER_OF_HITS));
+    }
+
+    @Test
     public void testTrackGoalRevenue() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().goal(1).revenue(100f).with(tracker);
