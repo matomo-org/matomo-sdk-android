@@ -10,30 +10,6 @@ def versionPatch = 0
 def myVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'piwik-sdk-android'
-
-    publishedGroupId = 'org.piwik.sdk'
-    libraryName = 'Piwik SDK for Android'
-    artifact = 'piwik-sdk'
-
-    libraryDescription = 'SDK for Android to measure your apps with Piwik '
-
-    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
-    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
-
-    libraryVersion = myVersionName
-
-    developerId = 'darken'
-    developerName = 'Matthias Urhahn'
-    developerEmail = 'darken@darken.eu'
-
-    licenseName = 'BSD-3 Clause'
-    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
-    allLicenses = ["BSD 3-Clause"]
-}
-
 android {
     compileSdkVersion project.ext.globalCompileSdkVersion
     buildToolsVersion project.ext.globalBuildToolsVersion
@@ -166,5 +142,37 @@ android.libraryVariants.all { variant ->
     }
 }
 
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+def credentialsFile = new File(System.properties['user.home'], ".bintray/bintray.properties")
+ext {
+    if (credentialsFile.canRead()) {
+        def Properties props = new Properties()
+        props.load(new FileInputStream(credentialsFile))
+        bintrayUser = props['bintray.user']
+        bintrayApiKey = props['bintray.apikey']
+    }
+
+    bintrayRepo = 'maven'
+    bintrayName = 'piwik-sdk-android'
+
+    publishedGroupId = 'org.piwik.sdk'
+    libraryName = 'Piwik SDK for Android'
+    artifact = 'piwik-sdk'
+
+    libraryDescription = 'SDK for Android to measure your apps with Piwik '
+
+    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
+    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
+
+    libraryVersion = myVersionName
+
+    developerId = 'darken'
+    developerName = 'Matthias Urhahn'
+    developerEmail = 'darken@darken.eu'
+
+    licenseName = 'BSD-3 Clause'
+    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
+    allLicenses = ["BSD 3-Clause"]
+}
+if (credentialsFile.canRead()) {
+    apply from: '../publish-to-bintray.gradle'
+}
