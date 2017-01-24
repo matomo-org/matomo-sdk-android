@@ -5,7 +5,6 @@ import android.util.Pair;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.piwik.sdk.dispatcher.DispatcherTest;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.TestActivity;
@@ -31,6 +30,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.piwik.sdk.dispatcher.DispatcherTest.getFlattenedQueries;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
@@ -109,6 +109,32 @@ public class TrackerTest extends DefaultTestCase {
 
         assertEquals(1337, tracker.getDispatcher().getConnectionTimeOut());
         assertEquals(1337, tracker.getDispatchTimeout());
+    }
+
+    @Test
+    public void testGetOfflineCacheAge_defaultValue() throws Exception {
+        Tracker tracker = createTracker();
+        assertEquals(24 * 60 * 60 * 1000, tracker.getOfflineCacheAge());
+    }
+
+    @Test
+    public void testSetOfflineCacheAge() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.setOfflineCacheAge(80085);
+        assertEquals(80085, tracker.getOfflineCacheAge());
+    }
+
+    @Test
+    public void testGetOfflineCacheSize_defaultValue() throws Exception {
+        Tracker tracker = createTracker();
+        assertEquals(4 * 1024 * 1024, tracker.getOfflineCacheSize());
+    }
+
+    @Test
+    public void testSetOfflineCacheSize() throws Exception {
+        Tracker tracker = createTracker();
+        tracker.setOfflineCacheSize(16 * 1000 * 1000);
+        assertEquals(16 * 1000 * 1000, tracker.getOfflineCacheSize());
     }
 
     @Test
@@ -270,7 +296,7 @@ public class TrackerTest extends DefaultTestCase {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = DispatcherTest.getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> flattenedQueries = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
             assertEquals(count, flattenedQueries.size());
             int found = 0;
             for (String query : flattenedQueries) {
@@ -451,6 +477,48 @@ public class TrackerTest extends DefaultTestCase {
         }
         countDownLatch.await();
         assertEquals(threadCount, getPiwik().getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, 0));
+    }
+
+    @Test
+    public void testSessionStartRaceCondition() throws Exception {
+        final Tracker tracker = createTracker();
+        for (int i = 0; i < 1000; i++) {
+            final CountDownLatch countDownLatch = new CountDownLatch(10);
+            for (int j = 0; j < 10; j++) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(new Random().nextInt(2 - 0) + 0);
+                            TrackMe trackMe = new TrackMe()
+                                    .set(QueryParams.EVENT_ACTION, UUID.randomUUID().toString())
+                                    .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
+                                    .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
+                                    .set(QueryParams.EVENT_VALUE, 1);
+                            tracker.track(trackMe);
+
+                            countDownLatch.countDown();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            assertFalse(true);
+                        }
+                    }
+                }).start();
+            }
+            countDownLatch.await();
+            List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            for (String out : output) {
+                if (output.indexOf(out) == 0) {
+                    assertTrue(out.contains("lang"));
+                    assertTrue(out.contains("_idts"));
+                    assertTrue(out.contains("new_visit"));
+                } else {
+                    assertFalse(out.contains("lang"));
+                    assertFalse(out.contains("_idts"));
+                    assertFalse(out.contains("new_visit"));
+                }
+            }
+        }
     }
 
     @Test

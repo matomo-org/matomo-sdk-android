@@ -37,7 +37,7 @@ public class Piwik {
         mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
     }
 
-    protected Context getContext() {
+    public Context getContext() {
         return mContext;
     }
 
