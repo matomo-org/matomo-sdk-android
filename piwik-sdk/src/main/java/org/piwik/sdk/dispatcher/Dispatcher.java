@@ -7,15 +7,13 @@
 
 package org.piwik.sdk.dispatcher;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
+import org.piwik.sdk.tools.Connectivity;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -43,8 +41,8 @@ public class Dispatcher {
     private final Object mThreadControl = new Object();
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
-    private final Piwik mPiwik;
-    private final ConnectivityManager mConnectivityManager;
+    private final Tracker mTracker;
+    private final Connectivity mConnectivity;
 
     private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
     public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
@@ -55,12 +53,13 @@ public class Dispatcher {
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private boolean mDispatchGzipped = false;
     private final PacketFactory packetFactory;
+    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
 
-    public Dispatcher(Tracker tracker, EventCache eventCache) {
-        mPiwik = tracker.getPiwik();
-        mConnectivityManager = (ConnectivityManager) mPiwik.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-        packetFactory = new PacketFactory(tracker.getAPIUrl(), tracker.getAuthToken());
+    public Dispatcher(Tracker tracker, EventCache eventCache, Connectivity connectivity) {
+        mTracker = tracker;
+        mConnectivity = connectivity;
         mEventCache = eventCache;
+        packetFactory = new PacketFactory(mTracker.getAPIUrl(), mTracker.getAuthToken());
     }
 
     /**
@@ -108,6 +107,14 @@ public class Dispatcher {
 
     public boolean getDispatchGzipped() {
         return mDispatchGzipped;
+    }
+
+    public void setDispatchMode(DispatchMode dispatchMode) {
+        this.mDispatchMode = dispatchMode;
+    }
+
+    public DispatchMode getDispatchMode() {
+        return mDispatchMode;
     }
 
     private boolean launch() {
@@ -182,8 +189,16 @@ public class Dispatcher {
     };
 
     private boolean isConnected() {
-        NetworkInfo activeNetwork = mConnectivityManager.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnected();
+        if (!mConnectivity.isConnected()) return false;
+
+        switch (mDispatchMode) {
+            case ALWAYS:
+                return true;
+            case WIFI_ONLY:
+                return mConnectivity.getType() == Connectivity.Type.WIFI;
+            default:
+                return false;
+        }
     }
 
     /**
@@ -192,7 +207,7 @@ public class Dispatcher {
      */
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) throws IOException {
-        if (mPiwik.isDryRun()) {
+        if (mTracker.isDryRun()) {
             mDryRunOutput.add(packet);
             Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
             return true;
