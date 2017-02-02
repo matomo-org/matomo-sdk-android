@@ -288,7 +288,8 @@ public class Tracker {
     }
 
     /**
-     * Whether the dispatch will only dispatch items on WIFI.
+     * The current dispatch behavior.
+     * @see DispatchMode
      */
     public DispatchMode getDispatchMode() {
         String raw = getSharedPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
@@ -302,7 +303,6 @@ public class Tracker {
 
     /**
      * Sets the dispatch mode.
-     *
      * @see DispatchMode
      */
     public void setDispatchMode(DispatchMode mode) {
