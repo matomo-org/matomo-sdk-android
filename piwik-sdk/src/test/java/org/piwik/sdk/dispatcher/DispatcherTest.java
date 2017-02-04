@@ -74,7 +74,7 @@ public class DispatcherTest {
         when(eventDiskCache.isEmpty()).thenReturn(false);
         when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
         dispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
-        dispatcher.submit("Test");
+        dispatcher.submit(getGuestEvent());
         dispatcher.forceDispatch();
         Thread.sleep(50);
         verify(eventDiskCache, never()).uncache();
@@ -89,7 +89,7 @@ public class DispatcherTest {
     public void testConnectivityChange() throws Exception {
         when(eventDiskCache.isEmpty()).thenReturn(false);
         when(connectivity.isConnected()).thenReturn(false);
-        dispatcher.submit("Test");
+        dispatcher.submit(getGuestEvent());
         dispatcher.forceDispatch();
         Thread.sleep(50);
         verify(eventDiskCache, never()).uncache();
@@ -147,15 +147,10 @@ public class DispatcherTest {
     public void testForceDispatchTwice() throws Exception {
         dispatcher.setDispatchInterval(-1);
         dispatcher.setConnectionTimeOut(20);
-        dispatcher.submit("url");
+        dispatcher.submit(getGuestEvent());
 
         assertTrue(dispatcher.forceDispatch());
         assertFalse(dispatcher.forceDispatch());
-    }
-
-    @Test
-    public void testUrlEncodeUTF8() throws Exception {
-        assertEquals(Dispatcher.urlEncodeUTF8((String) null), "");
     }
 
     @Test
@@ -274,9 +269,9 @@ public class DispatcherTest {
                                     .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, j);
-                            String event = Dispatcher.urlEncodeUTF8(trackMe.toMap());
+                            Event event = new Event(trackMe.toMap());
                             dispatcher.submit(event);
-                            createdQueries.add(tracker.getAPIUrl().toString() + event);
+                            createdQueries.add(tracker.getAPIUrl().toString() + event.getEncodedQuery());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -302,5 +297,11 @@ public class DispatcherTest {
             }
         }
         return flattenedQueries;
+    }
+
+    public static Event getGuestEvent() {
+        TrackMe trackMe = new TrackMe();
+        trackMe.set(QueryParams.SESSION_START, 1);
+        return new Event(trackMe.toMap());
     }
 }
