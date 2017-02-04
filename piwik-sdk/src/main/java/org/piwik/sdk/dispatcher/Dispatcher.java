@@ -12,7 +12,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.Connectivity;
 
 import java.io.BufferedWriter;
@@ -20,9 +19,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -38,10 +37,9 @@ public class Dispatcher {
     private final Object mThreadControl = new Object();
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
-    private final Tracker mTracker;
     private final Connectivity mConnectivity;
 
-    private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
+    private List<Packet> mDryRunTarget = null;
     public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile boolean mRunning = false;
@@ -49,14 +47,13 @@ public class Dispatcher {
     public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private boolean mDispatchGzipped = false;
-    private final PacketFactory packetFactory;
+    private final PacketFactory mPacketFactory;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
 
-    public Dispatcher(Tracker tracker, EventCache eventCache, Connectivity connectivity) {
-        mTracker = tracker;
+    public Dispatcher(URL apiUrl, EventCache eventCache, Connectivity connectivity) {
         mConnectivity = connectivity;
         mEventCache = eventCache;
-        packetFactory = new PacketFactory(mTracker.getAPIUrl());
+        mPacketFactory = new PacketFactory(apiUrl);
     }
 
     /**
@@ -160,7 +157,7 @@ public class Dispatcher {
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
                     Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
-                    for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
+                    for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
                         try {
                             if (dispatch(packet)) count += packet.getEventCount();
                         } catch (IOException e) {
@@ -204,13 +201,11 @@ public class Dispatcher {
      */
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) throws IOException {
-        if (mTracker.isDryRun()) {
-            mDryRunOutput.add(packet);
-            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
+        if (mDryRunTarget != null) {
+            mDryRunTarget.add(packet);
+            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunTarget.size());
             return true;
         }
-
-        if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
         HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
         urlConnection.setConnectTimeout(mTimeOut);
@@ -249,8 +244,11 @@ public class Dispatcher {
 
     }
 
-    public List<Packet> getDryRunOutput() {
-        return mDryRunOutput;
+    public void setDryRunTarget(List<Packet> dryRunTarget) {
+        mDryRunTarget = dryRunTarget;
     }
 
+    public List<Packet> getDryRunTarget() {
+        return mDryRunTarget;
+    }
 }

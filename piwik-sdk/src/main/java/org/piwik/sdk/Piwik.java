@@ -20,7 +20,6 @@ public class Piwik {
     public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
     private final Context mContext;
     private boolean mOptOut = false;
-    private boolean mDryRun = false;
 
     private static Piwik sInstance;
     private final SharedPreferences mSharedPreferences;
@@ -70,21 +69,6 @@ public class Piwik {
         return mOptOut;
     }
 
-    public boolean isDryRun() {
-        return mDryRun;
-    }
-
-    /**
-     * The dryRun flag set to true prevents any data from being sent to Piwik.
-     * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
-     * test data to appear in your Piwik reports. To set the dry run flag, use:
-     *
-     * @param dryRun true if you don't want to send any data to piwik
-     */
-    public void setDryRun(boolean dryRun) {
-        mDryRun = dryRun;
-    }
-
     public String getApplicationDomain() {
         return getContext().getPackageName();
     }
@@ -97,4 +81,5 @@ public class Piwik {
     public SharedPreferences getSharedPreferences() {
         return mSharedPreferences;
     }
+
 }

@@ -19,7 +19,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
-import org.piwik.sdk.Tracker;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.tools.Connectivity;
 import org.robolectric.annotation.Config;
@@ -52,21 +51,20 @@ public class DispatcherTest {
     Dispatcher dispatcher;
     EventCache eventCache;
     @Mock EventDiskCache eventDiskCache;
-    @Mock Tracker tracker;
     @Mock Connectivity connectivity;
     @Mock Context context;
+    URL mApiUrl;
 
     @Before
     public void setup() throws Exception {
+        mApiUrl = new URL("http://example.com");
         MockitoAnnotations.initMocks(this);
-        when(tracker.getAPIUrl()).thenReturn(new URL("http://example.com"));
-        when(tracker.isDryRun()).thenReturn(true);
         when(connectivity.isConnected()).thenReturn(true);
         when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
         when(eventDiskCache.isEmpty()).thenReturn(true);
         eventCache = spy(new EventCache(eventDiskCache));
-        dispatcher = new Dispatcher(tracker, eventCache, connectivity);
+        dispatcher = new Dispatcher(mApiUrl, eventCache, connectivity);
     }
 
     @Test
@@ -102,8 +100,6 @@ public class DispatcherTest {
 
     @Test
     public void testDispatch_gzip() throws Exception {
-        when(tracker.isDryRun()).thenReturn(false);
-
         Packet packet = mock(Packet.class);
 
         URL url = new URL("http://example.com");
@@ -155,50 +151,58 @@ public class DispatcherTest {
 
     @Test
     public void testMultiThreadDispatch() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        dispatcher.setDryRunTarget(dryRunData);
         dispatcher.setDispatchInterval(20);
 
         final int threadCount = 20;
         final int queryCount = 100;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(tracker, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
 
-        checkForMIAs(threadCount * queryCount, createdEvents, dispatcher.getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
 
     @Test
     public void testForceDispatch() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        dispatcher.setDryRunTarget(dryRunData);
         dispatcher.setDispatchInterval(-1L);
 
         final int threadCount = 10;
         final int queryCount = 10;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(tracker, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
         Thread.sleep(500);
         assertEquals(threadCount * queryCount, createdEvents.size());
-        assertEquals(0, dispatcher.getDryRunOutput().size());
+        assertEquals(0, dryRunData.size());
         dispatcher.forceDispatch();
 
-        checkForMIAs(threadCount * queryCount, createdEvents, dispatcher.getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
 
     @Test
     public void testBatchDispatch() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        dispatcher.setDryRunTarget(dryRunData);
         dispatcher.setDispatchInterval(1500);
 
         final int threadCount = 5;
         final int queryCount = 5;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(tracker, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
         Thread.sleep(1000);
         assertEquals(threadCount * queryCount, createdEvents.size());
-        assertEquals(0, dispatcher.getDryRunOutput().size());
+        assertEquals(0, dryRunData.size());
         Thread.sleep(1000);
 
-        checkForMIAs(threadCount * queryCount, createdEvents, dispatcher.getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
 
     @Test
     public void testRandomDispatchIntervals() throws Exception {
+        final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        dispatcher.setDryRunTarget(dryRunData);
 
         final int threadCount = 10;
         final int queryCount = 100;
@@ -208,7 +212,7 @@ public class DispatcherTest {
             @Override
             public void run() {
                 try {
-                    while (getFlattenedQueries(new ArrayList<>(dispatcher.getDryRunOutput())).size() != threadCount * queryCount)
+                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount)
                         dispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -217,9 +221,9 @@ public class DispatcherTest {
             }
         }).start();
 
-        launchTestThreads(tracker, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
 
-        checkForMIAs(threadCount * queryCount, createdEvents, dispatcher.getDryRunOutput());
+        checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
 
     public static void checkForMIAs(int expectedEvents, List<String> createdEvents, List<Packet> dryRunOutput) throws Exception {
@@ -255,7 +259,7 @@ public class DispatcherTest {
         Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
-    public static void launchTestThreads(final Tracker tracker, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
+    public static void launchTestThreads(final URL apiUrl, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
         Log.d("launchTestThreads", "Launching " + threadCount + " threads, " + queryCount + " queries each");
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
@@ -271,7 +275,7 @@ public class DispatcherTest {
                                     .set(QueryParams.EVENT_VALUE, j);
                             Event event = new Event(trackMe.toMap());
                             dispatcher.submit(event);
-                            createdQueries.add(tracker.getAPIUrl().toString() + event.getEncodedQuery());
+                            createdQueries.add(apiUrl.toString() + event.getEncodedQuery());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

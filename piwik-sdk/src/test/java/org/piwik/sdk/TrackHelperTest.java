@@ -35,7 +35,6 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testPiwikAutoBindActivities() throws Exception {
         Application app = Robolectric.application;
         Piwik piwik = Piwik.getInstance(app);
-        piwik.setDryRun(true);
         piwik.setOptOut(true);
         Tracker tracker = createTracker();
         //auto attach tracking screen view
