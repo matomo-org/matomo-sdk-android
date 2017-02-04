@@ -185,39 +185,13 @@ public enum QueryParams {
      * Only used if {@link #GOAL_ID} is specified in the request.
      */
     REVENUE("revenue"),
-
-
-    /**
-     * 32 character authorization key used to authenticate the API request.
-     *
-     * @deprecated due to security concerns.
-     */
-    @Deprecated
-    AUTHENTICATION_TOKEN("token_auth"),
-    /**
-     * An override value for the country.<p>
-     * Should be set to the two letter country code of the visitor (lowercase), eg fr, de, us.
-     * Requires {@link #AUTHENTICATION_TOKEN}.
-     */
-    COUNTRY("country"),
-    /**
-     * An override value for the visitor's latitude, eg 22.456.<p>
-     * Requires {@link #AUTHENTICATION_TOKEN}.
-     */
-    LATITUDE("lat"),
-    /**
-     * An override value for the visitor's longitude, eg 22.456.<p>
-     * Requires {@link #AUTHENTICATION_TOKEN}.
-     */
-    LONGITUDE("long"),
     /**
      * Override for the datetime of the request (normally the current time is used).<p>
      * This can be used to record visits and page views in the past.
      * The expected format is: 2011-04-05 00:11:42 (remember to URL encode the value!).
      * The datetime must be sent in UTC timezone.
+     * Events can only be backdated for a maximum time of 24h.
      * Note: if you record data in the past, you will need to <a href="http://piwik.org/faq/how-to/#faq_59">force Piwik to re-process reports for the past dates.</a>
-     * If you set cdt to a datetime older than 24 hours then token_auth must be set.
-     * If you set cdt with a datetime in the last 24 hours then you don't need to pass {@link #AUTHENTICATION_TOKEN}.
      */
     DATETIME_OF_REQUEST("cdt"),
 

@@ -17,7 +17,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
 import java.net.URL;
-import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -50,16 +49,6 @@ public class PiwikTest {
 
         tracker = piwik.newTracker("http://test/piwik-proxy.php", 1);
         assertEquals("http://test/piwik-proxy.php", tracker.getAPIUrl().toString());
-    }
-
-    @Test
-    public void testAuthTokenTracker() throws Exception {
-        Piwik piwik = Piwik.getInstance(Robolectric.application);
-        String token = UUID.randomUUID().toString();
-        Tracker tracker = piwik.newTracker("http://test", 1, token);
-        assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
-        assertEquals(1, tracker.getSiteId());
-        assertEquals(token, tracker.getAuthToken());
     }
 
     @Test

@@ -36,15 +36,6 @@ public class DeviceHelper {
     }
 
     /**
-     * Returns user country
-     *
-     * @return country
-     */
-    public static String getUserCountry() {
-        return Locale.getDefault().getCountry();
-    }
-
-    /**
      * Returns android system user agent
      *
      * @return well formatted user agent

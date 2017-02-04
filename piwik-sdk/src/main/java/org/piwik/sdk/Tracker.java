@@ -66,7 +66,6 @@ public class Tracker {
      * The ID of the website we're tracking a visit/action for.
      */
     private final int mSiteId;
-    private final String mAuthToken;
     private final Object mSessionLock = new Object();
     private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
@@ -83,11 +82,10 @@ public class Tracker {
      *
      * @param url       (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId    (required) id of site
-     * @param authToken (optional) could be null
      * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) {
+    protected Tracker(@NonNull final String url, int siteId, @NonNull Piwik piwik) {
         String checkUrl = url;
         try {
             if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
@@ -102,7 +100,6 @@ public class Tracker {
 
         mPiwik = piwik;
         mSiteId = siteId;
-        mAuthToken = authToken;
 
         mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
 
@@ -123,7 +120,6 @@ public class Tracker {
 
         mDefaultTrackMe.set(QueryParams.USER_AGENT, DeviceHelper.getUserAgent());
         mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
-        mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
     }
@@ -134,10 +130,6 @@ public class Tracker {
 
     public URL getAPIUrl() {
         return mApiUrl;
-    }
-
-    public String getAuthToken() {
-        return mAuthToken;
     }
 
     protected int getSiteId() {
@@ -419,7 +411,6 @@ public class Tracker {
         trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
         trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
         trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
-        trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
         trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
