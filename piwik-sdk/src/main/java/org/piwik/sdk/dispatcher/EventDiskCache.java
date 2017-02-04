@@ -198,7 +198,7 @@ public class EventDiskCache {
             final long cutoff = System.currentTimeMillis() - mMaxAge;
             for (Event event : events) {
                 if (mMaxAge > 0 && event.getTimeStamp() < cutoff) continue;
-                out.append(String.valueOf(event.getTimeStamp())).append(" ").append(event.getQuery()).append("\n");
+                out.append(String.valueOf(event.getTimeStamp())).append(" ").append(event.getEncodedQuery()).append("\n");
                 dataWritten = true;
             }
         } catch (IOException e) {

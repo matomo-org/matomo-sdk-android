@@ -3,7 +3,6 @@ package org.piwik.sdk;
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.os.Build;
-import android.util.Pair;
 
 import org.json.JSONArray;
 import org.junit.Test;
@@ -12,16 +11,11 @@ import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.TestActivity;
-import org.piwik.sdk.tools.UrlHelper;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
-import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -50,7 +44,7 @@ public class TrackHelperTest extends DefaultTestCase {
         // emulate default trackScreenView
         Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();
 
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         validateDefaultQuery(queryParams);
         assertEquals(queryParams.get(QueryParams.ACTION_NAME), TestActivity.getTestTitle());
 
@@ -136,19 +130,19 @@ public class TrackHelperTest extends DefaultTestCase {
 
         URL valid = new URL("https://foo.bar");
         TrackHelper.track().outlink(valid).with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
 
         valid = new URL("https://foo.bar");
         TrackHelper.track().outlink(valid).with(tracker);
-        queryParams = parseEventUrl(tracker.getLastEvent());
+        queryParams = new QueryHashMap(tracker.getLastEvent());
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
 
         valid = new URL("ftp://foo.bar");
         TrackHelper.track().outlink(valid).with(tracker);
-        queryParams = parseEventUrl(tracker.getLastEvent());
+        queryParams = new QueryHashMap(tracker.getLastEvent());
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), queryParams.get(QueryParams.URL_PATH));
     }
@@ -178,7 +172,7 @@ public class TrackHelperTest extends DefaultTestCase {
         String version = UUID.randomUUID().toString();
         TrackHelper.track().download().version(version).with(tracker);
         assertNotNull(tracker.getLastEvent());
-        QueryHashMap<String, String> map = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap map = new QueryHashMap(tracker.getLastEvent());
         assertTrue(map.get(QueryParams.DOWNLOAD).endsWith(version));
 
         tracker.clearLastEvent();
@@ -194,17 +188,14 @@ public class TrackHelperTest extends DefaultTestCase {
                 .variable(1, "2", "3")
                 .with(tracker);
 
-        String event = tracker.getLastEvent();
-        Map<String, String> queryParams = parseEventUrl(event);
-
-        assertEquals("{'1':['2','3']}".replaceAll("'", "\""), queryParams.get("cvar"));
+        assertEquals("{'1':['2','3']}".replaceAll("'", "\""), new QueryHashMap(tracker.getLastEvent()).get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
     }
 
     @Test
     public void testTrackScreenView() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().screen("/test/test").title("title").with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertTrue(queryParams.get(QueryParams.URL_PATH).endsWith("/test/test"));
         validateDefaultQuery(queryParams);
@@ -214,14 +205,14 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testTrackScreenWithTitleView() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().screen("test/test").title("Test title").with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertTrue(queryParams.get(QueryParams.URL_PATH).endsWith("/test/test"));
         assertEquals(queryParams.get(QueryParams.ACTION_NAME), "Test title");
         validateDefaultQuery(queryParams);
     }
 
-    private void checkEvent(QueryHashMap<String, String> queryParams, String name, Float value) {
+    private void checkEvent(QueryHashMap queryParams, String name, Float value) {
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "category");
         assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "test action");
         assertEquals(queryParams.get(QueryParams.EVENT_NAME), name);
@@ -237,7 +228,7 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testTrackEvent() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().event("category", "test action").with(tracker);
-        checkEvent(parseEventUrl(tracker.getLastEvent()), null, null);
+        checkEvent(new QueryHashMap(tracker.getLastEvent()), null, null);
     }
 
     @Test
@@ -245,7 +236,7 @@ public class TrackHelperTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         String name = "test name2";
         TrackHelper.track().event("category", "test action").name(name).with(tracker);
-        checkEvent(parseEventUrl(tracker.getLastEvent()), name, null);
+        checkEvent(new QueryHashMap(tracker.getLastEvent()), name, null);
     }
 
     @Test
@@ -253,14 +244,14 @@ public class TrackHelperTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         String name = "test name3";
         TrackHelper.track().event("category", "test action").name(name).value(1f).with(tracker);
-        checkEvent(parseEventUrl(tracker.getLastEvent()), name, 1f);
+        checkEvent(new QueryHashMap(tracker.getLastEvent()), name, 1f);
     }
 
     @Test
     public void testTrackGoal() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().goal(1).with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertNull(queryParams.get(QueryParams.REVENUE));
         assertEquals(queryParams.get(QueryParams.GOAL_ID), "1");
@@ -271,7 +262,7 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testTrackSiteSearch() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().search("keyword").category("category").count(1337).with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals(queryParams.get(QueryParams.SEARCH_KEYWORD), "keyword");
         assertEquals(queryParams.get(QueryParams.SEARCH_CATEGORY), "category");
@@ -279,7 +270,7 @@ public class TrackHelperTest extends DefaultTestCase {
         validateDefaultQuery(queryParams);
 
         TrackHelper.track().search("keyword2").with(tracker);
-        queryParams = parseEventUrl(tracker.getLastEvent());
+        queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals(queryParams.get(QueryParams.SEARCH_KEYWORD), "keyword2");
         assertNull(queryParams.get(QueryParams.SEARCH_CATEGORY));
@@ -290,7 +281,7 @@ public class TrackHelperTest extends DefaultTestCase {
     public void testTrackGoalRevenue() throws Exception {
         Tracker tracker = createTracker();
         TrackHelper.track().goal(1).revenue(100f).with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals("1", queryParams.get(QueryParams.GOAL_ID));
         assertTrue(100f == Float.valueOf(queryParams.get(QueryParams.REVENUE)));
@@ -309,7 +300,7 @@ public class TrackHelperTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         String name = "test name2";
         TrackHelper.track().impression(name).piece("test").target("test2").with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals(queryParams.get(QueryParams.CONTENT_NAME), name);
         assertEquals(queryParams.get(QueryParams.CONTENT_PIECE), "test");
@@ -324,7 +315,7 @@ public class TrackHelperTest extends DefaultTestCase {
         String name = "test name2";
         TrackHelper.track().interaction(name, interaction).piece("test").target("test2").with(tracker);
 
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals(queryParams.get(QueryParams.CONTENT_INTERACTION), interaction);
         assertEquals(queryParams.get(QueryParams.CONTENT_NAME), name);
@@ -342,7 +333,7 @@ public class TrackHelperTest extends DefaultTestCase {
         items.addItem(new EcommerceItems.Item("fake_sku_2").name("fake_product_2").category("fake_category_2").price(400).quantity(3));
         TrackHelper.track().cartUpdate(50000).items(items).with(tracker);
 
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
 
         assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
         assertEquals(queryParams.get(QueryParams.REVENUE), "500.00");
@@ -365,7 +356,7 @@ public class TrackHelperTest extends DefaultTestCase {
         items.addItem(new EcommerceItems.Item("fake_sku_2").name("fake_product_2").category("fake_category_2").price(400).quantity(3));
         TrackHelper.track().order("orderId", 10020).subTotal(7002).tax(2000).shipping(1000).discount(0).items(items).with(tracker);
 
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         assertEquals(queryParams.get(QueryParams.GOAL_ID), "0");
         assertEquals(queryParams.get(QueryParams.ORDER_ID), "orderId");
         assertEquals(queryParams.get(QueryParams.REVENUE), "100.20");
@@ -394,7 +385,7 @@ public class TrackHelperTest extends DefaultTestCase {
         }
         assertNotNull(catchedException);
         TrackHelper.track().exception(catchedException).description("<Null> exception").fatal(false).with(tracker);
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
         StackTraceElement traceElement = catchedException.getStackTrace()[0];
         assertNotNull(traceElement);
@@ -416,7 +407,7 @@ public class TrackHelperTest extends DefaultTestCase {
         } catch (Exception e) {
             (Thread.getDefaultUncaughtExceptionHandler()).uncaughtException(Thread.currentThread(), e);
         }
-        QueryHashMap<String, String> queryParams = parseEventUrl(tracker.getLastEvent());
+        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         validateDefaultQuery(queryParams);
         assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "Exception");
         assertTrue(queryParams.get(QueryParams.EVENT_ACTION).startsWith("org.piwik.sdk.TrackHelperTest/testPiwikExceptionHandler:"));
@@ -432,29 +423,7 @@ public class TrackHelperTest extends DefaultTestCase {
         assertTrue(exception);
     }
 
-    private static class QueryHashMap<String, V> extends HashMap<String, V> {
-
-        private QueryHashMap() {
-            super(10);
-        }
-
-        public V get(QueryParams key) {
-            return get(key.toString());
-        }
-    }
-
-    private static QueryHashMap<String, String> parseEventUrl(String url) throws Exception {
-        QueryHashMap<String, String> values = new QueryHashMap<>();
-
-        List<Pair<String, String>> params = UrlHelper.parse(new URI("http://localhost/" + url), "UTF-8");
-
-        for (Pair<String, String> param : params)
-            values.put(param.first, param.second);
-
-        return values;
-    }
-
-    private static void validateDefaultQuery(QueryHashMap<String, String> params) {
+    private static void validateDefaultQuery(QueryHashMap params) {
         assertEquals(params.get(QueryParams.SITE_ID), "1");
         assertEquals(params.get(QueryParams.RECORD), "1");
         assertEquals(params.get(QueryParams.SEND_IMAGE), "0");

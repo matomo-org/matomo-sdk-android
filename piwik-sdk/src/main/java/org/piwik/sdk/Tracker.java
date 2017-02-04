@@ -13,6 +13,7 @@ import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.Event;
 import org.piwik.sdk.dispatcher.EventCache;
 import org.piwik.sdk.dispatcher.EventDiskCache;
 import org.piwik.sdk.tools.Connectivity;
@@ -72,7 +73,7 @@ public class Tracker {
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
     private final TrackMe mDefaultTrackMe = new TrackMe();
 
-    private String mLastEvent;
+    private TrackMe mLastEvent;
     private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
     private long mSessionStartTime;
@@ -289,6 +290,7 @@ public class Tracker {
 
     /**
      * The current dispatch behavior.
+     *
      * @see DispatchMode
      */
     public DispatchMode getDispatchMode() {
@@ -303,6 +305,7 @@ public class Tracker {
 
     /**
      * Sets the dispatch mode.
+     *
      * @see DispatchMode
      */
     public void setDispatchMode(DispatchMode mode) {
@@ -478,18 +481,17 @@ public class Tracker {
         }
 
         injectBaseParams(trackMe);
-        String event = Dispatcher.urlEncodeUTF8(trackMe.toMap());
+
         if (mPiwik.isOptOut()) {
-            mLastEvent = event;
-            Timber.tag(LOGGER_TAG).d("URL omitted due to opt out: %s", event);
+            mLastEvent = trackMe;
+            Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
         } else {
-            mDispatcher.submit(event);
-            Timber.tag(LOGGER_TAG).d("URL added to the queue: %s", event);
+            mDispatcher.submit(new Event(trackMe.toMap()));
+            Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
         }
 
         // we did a first transmission, let the other through.
-        if (newSession)
-            mSessionStartLatch.countDown();
+        if (newSession) mSessionStartLatch.countDown();
 
         return this;
     }
@@ -547,7 +549,7 @@ public class Tracker {
      * @return query of the event
      */
     @VisibleForTesting
-    public String getLastEvent() {
+    public TrackMe getLastEvent() {
         return mLastEvent;
     }
 

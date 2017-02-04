@@ -42,7 +42,7 @@ public class EventCacheTest {
         assertFalse(eventCache.isEmpty());
         List<Event> events = new ArrayList<>();
         eventCache.drainTo(events);
-        assertEquals("test", events.get(0).getQuery());
+        assertEquals("test", events.get(0).getEncodedQuery());
         assertTrue(eventCache.isEmpty());
     }
 
@@ -82,9 +82,9 @@ public class EventCacheTest {
         eventCache.drainTo(events);
         verify(eventDiskCache).uncache();
         assertFalse(events.isEmpty());
-        assertEquals("1", events.get(0).getQuery());
-        assertEquals("2", events.get(1).getQuery());
-        assertEquals("3", events.get(2).getQuery());
+        assertEquals("1", events.get(0).getEncodedQuery());
+        assertEquals("2", events.get(1).getEncodedQuery());
+        assertEquals("3", events.get(2).getEncodedQuery());
     }
 
     @Test
@@ -123,9 +123,9 @@ public class EventCacheTest {
         eventCache.drainTo(restoredEvents);
 
         assertEquals(3, restoredEvents.size());
-        assertEquals("test0", restoredEvents.get(0).getQuery());
-        assertEquals("test1", restoredEvents.get(1).getQuery());
-        assertEquals("test2", restoredEvents.get(2).getQuery());
+        assertEquals("test0", restoredEvents.get(0).getEncodedQuery());
+        assertEquals("test1", restoredEvents.get(1).getEncodedQuery());
+        assertEquals("test2", restoredEvents.get(2).getEncodedQuery());
     }
 
 }

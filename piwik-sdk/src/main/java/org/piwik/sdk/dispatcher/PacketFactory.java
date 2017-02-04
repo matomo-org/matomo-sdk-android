@@ -73,7 +73,7 @@ public class PacketFactory {
             JSONObject params = new JSONObject();
 
             JSONArray jsonArray = new JSONArray();
-            for (Event event : events) jsonArray.put(event.getQuery());
+            for (Event event : events) jsonArray.put(event.getEncodedQuery());
             params.put("requests", jsonArray);
 
             if (mAuthtoken != null) params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), mAuthtoken);
@@ -87,7 +87,7 @@ public class PacketFactory {
     // "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
     @Nullable
     private Packet buildPacketForGet(@NonNull Event event) {
-        if (event.getQuery().isEmpty()) return null;
+        if (event.getEncodedQuery().isEmpty()) return null;
         try {
             return new Packet(new URL(mApiUrl.toString() + event));
         } catch (MalformedURLException e) {

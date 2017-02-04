@@ -19,14 +19,11 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -140,8 +137,8 @@ public class Dispatcher {
         return true;
     }
 
-    public void submit(String query) {
-        mEventCache.add(new Event(query));
+    public void submit(Event event) {
+        mEventCache.add(event);
         if (mDispatchInterval != -1) launch();
     }
 
@@ -250,39 +247,6 @@ public class Dispatcher {
         Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
         return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
 
-    }
-
-    /**
-     * http://stackoverflow.com/q/4737841
-     *
-     * @param param raw data
-     * @return encoded string
-     */
-    public static String urlEncodeUTF8(String param) {
-        try {
-            return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
-        } catch (UnsupportedEncodingException e) {
-            Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
-            return "";
-        } catch (NullPointerException e) {
-            return "";
-        }
-    }
-
-    /**
-     * URL encodes a key-value map
-     */
-    public static String urlEncodeUTF8(Map<String, String> map) {
-        StringBuilder sb = new StringBuilder(100);
-        sb.append('?');
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(urlEncodeUTF8(entry.getKey()));
-            sb.append('=');
-            sb.append(urlEncodeUTF8(entry.getValue()));
-            sb.append('&');
-        }
-
-        return sb.substring(0, sb.length() - 1);
     }
 
     public List<Packet> getDryRunOutput() {

@@ -112,7 +112,7 @@ public class TrackMe {
     }
 
     /**
-     * The tracker calls this to build the final query to be sent via HTTP
+     * The tracker calls this to get the final data that will be transmitted
      *
      * @return the parameter map, but without the base URL
      */
