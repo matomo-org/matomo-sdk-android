@@ -56,7 +56,7 @@ public class Dispatcher {
         mTracker = tracker;
         mConnectivity = connectivity;
         mEventCache = eventCache;
-        packetFactory = new PacketFactory(mTracker.getAPIUrl(), mTracker.getAuthToken());
+        packetFactory = new PacketFactory(mTracker.getAPIUrl());
     }
 
     /**
