@@ -7,8 +7,6 @@
 package org.piwik.sdk.dispatcher;
 
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -19,11 +17,11 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
+import org.piwik.sdk.tools.Connectivity;
 import org.robolectric.annotation.Config;
 
 import java.io.OutputStream;
@@ -46,46 +44,57 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "PointlessArithmeticExpression"})
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
 public class DispatcherTest {
 
     Dispatcher dispatcher;
     EventCache eventCache;
-    @Mock Piwik piwik;
     @Mock EventDiskCache eventDiskCache;
     @Mock Tracker tracker;
-    @Mock ConnectivityManager connectivityManager;
+    @Mock Connectivity connectivity;
     @Mock Context context;
-    @Mock NetworkInfo networkInfo;
 
     @Before
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
-        when(tracker.getPiwik()).thenReturn(piwik);
         when(tracker.getAPIUrl()).thenReturn(new URL("http://example.com"));
-        when(piwik.isDryRun()).thenReturn(true);
-        when(piwik.getContext()).thenReturn(context);
-        when(context.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(connectivityManager);
-        when(connectivityManager.getActiveNetworkInfo()).thenReturn(networkInfo);
-        when(networkInfo.isConnected()).thenReturn(true);
+        when(tracker.isDryRun()).thenReturn(true);
+        when(connectivity.isConnected()).thenReturn(true);
+        when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
         when(eventDiskCache.isEmpty()).thenReturn(true);
         eventCache = spy(new EventCache(eventDiskCache));
-        dispatcher = new Dispatcher(tracker, eventCache);
+        dispatcher = new Dispatcher(tracker, eventCache, connectivity);
     }
 
     @Test
-    public void testConnectivityChange() throws Exception {
+    public void testDispatchMode_wifiOnly() throws Exception {
         when(eventDiskCache.isEmpty()).thenReturn(false);
-        when(networkInfo.isConnected()).thenReturn(false);
+        when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
+        dispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
         dispatcher.submit("Test");
         dispatcher.forceDispatch();
         Thread.sleep(50);
         verify(eventDiskCache, never()).uncache();
         verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
-        when(networkInfo.isConnected()).thenReturn(true);
+        when(connectivity.getType()).thenReturn(Connectivity.Type.WIFI);
+        dispatcher.forceDispatch();
+        Thread.sleep(50);
+        verify(eventDiskCache).uncache();
+    }
+
+    @Test
+    public void testConnectivityChange() throws Exception {
+        when(eventDiskCache.isEmpty()).thenReturn(false);
+        when(connectivity.isConnected()).thenReturn(false);
+        dispatcher.submit("Test");
+        dispatcher.forceDispatch();
+        Thread.sleep(50);
+        verify(eventDiskCache, never()).uncache();
+        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+        when(connectivity.isConnected()).thenReturn(true);
         dispatcher.forceDispatch();
         Thread.sleep(50);
         verify(eventDiskCache).uncache();
@@ -93,7 +102,7 @@ public class DispatcherTest {
 
     @Test
     public void testDispatch_gzip() throws Exception {
-        when(piwik.isDryRun()).thenReturn(false);
+        when(tracker.isDryRun()).thenReturn(false);
 
         Packet packet = mock(Packet.class);
 

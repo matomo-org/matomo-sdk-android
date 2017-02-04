@@ -11,9 +11,11 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
+import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.EventCache;
 import org.piwik.sdk.dispatcher.EventDiskCache;
+import org.piwik.sdk.tools.Connectivity;
 import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
@@ -50,6 +52,7 @@ public class Tracker {
     protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
     protected static final String PREFERENCE_KEY_OFFLINE_CACHE_AGE = "tracker.cache.age";
     protected static final String PREFERENCE_KEY_OFFLINE_CACHE_SIZE = "tracker.cache.size";
+    protected static final String PREF_KEY_DISPATCHER_MODE = "tracker.dispatcher.mode";
 
     private final Piwik mPiwik;
 
@@ -100,7 +103,7 @@ public class Tracker {
         mSiteId = siteId;
         mAuthToken = authToken;
 
-        mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)));
+        mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
@@ -282,6 +285,29 @@ public class Tracker {
      */
     public long getOfflineCacheSize() {
         return getSharedPreferences().getLong(PREFERENCE_KEY_OFFLINE_CACHE_SIZE, 4 * 1024 * 1024);
+    }
+
+    /**
+     * The current dispatch behavior.
+     * @see DispatchMode
+     */
+    public DispatchMode getDispatchMode() {
+        String raw = getSharedPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
+        DispatchMode mode = DispatchMode.fromString(raw);
+        if (mode == null) {
+            mode = DispatchMode.ALWAYS;
+            setDispatchMode(mode);
+        }
+        return mode;
+    }
+
+    /**
+     * Sets the dispatch mode.
+     * @see DispatchMode
+     */
+    public void setDispatchMode(DispatchMode mode) {
+        getSharedPreferences().edit().putString(PREF_KEY_DISPATCHER_MODE, mode.toString()).apply();
+        mDispatcher.setDispatchMode(mode);
     }
 
     /**
@@ -533,6 +559,10 @@ public class Tracker {
     @VisibleForTesting
     public Dispatcher getDispatcher() {
         return mDispatcher;
+    }
+
+    public boolean isDryRun() {
+        return mPiwik.isDryRun();
     }
 }
 

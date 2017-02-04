@@ -5,6 +5,7 @@ import android.util.Pair;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.TestActivity;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 import static org.piwik.sdk.dispatcher.DispatcherTest.getFlattenedQueries;
 
 
+@SuppressWarnings("PointlessArithmeticExpression")
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
 public class TrackerTest extends DefaultTestCase {
@@ -135,6 +137,25 @@ public class TrackerTest extends DefaultTestCase {
         Tracker tracker = createTracker();
         tracker.setOfflineCacheSize(16 * 1000 * 1000);
         assertEquals(16 * 1000 * 1000, tracker.getOfflineCacheSize());
+    }
+
+    @Test
+    public void testSetDispatchMode() throws MalformedURLException {
+        Tracker tracker = createTracker();
+        assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
+        assertEquals(DispatchMode.ALWAYS, tracker.getDispatcher().getDispatchMode());
+
+        tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
+        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
+        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatcher().getDispatchMode());
+
+        tracker.getSharedPreferences().edit().putString(Tracker.PREF_KEY_DISPATCHER_MODE, "lol").apply();
+        assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
+        assertEquals(DispatchMode.ALWAYS, tracker.getDispatcher().getDispatchMode());
+
+        tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
+        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
+        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatcher().getDispatchMode());
     }
 
     @Test
