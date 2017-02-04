@@ -16,6 +16,7 @@ import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Event;
 import org.piwik.sdk.dispatcher.EventCache;
 import org.piwik.sdk.dispatcher.EventDiskCache;
+import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.tools.Connectivity;
 import org.piwik.sdk.tools.DeviceHelper;
 
@@ -23,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
@@ -80,9 +82,9 @@ public class Tracker {
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
-     * @param url       (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId    (required) id of site
-     * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
+     * @param url    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param siteId (required) id of site
+     * @param piwik  piwik object used to gain access to application params such as name, resolution or lang
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
     protected Tracker(@NonNull final String url, int siteId, @NonNull Piwik piwik) {
@@ -101,7 +103,7 @@ public class Tracker {
         mPiwik = piwik;
         mSiteId = siteId;
 
-        mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
+        mDispatcher = new Dispatcher(mApiUrl, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
@@ -554,8 +556,24 @@ public class Tracker {
         return mDispatcher;
     }
 
-    public boolean isDryRun() {
-        return mPiwik.isDryRun();
+    /**
+     * Set a data structure here to put the Dispatcher into dry-run-mode.
+     * Data will be processed but at the last step just stored instead of transmitted.
+     * Set it to null to disable it.
+     *
+     * @param dryRunTarget a data structure the data should be passed into
+     */
+    public void setDryRunTarget(List<Packet> dryRunTarget) {
+        mDispatcher.setDryRunTarget(dryRunTarget);
+    }
+
+    /**
+     * If we are in dry-run mode then this will return a datastructure.
+     *
+     * @return a datastructure or null
+     */
+    public List<Packet> getDryRunTarget() {
+        return mDispatcher.getDryRunTarget();
     }
 }
 

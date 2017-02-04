@@ -11,12 +11,15 @@ import android.app.Application;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,32 +57,24 @@ public class PiwikTest {
     @Test
     public void testOptions() throws Exception {
         Piwik piwik = Piwik.getInstance(Robolectric.application);
-
-        piwik.setDryRun(true);
         piwik.setOptOut(true);
-
-        assertTrue(piwik.isDryRun());
         assertTrue(piwik.isOptOut());
-
-        piwik.setDryRun(false);
         piwik.setOptOut(false);
-
-        assertFalse(piwik.isDryRun());
         assertFalse(piwik.isOptOut());
     }
 
     @Test
     public void testLowMemoryDispatch() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        app.getPiwik().setDryRun(true);
         Tracker tracker = app.getTracker();
+        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         assertNotNull(tracker);
         tracker.setDispatchInterval(-1);
         tracker.track(TrackHelper.track().screen("test").build());
         Thread.sleep(50);
-        assertTrue(tracker.getDispatcher().getDryRunOutput().isEmpty());
+        assertTrue(tracker.getDryRunTarget().isEmpty());
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN);
         Thread.sleep(50);
-        assertFalse(tracker.getDispatcher().getDryRunOutput().isEmpty());
+        assertFalse(tracker.getDryRunTarget().isEmpty());
     }
 }

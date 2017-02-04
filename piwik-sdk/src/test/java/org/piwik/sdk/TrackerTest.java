@@ -5,6 +5,7 @@ import android.app.Application;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.dispatcher.DispatchMode;
+import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.TestActivity;
@@ -61,7 +62,6 @@ public class TrackerTest extends DefaultTestCase {
     public void testPiwikAutoBindActivities() throws Exception {
         Application app = Robolectric.application;
         Piwik piwik = Piwik.getInstance(app);
-        piwik.setDryRun(true);
         piwik.setOptOut(true);
         Tracker tracker = createTracker();
         //auto attach tracking screen view
@@ -295,8 +295,8 @@ public class TrackerTest extends DefaultTestCase {
     public void testSetNewSessionRaceCondition() throws Exception {
         for (int retry = 0; retry < 5; retry++) {
             getPiwik().setOptOut(false);
-            getPiwik().setDryRun(true);
             final Tracker tracker = createTracker();
+            tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
             tracker.setDispatchInterval(0);
             int count = 20;
             for (int i = 0; i < count; i++) {
@@ -313,7 +313,7 @@ public class TrackerTest extends DefaultTestCase {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> flattenedQueries = getFlattenedQueries(tracker.getDryRunTarget());
             assertEquals(count, flattenedQueries.size());
             int found = 0;
             for (String query : flattenedQueries) {
@@ -491,6 +491,7 @@ public class TrackerTest extends DefaultTestCase {
     @Test
     public void testSessionStartRaceCondition() throws Exception {
         final Tracker tracker = createTracker();
+        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         for (int i = 0; i < 1000; i++) {
             final CountDownLatch countDownLatch = new CountDownLatch(10);
             for (int j = 0; j < 10; j++) {
@@ -515,7 +516,7 @@ public class TrackerTest extends DefaultTestCase {
                 }).start();
             }
             countDownLatch.await();
-            List<String> output = getFlattenedQueries(tracker.getDispatcher().getDryRunOutput());
+            List<String> output = getFlattenedQueries(tracker.getDryRunTarget());
             for (String out : output) {
                 if (output.indexOf(out) == 0) {
                     assertTrue(out.contains("lang"));

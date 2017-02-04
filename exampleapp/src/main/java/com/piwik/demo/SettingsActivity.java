@@ -18,6 +18,10 @@ import android.widget.EditText;
 
 import org.piwik.sdk.PiwikApplication;
 import org.piwik.sdk.TrackHelper;
+import org.piwik.sdk.dispatcher.Packet;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 import timber.log.Timber;
 
@@ -36,11 +40,11 @@ public class SettingsActivity extends Activity {
 
         // Dry run
         CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
-        dryRun.setChecked(((PiwikApplication) getApplication()).getPiwik().isDryRun());
+        dryRun.setChecked(((PiwikApplication) getApplication()).getTracker().getDryRunTarget() != null);
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setDryRun(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getTracker().setDryRunTarget(((CheckBox) v).isChecked() ? Collections.synchronizedList(new ArrayList<Packet>()) : null);
             }
         });
 
