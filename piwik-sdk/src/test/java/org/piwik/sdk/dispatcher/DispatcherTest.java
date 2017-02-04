@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
@@ -51,6 +52,7 @@ public class DispatcherTest {
 
     Dispatcher dispatcher;
     EventCache eventCache;
+    @Mock Piwik piwik;
     @Mock EventDiskCache eventDiskCache;
     @Mock Tracker tracker;
     @Mock Connectivity connectivity;
@@ -103,6 +105,8 @@ public class DispatcherTest {
     @Test
     public void testDispatch_gzip() throws Exception {
         when(tracker.isDryRun()).thenReturn(false);
+        when(tracker.getPiwik()).thenReturn(piwik);
+        when(tracker.getPiwik().isOptOut()).thenReturn(false);
 
         Packet packet = mock(Packet.class);
 
