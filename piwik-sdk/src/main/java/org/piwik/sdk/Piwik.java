@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 
 
 public class Piwik {
@@ -41,12 +42,23 @@ public class Piwik {
     }
 
     /**
-     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId     (required) id of site
+     * @param url    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param siteId (required) id of site
      * @return Tracker object
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId) throws MalformedURLException {
+    public synchronized Tracker newTracker(@NonNull String url, int siteId) throws MalformedURLException {
+        URL trackerUrl;
+        try {
+            if (url.endsWith("piwik.php") || url.endsWith("piwik-proxy.php")) {
+                trackerUrl = new URL(url);
+            } else {
+                if (!url.endsWith("/")) {
+                    url += "/";
+                }
+                trackerUrl = new URL(url + "piwik.php");
+            }
+        } catch (MalformedURLException e) { throw new RuntimeException(e); }
         return new Tracker(trackerUrl, siteId, this);
     }
 

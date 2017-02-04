@@ -20,7 +20,6 @@ import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.tools.Connectivity;
 import org.piwik.sdk.tools.DeviceHelper;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -82,24 +81,13 @@ public class Tracker {
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
-     * @param url    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param apiUrl    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId (required) id of site
      * @param piwik  piwik object used to gain access to application params such as name, resolution or lang
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    protected Tracker(@NonNull final String url, int siteId, @NonNull Piwik piwik) {
-        String checkUrl = url;
-        try {
-            if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
-                mApiUrl = new URL(checkUrl);
-            } else {
-                if (!checkUrl.endsWith("/")) {
-                    checkUrl += "/";
-                }
-                mApiUrl = new URL(checkUrl + "piwik.php");
-            }
-        } catch (MalformedURLException e) { throw new RuntimeException(e); }
-
+    public Tracker(@NonNull URL apiUrl, int siteId, @NonNull Piwik piwik) {
+        mApiUrl = apiUrl;
         mPiwik = piwik;
         mSiteId = siteId;
 
