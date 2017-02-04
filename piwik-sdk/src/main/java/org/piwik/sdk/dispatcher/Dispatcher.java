@@ -215,6 +215,12 @@ public class Dispatcher {
 
         if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
+        if (mTracker.getPiwik().isOptOut() && packet.getPostData() != null){
+            // don't send datas after optout
+            Timber.tag(LOGGER_TAG).d("Optout, free cache, false dispatch");
+            return true;
+        }
+
         HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
         urlConnection.setConnectTimeout(mTimeOut);
         urlConnection.setReadTimeout(mTimeOut);
