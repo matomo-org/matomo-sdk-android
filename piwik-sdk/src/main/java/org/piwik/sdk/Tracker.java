@@ -233,6 +233,17 @@ public class Tracker {
     }
 
     /**
+     * Defines if when user optout, remaining cached datas
+     * should be dispatched or not.
+     *
+     * @param dispatchAfterOptout boolean
+     */
+    public Tracker setDispatchAfterOptout(boolean dispatchAfterOptout) {
+        mDispatcher.setDispatchAfterOptout(dispatchAfterOptout);
+        return this;
+    }
+
+    /**
      * @return in milliseconds
      */
     public long getDispatchInterval() {

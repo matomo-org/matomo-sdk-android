@@ -52,6 +52,7 @@ public class Dispatcher {
     public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private boolean mDispatchGzipped = false;
+    private boolean mDispatchAfterOptout = false;
     private final PacketFactory packetFactory;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
 
@@ -107,6 +108,20 @@ public class Dispatcher {
 
     public boolean getDispatchGzipped() {
         return mDispatchGzipped;
+    }
+
+    /**
+     * Datas should be cached before user optout. This boolean sets if when user
+     * optout, remaining cached datas should be dispatched or not.
+     *
+     * @param dispatchAfterOptout boolean
+     */
+    public void setDispatchAfterOptout(boolean dispatchAfterOptout) {
+        mDispatchAfterOptout = dispatchAfterOptout;
+    }
+
+    public boolean getDispatchAfterOptout() {
+        return mDispatchAfterOptout;
     }
 
     public void setDispatchMode(DispatchMode dispatchMode) {
@@ -215,8 +230,8 @@ public class Dispatcher {
 
         if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
-        if (mTracker.getPiwik().isOptOut() && packet.getPostData() != null){
-            // don't send datas after optout
+        if (mTracker.getPiwik().isOptOut() && mDispatchAfterOptout && packet.getPostData() != null){
+            // don't send remaining datas after user is optout. Loose them.
             Timber.tag(LOGGER_TAG).d("Optout, free cache, false dispatch");
             return true;
         }
