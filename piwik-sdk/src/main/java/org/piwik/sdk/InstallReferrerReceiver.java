@@ -32,7 +32,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
             Timber.tag(LOGGER_TAG).d("Dropping forwarded intent");
             return;
         }
-        SharedPreferences piwikPreferences = Piwik.getInstance(context.getApplicationContext()).getSharedPreferences();
+        SharedPreferences piwikPreferences = Piwik.getInstance(context.getApplicationContext()).getPiwikPreferences();
         if (intent.getAction().equals(REFERRER_SOURCE_GPLAY)) {
             String referrer = intent.getStringExtra(ARG_KEY_GPLAY_REFERRER);
             if (referrer != null) {

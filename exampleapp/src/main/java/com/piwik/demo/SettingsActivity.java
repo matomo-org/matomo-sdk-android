@@ -50,11 +50,11 @@ public class SettingsActivity extends Activity {
 
         // out out
         CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
-        optOut.setChecked(((PiwikApplication) getApplication()).getPiwik().isOptOut());
+        optOut.setChecked(((PiwikApplication) getApplication()).getTracker().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setOptOut(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getTracker().setOptOut(((CheckBox) v).isChecked());
             }
         });
 

@@ -27,7 +27,7 @@ public abstract class PiwikApplication extends Application {
     public synchronized Tracker getTracker() {
         if (mPiwikTracker == null) {
             try {
-                mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId());
+                mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId(), "Default Tracker");
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 throw new RuntimeException("Tracker URL was malformed.");

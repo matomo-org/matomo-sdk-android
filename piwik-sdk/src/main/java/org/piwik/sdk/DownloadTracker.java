@@ -41,7 +41,7 @@ public class DownloadTracker {
 
     public DownloadTracker(Tracker tracker) {
         mTracker = tracker;
-        mPreferences = tracker.getSharedPreferences();
+        mPreferences = tracker.getPreferences();
         mPackageName = tracker.getPiwik().getContext().getPackageName();
         mPackMan = tracker.getPiwik().getContext().getPackageManager();
         try {
@@ -112,7 +112,7 @@ public class DownloadTracker {
 
         if (referringApp != null && referringApp.equals(INSTALL_SOURCE_GOOGLE_PLAY)) {
             // For this type of install source we could have extra referral information
-            String referrerExtras = mPreferences.getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+            String referrerExtras = mTracker.getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
             if (referrerExtras != null) referringApp = referringApp + "/?" + referrerExtras;
         }
 
