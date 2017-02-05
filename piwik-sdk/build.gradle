@@ -40,7 +40,7 @@ dependencies {
 
     // Mocktio
     testCompile 'org.mockito:mockito-core:2.2.9'
-
+    testCompile 'org.json:json:20140107'
     testCompile('org.robolectric:robolectric:2.4') {
         exclude module: 'classworlds'
         exclude module: 'commons-logging'

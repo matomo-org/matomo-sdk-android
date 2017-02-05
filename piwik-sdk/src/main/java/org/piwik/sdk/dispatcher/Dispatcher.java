@@ -7,11 +7,11 @@
 
 package org.piwik.sdk.dispatcher;
 
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.Piwik;
+import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
 import java.io.BufferedWriter;
@@ -19,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,10 +49,10 @@ public class Dispatcher {
     private final PacketFactory mPacketFactory;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
 
-    public Dispatcher(URL apiUrl, EventCache eventCache, Connectivity connectivity) {
+    public Dispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory) {
         mConnectivity = connectivity;
         mEventCache = eventCache;
-        mPacketFactory = new PacketFactory(apiUrl);
+        mPacketFactory = packetFactory;
     }
 
     /**
@@ -115,7 +114,9 @@ public class Dispatcher {
         synchronized (mThreadControl) {
             if (!mRunning) {
                 mRunning = true;
-                new Thread(mLoop).start();
+                Thread thread = new Thread(mLoop);
+                thread.setPriority(Thread.MIN_PRIORITY);
+                thread.start();
                 return true;
             }
         }
@@ -134,15 +135,14 @@ public class Dispatcher {
         return true;
     }
 
-    public void submit(Event event) {
-        mEventCache.add(event);
+    public void submit(TrackMe trackMe) {
+        mEventCache.add(new Event(trackMe.toMap()));
         if (mDispatchInterval != -1) launch();
     }
 
     private Runnable mLoop = new Runnable() {
         @Override
         public void run() {
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             while (mRunning) {
                 try {
                     // Either we wait the interval or forceDispatch() granted us one free pass

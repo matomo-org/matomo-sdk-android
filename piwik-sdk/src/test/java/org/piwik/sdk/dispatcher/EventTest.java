@@ -9,12 +9,9 @@ package org.piwik.sdk.dispatcher;
 import android.util.Pair;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.tools.UrlHelper;
-import org.robolectric.annotation.Config;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -24,10 +21,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-
-@SuppressWarnings({"deprecation", "PointlessArithmeticExpression"})
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
 public class EventTest {
 
     @Test

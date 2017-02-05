@@ -77,4 +77,21 @@ public class PiwikTest {
         Thread.sleep(50);
         assertFalse(tracker.getDryRunTarget().isEmpty());
     }
+
+    @Test
+    public void testSetAPIUrl() throws Exception {
+        Piwik piwik = Piwik.getInstance(Robolectric.application);
+        String[] urls = new String[]{
+                "https://demo.org/piwik/piwik.php",
+                "https://demo.org/piwik/",
+                "https://demo.org/piwik",
+        };
+
+        for (String url : urls) {
+            assertEquals(piwik.newTracker(url, 1).getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
+        }
+
+        assertEquals(piwik.newTracker("http://demo.org/piwik-proxy.php", 1).getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
+    }
+
 }

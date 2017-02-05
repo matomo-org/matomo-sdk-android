@@ -1,16 +1,21 @@
 package org.piwik.sdk;
 
-import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.piwik.sdk.dispatcher.DispatchMode;
-import org.piwik.sdk.dispatcher.Packet;
-import org.piwik.sdk.testhelper.DefaultTestCase;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.piwik.sdk.testhelper.TestActivity;
-import org.robolectric.Robolectric;
-import org.robolectric.annotation.Config;
+import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.testhelper.TestPreferences;
+import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,276 +32,261 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.piwik.sdk.dispatcher.DispatcherTest.getFlattenedQueries;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.piwik.sdk.QueryParams.FIRST_VISIT_TIMESTAMP;
+import static org.piwik.sdk.QueryParams.SESSION_START;
 
 
 @SuppressWarnings("PointlessArithmeticExpression")
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
-public class TrackerTest extends DefaultTestCase {
+public class TrackerTest {
+    ArgumentCaptor<TrackMe> mCaptor = ArgumentCaptor.forClass(TrackMe.class);
+    Tracker mTracker;
+    @Mock Piwik mPiwik;
+    @Mock Context mContext;
+    @Mock Dispatcher mDispatcher;
+    @Mock DispatcherFactory mDispatcherFactory;
+    SharedPreferences mSharedPreferences = new TestPreferences();
+    private URL mApiUrl;
+    private int mSiteId;
+    @Mock DeviceHelper mDeviceHelper;
+
+    @Before
+    public void setup() throws PackageManager.NameNotFoundException, MalformedURLException {
+        MockitoAnnotations.initMocks(this);
+        when(mPiwik.getContext()).thenReturn(mContext);
+        when(mContext.getPackageName()).thenReturn("package");
+        when(mPiwik.getSharedPreferences()).thenReturn(mSharedPreferences);
+        when(mPiwik.getDispatcherFactory()).thenReturn(mDispatcherFactory);
+        when(mPiwik.getApplicationDomain()).thenReturn("org.piwik.sdk.test");
+        when(mDispatcherFactory.build(any(Tracker.class))).thenReturn(mDispatcher);
+        when(mPiwik.getDeviceHelper()).thenReturn(mDeviceHelper);
+        when(mDeviceHelper.getResolution()).thenReturn(new int[]{480, 800});
+        when(mDeviceHelper.getUserAgent()).thenReturn("aUserAgent");
+        when(mDeviceHelper.getUserLanguage()).thenReturn("en");
+
+        mApiUrl = new URL("http://example.com");
+        mSiteId = 11;
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+    }
 
     @Test
     public void testLastScreenUrl() throws Exception {
-        Tracker tracker = createTracker();
-        assertNull(tracker.getLastEvent());
+        mTracker.track(new TrackMe());
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals(mTracker.getApplicationBaseURL() + "/", mCaptor.getValue().get(QueryParams.URL_PATH));
 
-        tracker.track(new TrackMe());
-        assertNotNull(tracker.getLastEvent());
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals(tracker.getApplicationBaseURL() + "/", queryParams.get(QueryParams.URL_PATH));
+        mTracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.thing.com/foo/bar"));
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        assertEquals("http://some.thing.com/foo/bar", mCaptor.getValue().get(QueryParams.URL_PATH));
 
-        tracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.thing.com/foo/bar"));
-        queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals("http://some.thing.com/foo/bar", queryParams.get(QueryParams.URL_PATH));
+        mTracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.other/thing"));
+        verify(mDispatcher, times(3)).submit(mCaptor.capture());
+        assertEquals("http://some.other/thing", mCaptor.getValue().get(QueryParams.URL_PATH));
 
-        tracker.track(new TrackMe().set(QueryParams.URL_PATH, "http://some.other/thing"));
-        queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals("http://some.other/thing", queryParams.get(QueryParams.URL_PATH));
-
-        tracker.track(new TrackMe());
-        queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals("http://some.other/thing", queryParams.get(QueryParams.URL_PATH));
-    }
-
-    @Test
-    public void testPiwikAutoBindActivities() throws Exception {
-        Application app = Robolectric.application;
-        Piwik piwik = Piwik.getInstance(app);
-        piwik.setOptOut(true);
-        Tracker tracker = createTracker();
-        //auto attach tracking screen view
-        TrackHelper.track().screens(app).with(tracker);
-
-        // emulate default trackScreenView
-        Robolectric.buildActivity(TestActivity.class).create().start().resume().visible().get();
-
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
-        validateDefaultQuery(queryParams);
-        assertEquals(queryParams.get(QueryParams.ACTION_NAME), TestActivity.getTestTitle());
-    }
-
-    @Test
-    public void testPiwikApplicationGetTracker() throws Exception {
-        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
-        assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
-    }
-
-    @Test
-    public void testPiwikApplicationgetPiwik() throws Exception {
-        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
-        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
-    }
-
-    @Test
-    public void testEmptyQueueDispatch() throws Exception {
-        assertFalse(createTracker().dispatch());
+        mTracker.track(new TrackMe());
+        verify(mDispatcher, times(4)).submit(mCaptor.capture());
+        assertEquals("http://some.other/thing", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 
     @Test
     public void testSetDispatchInterval() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setDispatchInterval(1);
-        assertEquals(tracker.getDispatchInterval(), 1);
+        mTracker.setDispatchInterval(1);
+        verify(mDispatcher).setDispatchInterval(1);
+        mTracker.getDispatchInterval();
+        verify(mDispatcher).getDispatchInterval();
     }
 
     @Test
     public void testSetDispatchTimeout() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setDispatchTimeout(1337);
-
-        assertEquals(1337, tracker.getDispatcher().getConnectionTimeOut());
-        assertEquals(1337, tracker.getDispatchTimeout());
+        int timeout = 1337;
+        mTracker.setDispatchTimeout(timeout);
+        verify(mDispatcher).setConnectionTimeOut(timeout);
+        mTracker.getDispatchTimeout();
+        verify(mDispatcher).getConnectionTimeOut();
     }
 
     @Test
     public void testGetOfflineCacheAge_defaultValue() throws Exception {
-        Tracker tracker = createTracker();
-        assertEquals(24 * 60 * 60 * 1000, tracker.getOfflineCacheAge());
+        assertEquals(24 * 60 * 60 * 1000, mTracker.getOfflineCacheAge());
     }
 
     @Test
     public void testSetOfflineCacheAge() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setOfflineCacheAge(80085);
-        assertEquals(80085, tracker.getOfflineCacheAge());
+        mTracker.setOfflineCacheAge(80085);
+        assertEquals(80085, mTracker.getOfflineCacheAge());
     }
 
     @Test
     public void testGetOfflineCacheSize_defaultValue() throws Exception {
-        Tracker tracker = createTracker();
-        assertEquals(4 * 1024 * 1024, tracker.getOfflineCacheSize());
+        assertEquals(4 * 1024 * 1024, mTracker.getOfflineCacheSize());
     }
 
     @Test
     public void testSetOfflineCacheSize() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setOfflineCacheSize(16 * 1000 * 1000);
-        assertEquals(16 * 1000 * 1000, tracker.getOfflineCacheSize());
+        mTracker.setOfflineCacheSize(16 * 1000 * 1000);
+        assertEquals(16 * 1000 * 1000, mTracker.getOfflineCacheSize());
     }
 
     @Test
     public void testSetDispatchMode() throws MalformedURLException {
-        Tracker tracker = createTracker();
-        assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
-        assertEquals(DispatchMode.ALWAYS, tracker.getDispatcher().getDispatchMode());
+        assertEquals(DispatchMode.ALWAYS, mTracker.getDispatchMode());
+        verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.ALWAYS);
 
-        tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
-        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
-        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatcher().getDispatchMode());
+        mTracker.setDispatchMode(DispatchMode.WIFI_ONLY);
+        assertEquals(DispatchMode.WIFI_ONLY, mTracker.getDispatchMode());
+        verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.WIFI_ONLY);
 
-        tracker.getSharedPreferences().edit().putString(Tracker.PREF_KEY_DISPATCHER_MODE, "lol").apply();
-        assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
-        assertEquals(DispatchMode.ALWAYS, tracker.getDispatcher().getDispatchMode());
+        mTracker.getSharedPreferences().edit().putString(Tracker.PREF_KEY_DISPATCHER_MODE, "lol").apply();
+        assertEquals(DispatchMode.ALWAYS, mTracker.getDispatchMode());
+        verify(mDispatcher, times(2)).setDispatchMode(DispatchMode.ALWAYS);
 
-        tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
-        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
-        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatcher().getDispatchMode());
+        mTracker.setDispatchMode(DispatchMode.WIFI_ONLY);
+        assertEquals(DispatchMode.WIFI_ONLY, mTracker.getDispatchMode());
+        verify(mDispatcher, times(2)).setDispatchMode(DispatchMode.WIFI_ONLY);
     }
 
     @Test
     public void testGetSiteId() throws Exception {
-        assertEquals(createTracker().getSiteId(), 1);
+        assertEquals(mTracker.getSiteId(), 11);
     }
 
     @Test
     public void testGetPiwik() throws Exception {
-        PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
-        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
+        assertEquals(mPiwik, mTracker.getPiwik());
     }
 
     @Test
     public void testSetURL() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setApplicationDomain("test.com");
-        assertEquals(tracker.getApplicationDomain(), "test.com");
-        assertEquals(tracker.getApplicationBaseURL(), "http://test.com");
+        mTracker.setApplicationDomain("test.com");
+        assertEquals(mTracker.getApplicationDomain(), "test.com");
+        assertEquals(mTracker.getApplicationBaseURL(), "http://test.com");
         TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
+        mTracker.track(trackMe);
         assertEquals("http://test.com/", trackMe.get(QueryParams.URL_PATH));
 
         trackMe.set(QueryParams.URL_PATH, "me");
-        tracker.track(trackMe);
+        mTracker.track(trackMe);
         assertEquals("http://test.com/me", trackMe.get(QueryParams.URL_PATH));
 
         // override protocol
         trackMe.set(QueryParams.URL_PATH, "https://my.com/secure");
-        tracker.track(trackMe);
+        mTracker.track(trackMe);
         assertEquals("https://my.com/secure", trackMe.get(QueryParams.URL_PATH));
     }
 
     @Test
     public void testSetApplicationDomain() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setApplicationDomain("my-domain.com");
-        TrackHelper.track().screen("test/test").title("Test title").with(tracker);
-
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
-        validateDefaultQuery(queryParams);
-        assertTrue(queryParams.get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
+        mTracker.setApplicationDomain("my-domain.com");
+        TrackHelper.track().screen("test/test").title("Test title").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
+        validateDefaultQuery(mCaptor.getValue());
+        assertTrue(mCaptor.getValue().get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetTooShortVistorId() throws MalformedURLException {
-        Tracker tracker = createTracker();
         String tooShortVisitorId = "0123456789ab";
-        tracker.setVisitorId(tooShortVisitorId);
-        assertNotEquals(tooShortVisitorId, tracker.getVisitorId());
+        mTracker.setVisitorId(tooShortVisitorId);
+        assertNotEquals(tooShortVisitorId, mTracker.getVisitorId());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetTooLongVistorId() throws MalformedURLException {
-        Tracker tracker = createTracker();
         String tooLongVisitorId = "0123456789abcdefghi";
-        tracker.setVisitorId(tooLongVisitorId);
-        assertNotEquals(tooLongVisitorId, tracker.getVisitorId());
+        mTracker.setVisitorId(tooLongVisitorId);
+        assertNotEquals(tooLongVisitorId, mTracker.getVisitorId());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetVistorIdWithInvalidCharacters() throws MalformedURLException {
-        Tracker tracker = createTracker();
         String invalidCharacterVisitorId = "01234-6789-ghief";
-        tracker.setVisitorId(invalidCharacterVisitorId);
-        assertNotEquals(invalidCharacterVisitorId, tracker.getVisitorId());
+        mTracker.setVisitorId(invalidCharacterVisitorId);
+        assertNotEquals(invalidCharacterVisitorId, mTracker.getVisitorId());
     }
 
     @Test
     public void testSetVistorId() throws Exception {
-        Tracker tracker = createTracker();
         String visitorId = "0123456789abcdef";
-        tracker.setVisitorId(visitorId);
-        assertEquals(visitorId, tracker.getVisitorId());
+        mTracker.setVisitorId(visitorId);
+        assertEquals(visitorId, mTracker.getVisitorId());
         TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
-        assertEquals(visitorId, tracker.getLastEvent().get(QueryParams.VISITOR_ID));
+        mTracker.track(trackMe);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals(visitorId, mCaptor.getValue().get(QueryParams.VISITOR_ID));
     }
 
     @Test
     public void testSetUserId() throws Exception {
-        Tracker tracker = createTracker();
-        assertNotNull(tracker.getDefaultTrackMe().get(QueryParams.USER_ID));
+        assertNotNull(mTracker.getDefaultTrackMe().get(QueryParams.USER_ID));
 
-        tracker.setUserId("test");
-        assertEquals(tracker.getUserId(), "test");
+        mTracker.setUserId("test");
+        assertEquals(mTracker.getUserId(), "test");
 
-        tracker.setUserId("");
-        assertEquals(tracker.getUserId(), "test");
+        mTracker.setUserId("");
+        assertEquals(mTracker.getUserId(), "test");
 
-        tracker.setUserId(null);
-        assertNull(tracker.getUserId());
+        mTracker.setUserId(null);
+        assertNull(mTracker.getUserId());
 
         String uuid = UUID.randomUUID().toString();
-        tracker.setUserId(uuid);
-        assertEquals(uuid, tracker.getUserId());
-        assertEquals(uuid, createTracker().getUserId());
+        mTracker.setUserId(uuid);
+        assertEquals(uuid, mTracker.getUserId());
+        assertEquals(uuid, mTracker.getUserId());
     }
 
     @Test
     public void testGetResolution() throws Exception {
-        Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
-        assertEquals("480x800", tracker.getLastEvent().get(QueryParams.SCREEN_RESOLUTION));
+        mTracker.track(trackMe);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals("480x800", mCaptor.getValue().get(QueryParams.SCREEN_RESOLUTION));
     }
 
     @Test
     public void testSetVisitCustomVariable() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setVisitCustomVariable(1, "2& ?", "3@#");
-        TrackHelper.track().screen("").with(tracker);
-
-        QueryHashMap map = new QueryHashMap(tracker.getLastEvent());
-
-        assertEquals("{'1':['2& ?','3@#']}".replaceAll("'", "\""), map.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        mTracker.setVisitCustomVariable(1, "2& ?", "3@#");
+        TrackHelper.track().screen("").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals("{'1':['2& ?','3@#']}".replaceAll("'", "\""), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 
     @Test
     public void testSetNewSession() throws Exception {
-        Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
-        QueryHashMap map = new QueryHashMap(tracker.getLastEvent());
-        assertEquals("1", map.get(QueryParams.SESSION_START));
+        mTracker.track(trackMe);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
 
-        TrackHelper.track().screen("").with(tracker);
-        map = new QueryHashMap(tracker.getLastEvent());
-        assertFalse(map.containsKey(QueryParams.SESSION_START));
+        TrackHelper.track().screen("").with(mTracker);
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
 
-        TrackHelper.track().screen("").with(tracker);
-        map = new QueryHashMap(tracker.getLastEvent());
-        assertFalse(map.containsKey(QueryParams.SESSION_START));
+        TrackHelper.track().screen("").with(mTracker);
+        verify(mDispatcher, times(3)).submit(mCaptor.capture());
+        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
 
-        tracker.startNewSession();
-        TrackHelper.track().screen("").with(tracker);
-        map = new QueryHashMap(tracker.getLastEvent());
-        assertEquals("1", map.get(QueryParams.SESSION_START));
+        mTracker.startNewSession();
+        TrackHelper.track().screen("").with(mTracker);
+        verify(mDispatcher, times(4)).submit(mCaptor.capture());
+        assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
     }
 
     @Test
     public void testSetNewSessionRaceCondition() throws Exception {
         for (int retry = 0; retry < 5; retry++) {
-            getPiwik().setOptOut(false);
-            final Tracker tracker = createTracker();
-            tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
+            final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<TrackMe>());
+            doAnswer(new Answer<Void>() {
+                @Override
+                public Void answer(InvocationOnMock invocation) throws Throwable {
+                    trackMes.add((TrackMe) invocation.getArgument(0));
+                    return null;
+                }
+            }).when(mDispatcher).submit(any(TrackMe.class));
+            final Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik);
             tracker.setDispatchInterval(0);
             int count = 20;
             for (int i = 0; i < count; i++) {
@@ -313,12 +303,10 @@ public class TrackerTest extends DefaultTestCase {
                 }).start();
             }
             Thread.sleep(500);
-            List<String> flattenedQueries = getFlattenedQueries(tracker.getDryRunTarget());
-            assertEquals(count, flattenedQueries.size());
+            assertEquals(count, trackMes.size());
             int found = 0;
-            for (String query : flattenedQueries) {
-                if (query.contains("new_visit=1"))
-                    found++;
+            for (TrackMe trackMe : trackMes) {
+                if (trackMe.get(QueryParams.SESSION_START) != null) found++;
             }
             assertEquals(1, found);
         }
@@ -326,143 +314,116 @@ public class TrackerTest extends DefaultTestCase {
 
     @Test
     public void testSetSessionTimeout() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setSessionTimeout(10000);
+        mTracker.setSessionTimeout(10000);
 
-        TrackHelper.track().screen("test").with(tracker);
-        assertFalse(tracker.tryNewSession());
+        TrackHelper.track().screen("test").with(mTracker);
+        assertFalse(mTracker.tryNewSession());
 
-        tracker.setSessionTimeout(0);
+        mTracker.setSessionTimeout(0);
         Thread.sleep(1, 0);
-        assertTrue(tracker.tryNewSession());
+        assertTrue(mTracker.tryNewSession());
 
-        tracker.setSessionTimeout(10000);
-        assertFalse(tracker.tryNewSession());
-        assertEquals(tracker.getSessionTimeout(), 10000);
+        mTracker.setSessionTimeout(10000);
+        assertFalse(mTracker.tryNewSession());
+        assertEquals(mTracker.getSessionTimeout(), 10000);
     }
 
     @Test
     public void testCheckSessionTimeout() throws Exception {
-        Tracker tracker = createTracker();
-        tracker.setSessionTimeout(0);
-        TrackHelper.track().screen("test").with(tracker);
-        assertEquals("1", new QueryHashMap(tracker.getLastEvent()).get(QueryParams.SESSION_START));
+        mTracker.setSessionTimeout(0);
+        TrackHelper.track().screen("test").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
         Thread.sleep(1, 0);
-        TrackHelper.track().screen("test").with(tracker);
-        assertEquals("1", new QueryHashMap(tracker.getLastEvent()).get(QueryParams.SESSION_START));
-        tracker.setSessionTimeout(60000);
-        TrackHelper.track().screen("test").with(tracker);
-        assertFalse(new QueryHashMap(tracker.getLastEvent()).containsKey(QueryParams.SESSION_START));
+        TrackHelper.track().screen("test").with(mTracker);
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
+        mTracker.setSessionTimeout(60000);
+        TrackHelper.track().screen("test").with(mTracker);
+        verify(mDispatcher, times(3)).submit(mCaptor.capture());
+        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
     }
 
     @Test
     public void testTrackerEquals() throws Exception {
-        Tracker tracker = createTracker();
-        Tracker tracker2 = Piwik.getInstance(Robolectric.application).newTracker("http://localhost", 100);
-        Tracker tracker3 = Piwik.getInstance(Robolectric.application).newTracker("http://example.com", 1);
-        assertNotNull(tracker);
-        assertFalse(tracker.equals(tracker2));
-        assertTrue(tracker.equals(tracker3));
+        Tracker tracker2 = new Tracker(new URL("http://localhost"), 100, mPiwik);
+        Tracker tracker3 = new Tracker(new URL("http://example.com"), 11, mPiwik);
+        assertNotNull(mTracker);
+        assertFalse(mTracker.equals(tracker2));
+        assertTrue(mTracker.equals(tracker3));
     }
 
     @Test
     public void testTrackerHashCode() throws Exception {
-        Tracker tracker = createTracker();
-        assertEquals(tracker.hashCode(), 31 + tracker.getAPIUrl().hashCode());
+        assertEquals(mTracker.hashCode(), 31 * 11 + mTracker.getAPIUrl().hashCode());
     }
 
     @Test
     public void testUrlPathCorrection() throws Exception {
-        Tracker tracker = createTracker();
         String[] paths = new String[]{null, "", "/",};
         for (String path : paths) {
             TrackMe trackMe = new TrackMe();
             trackMe.set(QueryParams.URL_PATH, path);
-            tracker.track(trackMe);
+            mTracker.track(trackMe);
             assertEquals("http://org.piwik.sdk.test/", trackMe.get(QueryParams.URL_PATH));
         }
     }
 
     @Test
-    public void testSetAPIUrl() throws Exception {
-        String[] urls = new String[]{
-                "https://demo.org/piwik/piwik.php",
-                "https://demo.org/piwik/",
-                "https://demo.org/piwik",
-        };
-
-        for (String url : urls) {
-            assertEquals(getPiwik().newTracker(url, 1).getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
-        }
-
-        assertEquals(getPiwik().newTracker("http://demo.org/piwik-proxy.php", 1).getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
-    }
-
-    @Test
     public void testSetUserAgent() throws MalformedURLException {
-        String defaultUserAgent = "aUserAgent";
-        String customUserAgent = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0";
-        System.setProperty("http.agent", "aUserAgent");
-
-        // Default system user agent
-        Tracker tracker = createTracker();
         TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
-        assertEquals(defaultUserAgent, trackMe.get(QueryParams.USER_AGENT));
+        mTracker.track(trackMe);
+        assertEquals("aUserAgent", trackMe.get(QueryParams.USER_AGENT));
 
         // Custom developer specified useragent
-        tracker = createTracker();
         trackMe = new TrackMe();
+        String customUserAgent = "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0";
         trackMe.set(QueryParams.USER_AGENT, customUserAgent);
-        tracker.track(trackMe);
+        mTracker.track(trackMe);
         assertEquals(customUserAgent, trackMe.get(QueryParams.USER_AGENT));
 
         // Modifying default TrackMe, no USER_AGENT
-        tracker = createTracker();
         trackMe = new TrackMe();
-        tracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
-        tracker.track(trackMe);
+        mTracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
+        mTracker.track(trackMe);
         assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
     }
 
     @Test
     public void testFirstVisitTimeStamp() throws Exception {
-        Piwik piwik = getPiwik();
-        assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
+        assertEquals(-1, mPiwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
 
-        Tracker tracker = createTracker();
-        Tracker tracker1 = createTracker();
-
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
+        TrackMe trackMe1 = mCaptor.getValue();
         Thread.sleep(10);
         // make sure we are tracking in seconds
-        assertTrue(Math.abs((System.currentTimeMillis() / 1000) - Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP))) < 2);
+        assertTrue(Math.abs((System.currentTimeMillis() / 1000) - Long.parseLong(trackMe1.get(FIRST_VISIT_TIMESTAMP))) < 2);
 
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker1);
-        QueryHashMap queryParams1 = new QueryHashMap(tracker1.getLastEvent());
-        assertEquals(Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)), Long.parseLong(queryParams1.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
-        assertEquals(piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1), Long.parseLong(queryParams.get(QueryParams.FIRST_VISIT_TIMESTAMP)));
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        TrackMe trackMe2 = mCaptor.getValue();
+        assertEquals(Long.parseLong(trackMe1.get(FIRST_VISIT_TIMESTAMP)), Long.parseLong(trackMe2.get(FIRST_VISIT_TIMESTAMP)));
+        assertEquals(mPiwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1), Long.parseLong(trackMe1.get(FIRST_VISIT_TIMESTAMP)));
     }
 
     @Test
     public void testTotalVisitCount() throws Exception {
-        Piwik piwik = getPiwik();
-        Tracker tracker = createTracker();
-        assertEquals(-1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
-        assertNull(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
+        assertEquals(-1, mPiwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertNull(mTracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
 
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals(1, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals(1, Integer.parseInt(mCaptor.getValue().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
 
-        tracker = createTracker();
-        assertEquals(1, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
-        assertNull(tracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals(2, Integer.parseInt(queryParams.get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
-        assertEquals(2, piwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        assertEquals(1, mPiwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
+        assertNull(mTracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        assertEquals(2, Integer.parseInt(mCaptor.getValue().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
+        assertEquals(2, mPiwik.getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
     }
 
     @Test
@@ -474,39 +435,44 @@ public class TrackerTest extends DefaultTestCase {
                 @Override
                 public void run() {
                     try {
-                        Tracker tracker = createTracker();
                         Thread.sleep(new Random().nextInt(20 - 0) + 0);
-                        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-                        countDownLatch.countDown();
-                    } catch (MalformedURLException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    } catch (InterruptedException e) { e.printStackTrace(); }
+                    TrackHelper.track().event("TestCategory", "TestAction").with(new Tracker(mApiUrl, mSiteId, mPiwik));
+                    countDownLatch.countDown();
                 }
             }).start();
         }
         countDownLatch.await();
-        assertEquals(threadCount, getPiwik().getSharedPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, 0));
+        assertEquals(threadCount, mSharedPreferences.getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, 0));
     }
 
     @Test
     public void testSessionStartRaceCondition() throws Exception {
-        final Tracker tracker = createTracker();
-        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
+        final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<TrackMe>());
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                trackMes.add((TrackMe) invocation.getArgument(0));
+                return null;
+            }
+        }).when(mDispatcher).submit(any(TrackMe.class));
+        when(mDispatcher.getConnectionTimeOut()).thenReturn(1000);
         for (int i = 0; i < 1000; i++) {
+            trackMes.clear();
+            final Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik);
             final CountDownLatch countDownLatch = new CountDownLatch(10);
             for (int j = 0; j < 10; j++) {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            Thread.sleep(new Random().nextInt(2 - 0) + 0);
+                            Thread.sleep(new Random().nextInt(4 - 0) + 0);
                             TrackMe trackMe = new TrackMe()
                                     .set(QueryParams.EVENT_ACTION, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, 1);
                             tracker.track(trackMe);
-
                             countDownLatch.countDown();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -516,16 +482,15 @@ public class TrackerTest extends DefaultTestCase {
                 }).start();
             }
             countDownLatch.await();
-            List<String> output = getFlattenedQueries(tracker.getDryRunTarget());
-            for (String out : output) {
-                if (output.indexOf(out) == 0) {
-                    assertTrue(out.contains("lang"));
-                    assertTrue(out.contains("_idts"));
-                    assertTrue(out.contains("new_visit"));
+            for (TrackMe out : trackMes) {
+                if (trackMes.indexOf(out) == 0) {
+                    assertTrue(i + "#" + out.toMap().size(), out.get(QueryParams.LANGUAGE) != null);
+                    assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) != null);
+                    assertTrue(out.get(SESSION_START) != null);
                 } else {
-                    assertFalse(out.contains("lang"));
-                    assertFalse(out.contains("_idts"));
-                    assertFalse(out.contains("new_visit"));
+                    assertTrue(out.get(QueryParams.LANGUAGE) == null);
+                    assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) == null);
+                    assertTrue(out.get(SESSION_START) == null);
                 }
             }
         }
@@ -541,37 +506,34 @@ public class TrackerTest extends DefaultTestCase {
                 @Override
                 public void run() {
                     try {
-                        Tracker tracker = createTracker();
+
                         Thread.sleep(new Random().nextInt(20 - 0) + 0);
-                        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-                        long firstVisit = Long.valueOf(tracker.getDefaultTrackMe().get(QueryParams.FIRST_VISIT_TIMESTAMP));
+                        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+                        long firstVisit = Long.valueOf(mTracker.getDefaultTrackMe().get(FIRST_VISIT_TIMESTAMP));
                         firstVisitTimes.add(firstVisit);
                         countDownLatch.countDown();
-                    } catch (MalformedURLException | InterruptedException e) {
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
             }).start();
         }
         countDownLatch.await();
-        for (Long firstVisit : firstVisitTimes)
-            assertEquals(firstVisitTimes.get(0), firstVisit);
+        for (Long firstVisit : firstVisitTimes) assertEquals(firstVisitTimes.get(0), firstVisit);
     }
 
     @Test
     public void testPreviousVisits() throws Exception {
         final List<Long> previousVisitTimes = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            try {
-                Tracker tracker = createTracker();
-                TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-                String previousVisit = tracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
-                if (previousVisit != null)
-                    previousVisitTimes.add(Long.parseLong(previousVisit));
-                Thread.sleep(1010);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+
+
+            TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+            String previousVisit = mTracker.getDefaultTrackMe().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP);
+            if (previousVisit != null)
+                previousVisitTimes.add(Long.parseLong(previousVisit));
+            Thread.sleep(1010);
+
         }
         assertFalse(previousVisitTimes.contains(0L));
         Long lastTime = 0L;
@@ -583,55 +545,51 @@ public class TrackerTest extends DefaultTestCase {
 
     @Test
     public void testPreviousVisit() throws Exception {
-        Piwik piwik = getPiwik();
         // No timestamp yet
-        assertEquals(-1, piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
-
-        Tracker tracker = createTracker();
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
+        assertEquals(-1, mPiwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher).submit(mCaptor.capture());
         long _startTime = System.currentTimeMillis() / 1000;
-        QueryHashMap queryParams = new QueryHashMap(tracker.getLastEvent());
         // There was no previous visit
-        assertNull(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
+        assertNull(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
         Thread.sleep(1000);
 
         // After the first visit we now have a timestamp for the previous visit
-        long previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        long previousVisit = mPiwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
         assertTrue(previousVisit - _startTime < 2000);
         assertNotEquals(-1, previousVisit);
-
-        tracker = createTracker();
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        queryParams = new QueryHashMap(tracker.getLastEvent());
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
         // Transmitted timestamp is the one from the first visit visit
-        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+        assertEquals(previousVisit, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         Thread.sleep(1000);
-        tracker = createTracker();
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        queryParams = new QueryHashMap(tracker.getLastEvent());
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher, times(3)).submit(mCaptor.capture());
         // Now the timestamp changed as this is the 3rd visit.
-        assertNotEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+        assertNotEquals(previousVisit, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
         Thread.sleep(1000);
 
-        previousVisit = piwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-
-        tracker = createTracker();
-        TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-        queryParams = new QueryHashMap(tracker.getLastEvent());
+        previousVisit = mPiwik.getSharedPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik);
+        TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
+        verify(mDispatcher, times(4)).submit(mCaptor.capture());
         // Just make sure the timestamp in the 4th visit is from the 3rd visit
-        assertEquals(previousVisit, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+        assertEquals(previousVisit, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         // Test setting a custom timestamp
         TrackMe custom = new TrackMe();
         custom.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, 1000L);
-        tracker.track(custom);
-        queryParams = new QueryHashMap(tracker.getLastEvent());
-        assertEquals(1000L, Long.parseLong(queryParams.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+        mTracker.track(custom);
+        verify(mDispatcher, times(5)).submit(mCaptor.capture());
+        assertEquals(1000L, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
     }
 
-    private static void validateDefaultQuery(QueryHashMap params) {
-        assertEquals(params.get(QueryParams.SITE_ID), "1");
+    private static void validateDefaultQuery(TrackMe params) {
+        assertEquals(params.get(QueryParams.SITE_ID), "11");
         assertEquals(params.get(QueryParams.RECORD), "1");
         assertEquals(params.get(QueryParams.SEND_IMAGE), "0");
         assertEquals(params.get(QueryParams.VISITOR_ID).length(), 16);

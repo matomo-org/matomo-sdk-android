@@ -1,9 +1,6 @@
 package org.piwik.sdk.dispatcher;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -16,9 +13,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
 public class PacketFactoryTest {
 
     @Test

@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 
 import org.piwik.sdk.ecommerce.EcommerceItems;
 import org.piwik.sdk.tools.ActivityHelper;
@@ -336,17 +335,23 @@ public class TrackHelper {
      *
      * @return this object, to chain calls.
      */
+    public Download download(DownloadTracker downloadTracker) {
+        return new Download(downloadTracker, this);
+    }
+
     public Download download() {
-        return new Download(this);
+        return new Download(null, this);
     }
 
     public static class Download {
+        private DownloadTracker mDownloadTracker;
         private final TrackHelper mBaseBuilder;
         private DownloadTracker.Extra mExtra = DownloadTracker.Extra.NONE;
         private boolean mForced = false;
         private String mVersion;
 
-        Download(TrackHelper baseBuilder) {
+        Download(DownloadTracker downloadTracker, TrackHelper baseBuilder) {
+            mDownloadTracker = downloadTracker;
             mBaseBuilder = baseBuilder;
         }
 
@@ -385,12 +390,12 @@ public class TrackHelper {
         }
 
         public void with(Tracker tracker) {
-            final DownloadTracker downloadTracker = new DownloadTracker(tracker, mBaseBuilder.mBaseTrackMe);
-            if (mVersion != null) downloadTracker.setVersion(mVersion);
+            if (mDownloadTracker == null) mDownloadTracker = new DownloadTracker(tracker);
+            if (mVersion != null) mDownloadTracker.setVersion(mVersion);
             if (mForced) {
-                downloadTracker.trackNewAppDownload(mExtra);
+                mDownloadTracker.trackNewAppDownload(mBaseBuilder.mBaseTrackMe, mExtra);
             } else {
-                downloadTracker.trackOnce(mExtra);
+                mDownloadTracker.trackOnce(mBaseBuilder.mBaseTrackMe, mExtra);
             }
         }
     }
@@ -433,7 +438,7 @@ public class TrackHelper {
         @Nullable
         @Override
         public TrackMe build() {
-            if (TextUtils.isEmpty(mContentName)) return null;
+            if (mContentName == null || mContentName.length() == 0) return null;
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -484,7 +489,8 @@ public class TrackHelper {
         @Nullable
         @Override
         public TrackMe build() {
-            if (TextUtils.isEmpty(mContentName) || TextUtils.isEmpty(mInteraction)) return null;
+            if (mContentName == null || mContentName.length() == 0) return null;
+            if (mInteraction == null || mInteraction.length() == 0) return null;
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)

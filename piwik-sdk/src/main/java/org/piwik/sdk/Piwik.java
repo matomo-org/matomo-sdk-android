@@ -11,6 +11,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
+import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.tools.DeviceHelper;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -92,6 +95,14 @@ public class Piwik {
      */
     public SharedPreferences getSharedPreferences() {
         return mSharedPreferences;
+    }
+
+    protected DispatcherFactory getDispatcherFactory() {
+        return new DispatcherFactory();
+    }
+
+    DeviceHelper getDeviceHelper() {
+        return new DeviceHelper(mContext);
     }
 
 }
