@@ -242,16 +242,7 @@ public class Tracker {
         mDispatcher.setDispatchAfterOptout(dispatchAfterOptout);
         return this;
     }
-
-    /**
-     *
-     * @return boolean
-     */
-    public boolean getDispatchAfterOptout() {
-        return mDispatcher.getDispatchAfterOptout();
-    }
-
-
+    
     /**
      * @return in milliseconds
      */

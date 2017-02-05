@@ -107,7 +107,7 @@ public class DispatcherTest {
         when(tracker.isDryRun()).thenReturn(false);
         when(tracker.getPiwik()).thenReturn(piwik);
         when(tracker.getPiwik().isOptOut()).thenReturn(false);
-        when(tracker.getDispatchAfterOptout()).thenReturn(false);
+        dispatcher.setDispatchAfterOptout(false);
 
         Packet packet = mock(Packet.class);
 
@@ -137,7 +137,7 @@ public class DispatcherTest {
         when(tracker.isDryRun()).thenReturn(false);
         when(tracker.getPiwik()).thenReturn(piwik);
         when(tracker.getPiwik().isOptOut()).thenReturn(true);
-        when(tracker.getDispatchAfterOptout()).thenReturn(true);
+        dispatcher.setDispatchAfterOptout(true);
 
         Packet packet = mock(Packet.class);
 
@@ -167,7 +167,7 @@ public class DispatcherTest {
         when(tracker.isDryRun()).thenReturn(false);
         when(tracker.getPiwik()).thenReturn(piwik);
         when(tracker.getPiwik().isOptOut()).thenReturn(true);
-        when(tracker.getDispatchAfterOptout()).thenReturn(false);
+        dispatcher.setDispatchAfterOptout(false);
 
         Packet packet = mock(Packet.class);
 

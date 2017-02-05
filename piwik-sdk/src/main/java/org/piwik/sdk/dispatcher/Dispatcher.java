@@ -230,7 +230,7 @@ public class Dispatcher {
 
         if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
 
-        if (mTracker.getPiwik().isOptOut() && !mTracker.getDispatchAfterOptout() && packet.getPostData() != null){
+        if (mTracker.getPiwik().isOptOut() && mDispatchAfterOptout && packet.getPostData() != null){
             // don't send remaining datas after user is optout. Loose them.
             Timber.tag(LOGGER_TAG).d("Optout, free cache, false dispatch");
             return true;
