@@ -168,11 +168,22 @@ public class TrackerTest {
     }
 
     @Test
-    public void testOptOut() throws Exception {
+    public void testOptOut_set() throws Exception {
         mTracker.setOptOut(true);
+        verify(mDispatcher).clear();
         assertTrue(mTracker.isOptOut());
         mTracker.setOptOut(false);
         assertFalse(mTracker.isOptOut());
+    }
+
+    @Test
+    public void testOptOut_init() throws Exception {
+        mTrackerPreferences.edit().putBoolean(Tracker.PREF_KEY_TRACKER_OPTOUT, false).apply();
+        Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik, mName);
+        assertFalse(tracker.isOptOut());
+        mTrackerPreferences.edit().putBoolean(Tracker.PREF_KEY_TRACKER_OPTOUT, true).apply();
+        tracker = new Tracker(mApiUrl, mSiteId, mPiwik, mName);
+        assertTrue(tracker.isOptOut());
     }
 
     @Test
