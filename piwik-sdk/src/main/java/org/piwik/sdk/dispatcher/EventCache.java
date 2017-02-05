@@ -27,6 +27,11 @@ public class EventCache {
         mQueue.drainTo(drainedEvents);
     }
 
+    public void clear() {
+        mDiskCache.uncache();
+        mQueue.clear();
+    }
+
     public boolean isEmpty() {
         return mQueue.isEmpty() && mDiskCache.isEmpty();
     }

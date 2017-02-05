@@ -62,6 +62,33 @@ public class DispatcherTest {
     }
 
     @Test
+    public void testClear() {
+        mDispatcher.clear();
+        verify(mEventCache).clear();
+    }
+
+    @Test
+    public void testClear_cleanExit() throws InterruptedException {
+        final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.submit(getGuestEvent());
+        mDispatcher.forceDispatch();
+        Thread.sleep(100);
+        assertFalse(dryRunData.isEmpty());
+        dryRunData.clear();
+
+        when(mConnectivity.isConnected()).thenReturn(false);
+        mDispatcher.submit(getGuestEvent());
+        assertFalse(mEventCache.isEmpty());
+        mDispatcher.clear();
+        when(mConnectivity.isConnected()).thenReturn(true);
+        assertTrue(mEventCache.isEmpty());
+        verify(mEventCache).clear();
+        Thread.sleep(100);
+        assertTrue(dryRunData.isEmpty());
+    }
+
+    @Test
     public void testGetDispatchMode() {
         assertEquals(DispatchMode.ALWAYS, mDispatcher.getDispatchMode());
         mDispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);

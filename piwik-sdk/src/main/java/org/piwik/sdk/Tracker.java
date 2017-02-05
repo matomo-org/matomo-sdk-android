@@ -95,6 +95,8 @@ public class Tracker {
 
         new LegacySettingsPorter(piwik).port(this);
 
+        mOptOut = getPreferences().getBoolean(PREF_KEY_TRACKER_OPTOUT, false);
+
         mDispatcher = piwik.getDispatcherFactory().build(this);
         String userId = getPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
@@ -126,6 +128,7 @@ public class Tracker {
     public void setOptOut(boolean optOut) {
         mOptOut = optOut;
         getPreferences().edit().putBoolean(PREF_KEY_TRACKER_OPTOUT, optOut).apply();
+        mDispatcher.clear();
     }
 
     /**

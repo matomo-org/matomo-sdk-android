@@ -135,6 +135,12 @@ public class Dispatcher {
         return true;
     }
 
+    public void clear() {
+        mEventCache.clear();
+        // Try to exit the loop as the queue is empty
+        if (mRunning) forceDispatch();
+    }
+
     public void submit(TrackMe trackMe) {
         mEventCache.add(new Event(trackMe.toMap()));
         if (mDispatchInterval != -1) launch();
