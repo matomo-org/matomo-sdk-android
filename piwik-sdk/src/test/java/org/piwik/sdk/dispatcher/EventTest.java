@@ -22,6 +22,11 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 
 public class EventTest {
+    @Test
+    public void testhashCode() {
+        Event event = new Event(0, "");
+        assertEquals(0, event.hashCode());
+    }
 
     @Test
     public void testEncoding_escaping() throws Exception {
@@ -31,13 +36,13 @@ public class EventTest {
         assertEquals("?_cvar=%7B%221%22%3A%5B%222%26%20%3F%22%2C%223%40%23%22%5D%7D", event.getEncodedQuery());
     }
 
+
     @Test
-    public void testEncoding_empty() throws Exception {
+    public void testBncoding_empty() throws Exception {
         Map<String, String> data = new HashMap<>();
         Event event = new Event(data);
         assertEquals("", event.getEncodedQuery());
     }
-
 
     @Test
     public void testEncondingSingles() throws Exception {

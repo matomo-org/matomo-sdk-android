@@ -207,15 +207,10 @@ public class Tracker {
 
     /**
      * Processes all queued events in background thread
-     *
-     * @return true if there are any queued events and opt out is inactive
      */
-    public boolean dispatch() {
-        if (!mOptOut) {
-            mDispatcher.forceDispatch();
-            return true;
-        }
-        return false;
+    public void dispatch() {
+        if (mOptOut) return;
+        mDispatcher.forceDispatch();
     }
 
     /**
@@ -564,16 +559,6 @@ public class Tracker {
     @VisibleForTesting
     public TrackMe getLastEventX() {
         return mLastEvent;
-    }
-
-    @VisibleForTesting
-    public void clearLastEvent() {
-        mLastEvent = null;
-    }
-
-    @VisibleForTesting
-    public Dispatcher getDispatcher() {
-        return mDispatcher;
     }
 
     /**

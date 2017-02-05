@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -39,6 +40,7 @@ public class TrackHelperTest {
     @Mock Piwik mPiwik;
     @Mock Context mContext;
     @Mock PackageManager mPackageManager;
+    @Mock PiwikApplication mPiwikApplication;
 
     @Before
     public void setup() throws PackageManager.NameNotFoundException {
@@ -47,11 +49,18 @@ public class TrackHelperTest {
         when(mPiwik.getContext()).thenReturn(mContext);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
         when(mContext.getPackageName()).thenReturn("packageName");
-
+        when(mPiwikApplication.getTracker()).thenReturn(mTracker);
         PackageInfo packageInfo = new PackageInfo();
         packageInfo.versionCode = 123;
         //noinspection WrongConstant
         when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(packageInfo);
+    }
+
+    @Test
+    public void testBaseEvent() {
+        track().screen("/path").with(mPiwikApplication);
+        verify(mPiwikApplication).getTracker();
+        verify(mTracker).track(any(TrackMe.class));
     }
 
     @Test
@@ -79,10 +88,17 @@ public class TrackHelperTest {
     }
 
     @Test
+    public void testDownloadTrackChecksum() throws Exception {
+        DownloadTracker downloadTracker = mock(DownloadTracker.class);
+        track().download(downloadTracker).identifier(DownloadTracker.Extra.APK_CHECKSUM).with(mTracker);
+        verify(downloadTracker).trackOnce(any(TrackMe.class), eq(DownloadTracker.Extra.APK_CHECKSUM));
+    }
+
+    @Test
     public void testDownloadTrackForced() throws Exception {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
         track().download(downloadTracker).force().with(mTracker);
-        verify(downloadTracker).trackNewAppDownload(any(TrackMe.class), any(DownloadTracker.Extra.class));
+        verify(downloadTracker).trackNewAppDownload(any(TrackMe.class), eq(DownloadTracker.Extra.NONE));
     }
 
     @Test
@@ -121,22 +137,13 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.ACTION_NAME), "Test title");
     }
 
-    private void checkEvent(TrackMe queryParams, String name, Float value) {
-        assertEquals(queryParams.get(QueryParams.EVENT_CATEGORY), "category");
-        assertEquals(queryParams.get(QueryParams.EVENT_ACTION), "test action");
-        assertEquals(queryParams.get(QueryParams.EVENT_NAME), name);
-        if (value == null) {
-            assertNull(queryParams.get(QueryParams.EVENT_VALUE));
-        } else {
-            assertEquals(String.valueOf(queryParams.get(QueryParams.EVENT_VALUE)), String.valueOf(value));
-        }
-    }
-
     @Test
     public void testTrackEvent() throws Exception {
         track().event("category", "test action").with(mTracker);
         verify(mTracker).track(mCaptor.capture());
-        checkEvent(mCaptor.getValue(), null, null);
+        TrackMe tracked = mCaptor.getValue();
+        assertEquals(tracked.get(QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(tracked.get(QueryParams.EVENT_ACTION), "test action");
     }
 
     @Test
@@ -144,7 +151,10 @@ public class TrackHelperTest {
         String name = "test name2";
         track().event("category", "test action").name(name).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
-        checkEvent(mCaptor.getValue(), name, null);
+        TrackMe tracked = mCaptor.getValue();
+        assertEquals(tracked.get(QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(tracked.get(QueryParams.EVENT_ACTION), "test action");
+        assertEquals(tracked.get(QueryParams.EVENT_NAME), name);
     }
 
     @Test
@@ -152,7 +162,23 @@ public class TrackHelperTest {
         String name = "test name3";
         track().event("category", "test action").name(name).value(1f).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
-        checkEvent(mCaptor.getValue(), name, 1f);
+        TrackMe tracked = mCaptor.getValue();
+        assertEquals(tracked.get(QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(tracked.get(QueryParams.EVENT_ACTION), "test action");
+        assertEquals(tracked.get(QueryParams.EVENT_NAME), name);
+        assertEquals(String.valueOf(tracked.get(QueryParams.EVENT_VALUE)), String.valueOf(1f));
+    }
+
+    @Test
+    public void testTrackEventNameAndValueWithpath() throws Exception {
+        track().event("category", "test action").name("test name3").path("/path").value(1f).with(mTracker);
+        verify(mTracker).track(mCaptor.capture());
+        TrackMe tracked = mCaptor.getValue();
+        assertEquals(tracked.get(QueryParams.EVENT_CATEGORY), "category");
+        assertEquals(tracked.get(QueryParams.EVENT_ACTION), "test action");
+        assertEquals(tracked.get(QueryParams.EVENT_NAME), "test name3");
+        assertEquals(tracked.get(QueryParams.URL_PATH), "/path");
+        assertEquals(String.valueOf(tracked.get(QueryParams.EVENT_VALUE)), String.valueOf(1f));
     }
 
     @Test

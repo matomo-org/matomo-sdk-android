@@ -3,7 +3,6 @@ package org.piwik.sdk.dispatcher;
 
 import org.piwik.sdk.Piwik;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -67,10 +66,8 @@ public class Event {
     private static String urlEncodeUTF8(String param) {
         try {
             return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
-            return "";
-        } catch (NullPointerException e) {
             return "";
         }
     }

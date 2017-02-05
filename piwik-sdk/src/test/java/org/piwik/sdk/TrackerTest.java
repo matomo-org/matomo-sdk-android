@@ -34,6 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -161,11 +162,35 @@ public class TrackerTest {
     }
 
     @Test
+    public void testsetDispatchGzip() {
+        mTracker.setDispatchGzipped(true);
+        verify(mDispatcher).setDispatchGzipped(true);
+    }
+
+    @Test
     public void testOptOut() throws Exception {
         mTracker.setOptOut(true);
         assertTrue(mTracker.isOptOut());
         mTracker.setOptOut(false);
         assertFalse(mTracker.isOptOut());
+    }
+
+    @Test
+    public void testDispatch() {
+        mTracker.dispatch();
+        verify(mDispatcher).forceDispatch();
+        mTracker.dispatch();
+        verify(mDispatcher, times(2)).forceDispatch();
+    }
+
+    @Test
+    public void testDispatch_optOut() {
+        mTracker.setOptOut(true);
+        mTracker.dispatch();
+        verify(mDispatcher, never()).forceDispatch();
+        mTracker.setOptOut(false);
+        mTracker.dispatch();
+        verify(mDispatcher).forceDispatch();
     }
 
     @Test
