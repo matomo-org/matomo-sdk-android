@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
@@ -51,6 +52,7 @@ public class DispatcherTest {
 
     Dispatcher dispatcher;
     EventCache eventCache;
+    @Mock Piwik piwik;
     @Mock EventDiskCache eventDiskCache;
     @Mock Tracker tracker;
     @Mock Connectivity connectivity;
@@ -103,6 +105,9 @@ public class DispatcherTest {
     @Test
     public void testDispatch_gzip() throws Exception {
         when(tracker.isDryRun()).thenReturn(false);
+        when(tracker.getPiwik()).thenReturn(piwik);
+        when(tracker.getPiwik().isOptOut()).thenReturn(false);
+        dispatcher.setDispatchAfterOptout(false);
 
         Packet packet = mock(Packet.class);
 
@@ -125,6 +130,59 @@ public class DispatcherTest {
         dispatcher.setDispatchGzipped(true);
         dispatcher.dispatch(packet);
         verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
+    }
+
+    @Test
+    public void testAfterOptoutSendRemainingDatas() throws Exception {
+        when(tracker.isDryRun()).thenReturn(false);
+        when(tracker.getPiwik()).thenReturn(piwik);
+        when(tracker.getPiwik().isOptOut()).thenReturn(true);
+        dispatcher.setDispatchAfterOptout(true);
+
+        Packet packet = mock(Packet.class);
+
+        URL url = new URL("http://example.com");
+        when(packet.getTargetURL()).thenReturn(url);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("test", "test");
+        when(packet.getPostData()).thenReturn(jsonObject);
+
+        HttpURLConnection urlConnection = mock(HttpURLConnection.class);
+        when(packet.openConnection()).thenReturn(urlConnection);
+        OutputStream outputStream = mock(OutputStream.class);
+        when(urlConnection.getOutputStream()).thenReturn(outputStream);
+
+        dispatcher.setDispatchGzipped(false);
+        dispatcher.dispatch(packet);
+        verify(urlConnection, never()).addRequestProperty("Content-Encoding", "gzip");
+
+        dispatcher.setDispatchGzipped(true);
+        dispatcher.dispatch(packet);
+        verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
+    }
+
+    @Test
+    public void testAfterOptoutLooseRemainingDatas() throws Exception {
+        when(tracker.isDryRun()).thenReturn(false);
+        when(tracker.getPiwik()).thenReturn(piwik);
+        when(tracker.getPiwik().isOptOut()).thenReturn(true);
+        dispatcher.setDispatchAfterOptout(false);
+
+        Packet packet = mock(Packet.class);
+
+        URL url = new URL("http://example.com");
+        when(packet.getTargetURL()).thenReturn(url);
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("test", "test");
+        when(packet.getPostData()).thenReturn(jsonObject);
+
+        HttpURLConnection urlConnection = mock(HttpURLConnection.class);
+
+        verify(packet, never()).openConnection();
+        verify(urlConnection, never()).setDoOutput(true);
+        verify(urlConnection, never()).setDoOutput(false);
     }
 
     @Test
