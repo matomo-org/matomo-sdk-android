@@ -244,6 +244,15 @@ public class Tracker {
     }
 
     /**
+     *
+     * @return boolean
+     */
+    public boolean getDispatchAfterOptout() {
+        return mDispatcher.getDispatchAfterOptout();
+    }
+
+
+    /**
      * @return in milliseconds
      */
     public long getDispatchInterval() {
