@@ -14,7 +14,10 @@ import java.net.MalformedURLException;
 public abstract class DefaultTestCase {
     public Tracker createTracker() throws MalformedURLException {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        return Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
+        final Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId(), "Default Tracker");
+        tracker.getPreferences().edit().clear().apply();
+        tracker.setOptOut(true);
+        return tracker;
     }
 
     public Piwik getPiwik() {
@@ -23,7 +26,6 @@ public abstract class DefaultTestCase {
 
     @Before
     public void setup() {
-        Piwik.getInstance(Robolectric.application).setOptOut(true);
-        Piwik.getInstance(Robolectric.application).getSharedPreferences().edit().clear().apply();
+
     }
 }

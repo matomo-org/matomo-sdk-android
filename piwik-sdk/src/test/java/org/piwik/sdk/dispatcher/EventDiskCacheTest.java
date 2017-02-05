@@ -32,6 +32,7 @@ public class EventDiskCacheTest {
     private EventDiskCache mDiskCache;
     private File mHostFolder;
     private File mBaseCacheDir;
+    private File mCacheFolder;
 
     @Before
     public void setup() throws MalformedURLException {
@@ -46,18 +47,21 @@ public class EventDiskCacheTest {
 
         when(mTracker.getOfflineCacheAge()).thenReturn(0L);
 
-        File cacheFolder = new File(mBaseCacheDir, "piwik_cache");
-        mHostFolder = new File(cacheFolder, "testhost");
+        mCacheFolder = new File(mBaseCacheDir, "piwik_cache");
+        mHostFolder = new File(mCacheFolder, "testhost");
 
         mDiskCache = new EventDiskCache(mTracker);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @After
     public void tearDown() {
         for (File file : mBaseCacheDir.listFiles()[0].listFiles()[0].listFiles()) {
-            //noinspection ResultOfMethodCallIgnored
             file.delete();
         }
+        mHostFolder.delete();
+        mCacheFolder.delete();
+        mBaseCacheDir.delete();
     }
 
     @Test

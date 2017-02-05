@@ -12,21 +12,26 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
 import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
+import timber.log.Timber;
 
 
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
-    public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
-    public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
+    private static final String LOGGER_TAG = "PIWIK";
+    private static final String BASE_PREFERENCE_FILE = "org.piwik.sdk";
+    private final Map<Tracker, SharedPreferences> mPreferenceMap = new HashMap<>();
     private final Context mContext;
-    private boolean mOptOut = false;
 
     private static Piwik sInstance;
-    private final SharedPreferences mSharedPreferences;
+    private SharedPreferences mBasePreferences;
 
     public static synchronized Piwik getInstance(Context context) {
         if (sInstance == null)
@@ -36,8 +41,7 @@ public class Piwik {
 
     private Piwik(Context context) {
         mContext = context.getApplicationContext();
-        mSharedPreferences = getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
-        mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
+        mBasePreferences = context.getSharedPreferences(BASE_PREFERENCE_FILE, Context.MODE_PRIVATE);
     }
 
     public Context getContext() {
@@ -47,10 +51,11 @@ public class Piwik {
     /**
      * @param url    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId (required) id of site
+     * @param name   unique name for this Tracker. Used to store Tracker settings independent of URL and id changes.
      * @return Tracker object
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public synchronized Tracker newTracker(@NonNull String url, int siteId) throws MalformedURLException {
+    public synchronized Tracker newTracker(@NonNull String url, int siteId, String name) throws MalformedURLException {
         URL trackerUrl;
         try {
             if (url.endsWith("piwik.php") || url.endsWith("piwik-proxy.php")) {
@@ -62,26 +67,7 @@ public class Piwik {
                 trackerUrl = new URL(url + "piwik.php");
             }
         } catch (MalformedURLException e) { throw new RuntimeException(e); }
-        return new Tracker(trackerUrl, siteId, this);
-    }
-
-    /**
-     * Use this to disable Piwik, e.g. if the user opted out of tracking.
-     * Piwik will persist the choice and remain disable on next instance creation.<p>
-     * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
-     *
-     * @param optOut true to disable reporting
-     */
-    public void setOptOut(boolean optOut) {
-        mOptOut = optOut;
-        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).apply();
-    }
-
-    /**
-     * @return true if Piwik is currently disabled
-     */
-    public boolean isOptOut() {
-        return mOptOut;
+        return new Tracker(trackerUrl, siteId, this, name);
     }
 
     public String getApplicationDomain() {
@@ -89,12 +75,31 @@ public class Piwik {
     }
 
     /**
-     * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
-     *
-     * @return Piwik's SharedPreferences instance
+     * Base preferences, tracker idenpendent.
      */
-    public SharedPreferences getSharedPreferences() {
-        return mSharedPreferences;
+    public SharedPreferences getPiwikPreferences() {
+        return mBasePreferences;
+    }
+
+    /**
+     * @return Tracker specific settings object
+     */
+    public SharedPreferences getTrackerPreferences(@NonNull Tracker tracker) {
+        synchronized (mPreferenceMap) {
+            SharedPreferences newPrefs = mPreferenceMap.get(tracker);
+            if (newPrefs == null) {
+                String prefName;
+                try {
+                    prefName = "org.piwik.sdk_" + Checksum.getMD5Checksum(tracker.getName());
+                } catch (Exception e) {
+                    Timber.tag(LOGGER_TAG).e(e, null);
+                    prefName = "org.piwik.sdk_" + tracker.getName();
+                }
+                newPrefs = getContext().getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                mPreferenceMap.put(tracker, newPrefs);
+            }
+            return newPrefs;
+        }
     }
 
     protected DispatcherFactory getDispatcherFactory() {
@@ -104,5 +109,4 @@ public class Piwik {
     DeviceHelper getDeviceHelper() {
         return new DeviceHelper(mContext);
     }
-
 }

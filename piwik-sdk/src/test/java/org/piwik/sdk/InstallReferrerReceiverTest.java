@@ -23,7 +23,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         String testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         testIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
-        String referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        String referrerDataFromPreferences = getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData1, referrerDataFromPreferences);
         assertTrue(testIntent.getBooleanExtra("forwarded", false));
 
@@ -32,13 +32,13 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         testIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData2);
 
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
-        referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        referrerDataFromPreferences = getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData1, referrerDataFromPreferences);
 
 
         testIntent.putExtra("forwarded", false);
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
-        referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        referrerDataFromPreferences = getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData2, referrerDataFromPreferences);
     }
 
@@ -51,7 +51,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         String testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         badIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), badIntent);
-        String referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        String referrerDataFromPreferences = getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertNull(referrerDataFromPreferences);
 
 
@@ -61,7 +61,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         nullIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), nullIntent);
-        referrerDataFromPreferences = getPiwik().getSharedPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
+        referrerDataFromPreferences = getPiwik().getPiwikPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertNull(referrerDataFromPreferences);
     }
 

@@ -14,7 +14,7 @@ public class TestPreferences implements SharedPreferences {
 
     @Override
     public Map<String, ?> getAll() {
-        return null;
+        return mMap;
     }
 
     @Nullable

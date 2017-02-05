@@ -13,7 +13,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.piwik.sdk.testhelper.TestPreferences;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +39,7 @@ public class DownloadTrackerTest {
     @Before
     public void setup() throws PackageManager.NameNotFoundException {
         MockitoAnnotations.initMocks(this);
-        when(mTracker.getSharedPreferences()).thenReturn(mSharedPreferences);
+        when(mTracker.getPreferences()).thenReturn(mSharedPreferences);
         when(mTracker.getPiwik()).thenReturn(mPiwik);
         when(mPiwik.getContext()).thenReturn(mContext);
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
@@ -66,7 +68,7 @@ public class DownloadTrackerTest {
     public void testTrackIdentifier() throws Exception {
         ApplicationInfo applicationInfo = new ApplicationInfo();
         mPackageInfo.applicationInfo = applicationInfo;
-        applicationInfo.sourceDir = "testfile";
+        applicationInfo.sourceDir = UUID.randomUUID().toString();
         final byte[] FAKE_APK_DATA = "this is an apk, awesome right?".getBytes();
         final String FAKE_APK_DATA_MD5 = "771BD8971508985852AF8F96170C52FB";
 
@@ -101,6 +103,8 @@ public class DownloadTrackerTest {
         assertEquals(123, Integer.parseInt(m.group(2)));
         assertEquals(null, m.group(3));
         assertEquals("http://installer", mCaptor.getValue().get(QueryParams.REFERRER));
+        //noinspection ResultOfMethodCallIgnored
+        new File(applicationInfo.sourceDir).delete();
     }
 
     // http://org.piwik.sdk.test:1/some.package or http://org.piwik.sdk.test:1
