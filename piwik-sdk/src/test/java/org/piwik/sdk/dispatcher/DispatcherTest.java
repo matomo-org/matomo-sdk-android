@@ -42,54 +42,68 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("ALL")
 public class DispatcherTest {
 
-    Dispatcher dispatcher;
-    EventCache eventCache;
-    @Mock EventDiskCache eventDiskCache;
-    @Mock Connectivity connectivity;
-    @Mock Context context;
+    Dispatcher mDispatcher;
+    EventCache mEventCache;
+    @Mock EventDiskCache mEventDiskCache;
+    @Mock Connectivity mConnectivity;
+    @Mock Context mContext;
     URL mApiUrl;
 
     @Before
     public void setup() throws Exception {
         mApiUrl = new URL("http://example.com");
         MockitoAnnotations.initMocks(this);
-        when(connectivity.isConnected()).thenReturn(true);
-        when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
+        when(mConnectivity.isConnected()).thenReturn(true);
+        when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
-        when(eventDiskCache.isEmpty()).thenReturn(true);
-        eventCache = spy(new EventCache(eventDiskCache));
-        dispatcher = new Dispatcher(eventCache, connectivity, new PacketFactory(mApiUrl));
+        when(mEventDiskCache.isEmpty()).thenReturn(true);
+        mEventCache = spy(new EventCache(mEventDiskCache));
+        mDispatcher = new Dispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl));
+    }
+
+    @Test
+    public void testGetDispatchMode() {
+        assertEquals(DispatchMode.ALWAYS, mDispatcher.getDispatchMode());
+        mDispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
+        assertEquals(DispatchMode.WIFI_ONLY, mDispatcher.getDispatchMode());
     }
 
     @Test
     public void testDispatchMode_wifiOnly() throws Exception {
-        when(eventDiskCache.isEmpty()).thenReturn(false);
-        when(connectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
-        dispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
-        dispatcher.submit(getGuestEvent());
-        dispatcher.forceDispatch();
+        when(mEventDiskCache.isEmpty()).thenReturn(false);
+        when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
+        mDispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
+        mDispatcher.submit(getGuestEvent());
+        mDispatcher.forceDispatch();
         Thread.sleep(50);
-        verify(eventDiskCache, never()).uncache();
-        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
-        when(connectivity.getType()).thenReturn(Connectivity.Type.WIFI);
-        dispatcher.forceDispatch();
+        verify(mEventDiskCache, never()).uncache();
+        verify(mEventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+        when(mConnectivity.getType()).thenReturn(Connectivity.Type.WIFI);
+        mDispatcher.forceDispatch();
         Thread.sleep(50);
-        verify(eventDiskCache).uncache();
+        verify(mEventDiskCache).uncache();
     }
 
     @Test
     public void testConnectivityChange() throws Exception {
-        when(eventDiskCache.isEmpty()).thenReturn(false);
-        when(connectivity.isConnected()).thenReturn(false);
-        dispatcher.submit(getGuestEvent());
-        dispatcher.forceDispatch();
+        when(mEventDiskCache.isEmpty()).thenReturn(false);
+        when(mConnectivity.isConnected()).thenReturn(false);
+        mDispatcher.submit(getGuestEvent());
+        mDispatcher.forceDispatch();
         Thread.sleep(50);
-        verify(eventDiskCache, never()).uncache();
-        verify(eventDiskCache).cache(ArgumentMatchers.<Event>anyList());
-        when(connectivity.isConnected()).thenReturn(true);
-        dispatcher.forceDispatch();
+        verify(mEventDiskCache, never()).uncache();
+        verify(mEventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+        when(mConnectivity.isConnected()).thenReturn(true);
+        mDispatcher.forceDispatch();
         Thread.sleep(50);
-        verify(eventDiskCache).uncache();
+        verify(mEventDiskCache).uncache();
+    }
+
+    @Test
+    public void testGetDispatchGzipped() {
+        assertFalse(mDispatcher.getDispatchGzipped());
+        mDispatcher.setDispatchGzipped(true);
+        assertTrue(mDispatcher.getDispatchGzipped());
     }
 
     @Test
@@ -108,51 +122,51 @@ public class DispatcherTest {
         OutputStream outputStream = mock(OutputStream.class);
         when(urlConnection.getOutputStream()).thenReturn(outputStream);
 
-        dispatcher.setDispatchGzipped(false);
-        dispatcher.dispatch(packet);
+        mDispatcher.setDispatchGzipped(false);
+        mDispatcher.dispatch(packet);
         verify(urlConnection, never()).addRequestProperty("Content-Encoding", "gzip");
 
-        dispatcher.setDispatchGzipped(true);
-        dispatcher.dispatch(packet);
+        mDispatcher.setDispatchGzipped(true);
+        mDispatcher.dispatch(packet);
         verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
     }
 
     @Test
     public void testDefaultConnectionTimeout() throws Exception {
-        assertEquals(Dispatcher.DEFAULT_CONNECTION_TIMEOUT, dispatcher.getConnectionTimeOut());
+        assertEquals(Dispatcher.DEFAULT_CONNECTION_TIMEOUT, mDispatcher.getConnectionTimeOut());
     }
 
     @Test
     public void testSetConnectionTimeout() throws Exception {
-        dispatcher.setConnectionTimeOut(100);
-        assertEquals(100, dispatcher.getConnectionTimeOut());
+        mDispatcher.setConnectionTimeOut(100);
+        assertEquals(100, mDispatcher.getConnectionTimeOut());
     }
 
     @Test
     public void testDefaultDispatchInterval() throws Exception {
-        assertEquals(Dispatcher.DEFAULT_DISPATCH_INTERVAL, dispatcher.getDispatchInterval());
+        assertEquals(Dispatcher.DEFAULT_DISPATCH_INTERVAL, mDispatcher.getDispatchInterval());
     }
 
     @Test
     public void testForceDispatchTwice() throws Exception {
-        dispatcher.setDispatchInterval(-1);
-        dispatcher.setConnectionTimeOut(20);
-        dispatcher.submit(getGuestEvent());
+        mDispatcher.setDispatchInterval(-1);
+        mDispatcher.setConnectionTimeOut(20);
+        mDispatcher.submit(getGuestEvent());
 
-        assertTrue(dispatcher.forceDispatch());
-        assertFalse(dispatcher.forceDispatch());
+        assertTrue(mDispatcher.forceDispatch());
+        assertFalse(mDispatcher.forceDispatch());
     }
 
     @Test
     public void testMultiThreadDispatch() throws Exception {
         List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
-        dispatcher.setDryRunTarget(dryRunData);
-        dispatcher.setDispatchInterval(20);
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(20);
 
         final int threadCount = 20;
         final int queryCount = 100;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
@@ -160,17 +174,17 @@ public class DispatcherTest {
     @Test
     public void testForceDispatch() throws Exception {
         List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
-        dispatcher.setDryRunTarget(dryRunData);
-        dispatcher.setDispatchInterval(-1L);
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(-1L);
 
         final int threadCount = 10;
         final int queryCount = 10;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
         Thread.sleep(500);
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, dryRunData.size());
-        dispatcher.forceDispatch();
+        mDispatcher.forceDispatch();
 
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
@@ -178,13 +192,13 @@ public class DispatcherTest {
     @Test
     public void testBatchDispatch() throws Exception {
         List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
-        dispatcher.setDryRunTarget(dryRunData);
-        dispatcher.setDispatchInterval(1500);
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(1500);
 
         final int threadCount = 5;
         final int queryCount = 5;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
-        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
         Thread.sleep(1000);
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, dryRunData.size());
@@ -196,7 +210,7 @@ public class DispatcherTest {
     @Test
     public void testRandomDispatchIntervals() throws Exception {
         final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
-        dispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDryRunTarget(dryRunData);
 
         final int threadCount = 10;
         final int queryCount = 100;
@@ -207,7 +221,7 @@ public class DispatcherTest {
             public void run() {
                 try {
                     while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount)
-                        dispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
+                        mDispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -215,7 +229,7 @@ public class DispatcherTest {
             }
         }).start();
 
-        launchTestThreads(mApiUrl, dispatcher, threadCount, queryCount, createdEvents);
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
