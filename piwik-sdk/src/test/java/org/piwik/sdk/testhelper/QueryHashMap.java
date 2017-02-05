@@ -1,11 +1,14 @@
-package org.piwik.sdk;
+package org.piwik.sdk.testhelper;
+
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
 
 import java.util.HashMap;
 
 
 public class QueryHashMap extends HashMap<String, String> {
 
-    QueryHashMap(TrackMe trackMe) {
+    public QueryHashMap(TrackMe trackMe) {
         super(trackMe.toMap());
     }
 

@@ -4,8 +4,6 @@ package org.piwik.sdk;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -15,11 +13,12 @@ import java.io.File;
 
 import timber.log.Timber;
 
+import static android.content.ContentValues.TAG;
+
 public class DownloadTracker {
     protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DownloadTrackingHelper";
     private static final String INSTALL_SOURCE_GOOGLE_PLAY = "com.android.vending";
     private final Tracker mTracker;
-    private final TrackMe mBaseTrackMe;
     private final Object TRACK_ONCE_LOCK = new Object();
     private final PackageManager mPackMan;
     private final String mPackageName;
@@ -41,13 +40,8 @@ public class DownloadTracker {
     }
 
     public DownloadTracker(Tracker tracker) {
-        this(tracker, new TrackMe());
-    }
-
-    public DownloadTracker(Tracker tracker, TrackMe baseTrackMe) {
         mTracker = tracker;
-        mBaseTrackMe = baseTrackMe;
-        mPreferences = tracker.getPiwik().getSharedPreferences();
+        mPreferences = tracker.getSharedPreferences();
         mPackageName = tracker.getPiwik().getContext().getPackageName();
         mPackMan = tracker.getPiwik().getContext().getPackageManager();
         try {
@@ -66,44 +60,34 @@ public class DownloadTracker {
         return Integer.toString(mPkgInfo.versionCode);
     }
 
-    public void trackOnce(@NonNull Extra extra) {
+    public void trackOnce(TrackMe baseTrackme, @NonNull Extra extra) {
         String firedKey = "downloaded:" + mPackageName + ":" + getVersion();
         synchronized (TRACK_ONCE_LOCK) {
             if (!mPreferences.getBoolean(firedKey, false)) {
                 mPreferences.edit().putBoolean(firedKey, true).apply();
-                trackNewAppDownload(extra);
+                trackNewAppDownload(baseTrackme, extra);
             }
         }
     }
 
-    public void trackNewAppDownload(@NonNull final Extra extra) {
-        final Thread trackTask = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                trackNewAppDownloadInternal(extra);
-            }
-        });
-
-        boolean delay = INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPackageName));
+    public void trackNewAppDownload(final TrackMe baseTrackme, @NonNull final Extra extra) {
+        final boolean delay = INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPackageName));
         if (delay) {
             // Delay tracking incase we were called from within Application.onCreate
             Timber.tag(LOGGER_TAG).d("Google Play is install source, deferring tracking.");
         }
-
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+        final Thread trackTask = new Thread(new Runnable() {
             @Override
             public void run() {
-                if (extra == Extra.APK_CHECKSUM) {
-                    // Don't do APK checksum on this thread, we don't want to block.
-                    trackTask.start();
-                } else {
-                    trackTask.run();
-                }
+                if (delay) try {Thread.sleep(3000);} catch (Exception e) { Timber.tag(TAG).e(e, null);}
+                trackNewAppDownloadInternal(baseTrackme, extra);
             }
-        }, delay ? 3000 : 0);
+        });
+        if (!delay && extra == Extra.NONE) trackTask.run();
+        else trackTask.start();
     }
 
-    private void trackNewAppDownloadInternal(@NonNull Extra extra) {
+    private void trackNewAppDownloadInternal(TrackMe baseTrackMe, @NonNull Extra extra) {
         Timber.tag(LOGGER_TAG).d("Tracking app download...");
 
         StringBuilder installIdentifier = new StringBuilder();
@@ -134,7 +118,7 @@ public class DownloadTracker {
 
         if (referringApp != null) referringApp = "http://" + referringApp;
 
-        mTracker.track(new TrackMe(mBaseTrackMe)
+        mTracker.track(baseTrackMe
                 .set(QueryParams.EVENT_CATEGORY, "Application")
                 .set(QueryParams.EVENT_ACTION, "downloaded")
                 .set(QueryParams.ACTION_NAME, "application/downloaded")

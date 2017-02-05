@@ -1,20 +1,13 @@
 package org.piwik.sdk.plugins;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.piwik.sdk.testhelper.DefaultTestCase;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
-public class CustomDimensionsTest extends DefaultTestCase {
+public class CustomDimensionsTest {
 
     @Test
     public void testSetCustomDimensions() throws Exception {

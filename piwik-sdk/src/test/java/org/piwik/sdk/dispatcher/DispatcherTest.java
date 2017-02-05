@@ -7,21 +7,17 @@
 package org.piwik.sdk.dispatcher;
 
 import android.content.Context;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.tools.Connectivity;
-import org.robolectric.annotation.Config;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -43,9 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@SuppressWarnings({"deprecation", "PointlessArithmeticExpression"})
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
+@SuppressWarnings("ALL")
 public class DispatcherTest {
 
     Dispatcher dispatcher;
@@ -64,7 +58,7 @@ public class DispatcherTest {
 
         when(eventDiskCache.isEmpty()).thenReturn(true);
         eventCache = spy(new EventCache(eventDiskCache));
-        dispatcher = new Dispatcher(mApiUrl, eventCache, connectivity);
+        dispatcher = new Dispatcher(eventCache, connectivity, new PacketFactory(mApiUrl));
     }
 
     @Test
@@ -233,7 +227,6 @@ public class DispatcherTest {
         while (true) {
             Thread.sleep(500);
             flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
-            Log.d("checkForMIAs", createdEvents.size() + " events created, " + dryRunOutput.size() + " requests dispatched, containing " + flattenedQueries.size() + " flattened queries");
             if (flattenedQueries.size() == expectedEvents) {
                 break;
             } else {
@@ -256,11 +249,9 @@ public class DispatcherTest {
         }
         assertTrue(createdEvents.isEmpty());
         assertTrue(flattenedQueries.isEmpty());
-        Log.d("checkForMIAs", "All send queries are accounted for.");
     }
 
     public static void launchTestThreads(final URL apiUrl, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
-        Log.d("launchTestThreads", "Launching " + threadCount + " threads, " + queryCount + " queries each");
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
                 @Override
@@ -273,9 +264,8 @@ public class DispatcherTest {
                                     .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, j);
-                            Event event = new Event(trackMe.toMap());
-                            dispatcher.submit(event);
-                            createdQueries.add(apiUrl.toString() + event.getEncodedQuery());
+                            dispatcher.submit(trackMe);
+                            createdQueries.add(apiUrl.toString() + new Event(trackMe.toMap()).getEncodedQuery());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -284,7 +274,6 @@ public class DispatcherTest {
                 }
             }).start();
         }
-        Log.d("launchTestThreads", "All launched.");
     }
 
     public static List<String> getFlattenedQueries(List<Packet> packets) throws Exception {
@@ -303,9 +292,9 @@ public class DispatcherTest {
         return flattenedQueries;
     }
 
-    public static Event getGuestEvent() {
+    public static TrackMe getGuestEvent() {
         TrackMe trackMe = new TrackMe();
         trackMe.set(QueryParams.SESSION_START, 1);
-        return new Event(trackMe.toMap());
+        return trackMe;
     }
 }

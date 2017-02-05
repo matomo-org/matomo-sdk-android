@@ -13,12 +13,7 @@ import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.Event;
-import org.piwik.sdk.dispatcher.EventCache;
-import org.piwik.sdk.dispatcher.EventDiskCache;
 import org.piwik.sdk.dispatcher.Packet;
-import org.piwik.sdk.tools.Connectivity;
-import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -81,7 +76,7 @@ public class Tracker {
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
-     * @param apiUrl    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
+     * @param apiUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
      * @param siteId (required) id of site
      * @param piwik  piwik object used to gain access to application params such as name, resolution or lang
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
@@ -91,7 +86,7 @@ public class Tracker {
         mPiwik = piwik;
         mSiteId = siteId;
 
-        mDispatcher = new Dispatcher(mApiUrl, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
+        mDispatcher = piwik.getDispatcherFactory().build(this);
 
         String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
@@ -103,13 +98,13 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
         String resolution = DEFAULT_UNKNOWN_VALUE;
-        int[] res = DeviceHelper.getResolution(mPiwik.getContext());
+        int[] res = mPiwik.getDeviceHelper().getResolution();
         if (res != null)
             resolution = String.format("%sx%s", res[0], res[1]);
         mDefaultTrackMe.set(QueryParams.SCREEN_RESOLUTION, resolution);
 
-        mDefaultTrackMe.set(QueryParams.USER_AGENT, DeviceHelper.getUserAgent());
-        mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
+        mDefaultTrackMe.set(QueryParams.USER_AGENT, mPiwik.getDeviceHelper().getUserAgent());
+        mDefaultTrackMe.set(QueryParams.LANGUAGE, mPiwik.getDeviceHelper().getUserLanguage());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
     }
@@ -455,7 +450,7 @@ public class Tracker {
         } else {
             try {
                 // Another thread is currently creating a sessions first transmission, wait until it's done.
-                mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
+                mSessionStartLatch.await(getDispatchTimeout(), TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -467,7 +462,7 @@ public class Tracker {
             mLastEvent = trackMe;
             Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
         } else {
-            mDispatcher.submit(new Event(trackMe.toMap()));
+            mDispatcher.submit(trackMe);
             Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
         }
 
@@ -530,7 +525,7 @@ public class Tracker {
      * @return query of the event
      */
     @VisibleForTesting
-    public TrackMe getLastEvent() {
+    public TrackMe getLastEventX() {
         return mLastEvent;
     }
 

@@ -1,10 +1,6 @@
 package org.piwik.sdk;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.piwik.sdk.testhelper.DefaultTestCase;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,9 +13,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
-public class TrackMeTest extends DefaultTestCase {
+public class TrackMeTest {
     @Test
     public void testSourcingFromOtherTrackMe() throws Exception {
         TrackMe base = new TrackMe();

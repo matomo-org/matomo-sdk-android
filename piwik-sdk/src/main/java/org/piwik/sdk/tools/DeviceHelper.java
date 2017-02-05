@@ -25,13 +25,16 @@ import timber.log.Timber;
  */
 public class DeviceHelper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DeviceHelper";
+    private final Context mContext;
+
+    public DeviceHelper(Context context) {mContext = context;}
 
     /**
      * Returns user language
      *
      * @return language
      */
-    public static String getUserLanguage() {
+    public String getUserLanguage() {
         return Locale.getDefault().getLanguage();
     }
 
@@ -40,7 +43,7 @@ public class DeviceHelper {
      *
      * @return well formatted user agent
      */
-    public static String getUserAgent() {
+    public String getUserAgent() {
         return System.getProperty("http.agent");
     }
 
@@ -48,16 +51,15 @@ public class DeviceHelper {
      * Tries to get the most accurate device resolution.
      * On devices below API17 resolution might not account for statusbar/softkeys.
      *
-     * @param context your application context
      * @return [width, height]
      */
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-    public static int[] getResolution(Context context) {
+    public int[] getResolution() {
         int width = -1, height = -1;
 
         Display display;
         try {
-            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
             display = wm.getDefaultDisplay();
         } catch (NullPointerException e) {
             Timber.tag(LOGGER_TAG).e(e, "Window service was not available from this context");
