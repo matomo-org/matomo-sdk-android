@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,10 +27,21 @@ public class TrackMe {
         mQueryParams.putAll(trackMe.mQueryParams);
     }
 
-    protected synchronized TrackMe set(@NonNull String key, String value) {
+    /**
+     * Consider using {@link QueryParams} instead of raw strings
+     */
+    public synchronized TrackMe set(@NonNull String key, String value) {
         if (value == null) mQueryParams.remove(key);
         else if (value.length() > 0) mQueryParams.put(key, value);
         return this;
+    }
+
+    /**
+     * Consider using {@link QueryParams} instead of raw strings
+     */
+    @Nullable
+    public synchronized String get(@NonNull String queryParams) {
+        return mQueryParams.get(queryParams);
     }
 
     /**
@@ -120,4 +132,7 @@ public class TrackMe {
         return mQueryParams.get(queryParams.toString());
     }
 
+    public synchronized boolean isEmpty() {
+        return mQueryParams.isEmpty();
+    }
 }

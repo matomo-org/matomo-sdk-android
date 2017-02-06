@@ -4,6 +4,8 @@ import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
 
 import java.util.Arrays;
 
@@ -11,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation")
 public class CustomVariablesTest {
 
     @Test
@@ -83,6 +86,23 @@ public class CustomVariablesTest {
                 "{\"test\":[\"1\",\"2\"]}",
                 cv.toString()
         );
-
     }
+
+    @Test
+    public void testInject() throws Exception {
+        CustomVariables cv = new CustomVariables();
+        cv.put(1, "name", "value");
+        TrackMe trackMe = new TrackMe();
+        cv.inject(trackMe);
+        assertEquals(cv.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+    }
+
+    @Test
+    public void testToTrackMe() throws Exception {
+        CustomVariables cv = new CustomVariables();
+        cv.put(1, "name", "value");
+        TrackMe trackMe = cv.toTrackMe();
+        assertEquals(cv.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+    }
+
 }

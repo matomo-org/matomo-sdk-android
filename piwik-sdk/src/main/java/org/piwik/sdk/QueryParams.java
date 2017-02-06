@@ -74,7 +74,10 @@ public enum QueryParams {
     /**
      * Visit scope <a href="http://piwik.org/docs/custom-variables/">custom variables</a>.<p>
      * This is a JSON encoded string of the custom variable array.
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     * @see org.piwik.sdk.extra.CustomDimension
      */
+    @Deprecated
     VISIT_SCOPE_CUSTOM_VARIABLES("_cvar"),
     /**
      * The current count of visits for this visitor.<p>
@@ -151,6 +154,8 @@ public enum QueryParams {
     /**
      * Page scope <a href="http://piwik.org/docs/custom-variables/">custom variables</a>.
      * This is a JSON encoded string of the custom variable array.
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     * @see org.piwik.sdk.extra.CustomDimension
      */
     SCREEN_SCOPE_CUSTOM_VARIABLES("cvar"),
     /**
