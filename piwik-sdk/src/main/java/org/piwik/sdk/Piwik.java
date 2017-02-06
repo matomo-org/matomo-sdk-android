@@ -54,7 +54,7 @@ public class Piwik {
      * @return Tracker object
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public synchronized Tracker newTracker(@NonNull String url, int siteId, String name) throws MalformedURLException {
+    public synchronized Tracker newTracker(@NonNull String url, int siteId, String name) {
         URL trackerUrl;
         try {
             if (url.endsWith("piwik.php") || url.endsWith("piwik-proxy.php")) {
