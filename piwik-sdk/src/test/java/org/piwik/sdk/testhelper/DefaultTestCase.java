@@ -16,7 +16,6 @@ public abstract class DefaultTestCase {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         final Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId(), "Default Tracker");
         tracker.getPreferences().edit().clear().apply();
-        tracker.setOptOut(true);
         return tracker;
     }
 

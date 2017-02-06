@@ -486,8 +486,8 @@ public class Tracker {
 
         injectBaseParams(trackMe);
 
+        mLastEvent = trackMe;
         if (mOptOut) {
-            mLastEvent = trackMe;
             Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
         } else {
             mDispatcher.submit(trackMe);
