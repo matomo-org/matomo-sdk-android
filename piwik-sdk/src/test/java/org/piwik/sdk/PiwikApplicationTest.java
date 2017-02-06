@@ -6,12 +6,16 @@ import android.os.Build;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.QueryHashMap;
 import org.piwik.sdk.testhelper.TestActivity;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 
@@ -22,9 +26,8 @@ public class PiwikApplicationTest extends DefaultTestCase {
     @Test
     public void testPiwikAutoBindActivities() throws Exception {
         Application app = Robolectric.application;
-        Piwik piwik = Piwik.getInstance(app);
         Tracker tracker = createTracker();
-        tracker.setOptOut(true);
+        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         //auto attach tracking screen view
         TrackHelper.track().screens(app).with(tracker);
 

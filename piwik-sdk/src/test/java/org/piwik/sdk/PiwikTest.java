@@ -67,9 +67,16 @@ public class PiwikTest {
     public void testLowMemoryDispatch() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         Tracker tracker = app.getTracker();
-        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         assertNotNull(tracker);
+        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         tracker.setDispatchInterval(-1);
+
+        tracker.track(TrackHelper.track().screen("test").build());
+        tracker.dispatch();
+        Thread.sleep(50);
+        assertFalse(tracker.getDryRunTarget().isEmpty());
+        tracker.getDryRunTarget().clear();
+
         tracker.track(TrackHelper.track().screen("test").build());
         Thread.sleep(50);
         assertTrue(tracker.getDryRunTarget().isEmpty());
