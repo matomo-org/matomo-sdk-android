@@ -1,4 +1,4 @@
-package org.piwik.sdk.plugins;
+package org.piwik.sdk.extra;
 
 import org.junit.Test;
 

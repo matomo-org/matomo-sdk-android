@@ -14,6 +14,7 @@ import org.mockito.stubbing.Answer;
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.testhelper.TestPreferences;
 import org.piwik.sdk.tools.DeviceHelper;
 

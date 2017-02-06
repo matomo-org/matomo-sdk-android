@@ -5,10 +5,11 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.piwik.sdk.Piwik;
 
 import java.util.Arrays;
 import java.util.Map;

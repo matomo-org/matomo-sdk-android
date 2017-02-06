@@ -7,9 +7,9 @@
 
 package com.piwik.demo;
 
-import org.piwik.sdk.DownloadTracker;
-import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackHelper;
+import org.piwik.sdk.extra.DownloadTracker;
+import org.piwik.sdk.extra.PiwikApplication;
+import org.piwik.sdk.extra.TrackHelper;
 
 import timber.log.Timber;
 

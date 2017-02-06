@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk.ecommerce;
+package org.piwik.sdk.extra;
 
 import org.json.JSONArray;
 import org.piwik.sdk.tools.CurrencyFormatter;

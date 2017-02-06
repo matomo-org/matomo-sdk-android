@@ -1,11 +1,15 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.annotation.TargetApi;
 import android.app.Application;
 import android.os.Build;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
@@ -46,6 +50,6 @@ public class PiwikApplicationTest extends DefaultTestCase {
     @Test
     public void testPiwikApplicationgetPiwik() throws Exception {
         PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
-        assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
+        Assert.assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
     }
 }

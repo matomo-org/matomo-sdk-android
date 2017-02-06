@@ -14,6 +14,7 @@ import android.support.annotation.VisibleForTesting;
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.extra.CustomVariables;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -36,7 +37,7 @@ import static android.content.ContentValues.TAG;
  * This class is threadsafe.
  */
 public class Tracker {
-    protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
 
     // Piwik default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";

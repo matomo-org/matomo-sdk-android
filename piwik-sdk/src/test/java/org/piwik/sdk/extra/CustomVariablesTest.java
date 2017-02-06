@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;

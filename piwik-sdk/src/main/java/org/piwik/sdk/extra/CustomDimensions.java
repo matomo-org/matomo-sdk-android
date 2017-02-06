@@ -1,4 +1,4 @@
-package org.piwik.sdk.plugins;
+package org.piwik.sdk.extra;
 
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.TrackMe;
