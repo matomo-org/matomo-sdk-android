@@ -13,8 +13,6 @@ import android.os.Build;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
 
-import java.net.MalformedURLException;
-
 public abstract class PiwikApplication extends Application {
     private Tracker mPiwikTracker;
 
@@ -28,14 +26,7 @@ public abstract class PiwikApplication extends Application {
      * @return a shared Tracker
      */
     public synchronized Tracker getTracker() {
-        if (mPiwikTracker == null) {
-            try {
-                mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId(), "Default Tracker");
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Tracker URL was malformed.");
-            }
-        }
+        if (mPiwikTracker == null) mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId(), "Default Tracker");
         return mPiwikTracker;
     }
 
