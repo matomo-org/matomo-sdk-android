@@ -24,10 +24,11 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import timber.log.Timber;
+
+import static android.content.ContentValues.TAG;
 
 
 /**
@@ -109,8 +110,7 @@ public class Tracker {
 
         String resolution = DEFAULT_UNKNOWN_VALUE;
         int[] res = mPiwik.getDeviceHelper().getResolution();
-        if (res != null)
-            resolution = String.format("%sx%s", res[0], res[1]);
+        if (res != null) resolution = String.format("%sx%s", res[0], res[1]);
         mDefaultTrackMe.set(QueryParams.SCREEN_RESOLUTION, resolution);
 
         mDefaultTrackMe.set(QueryParams.USER_AGENT, mPiwik.getDeviceHelper().getUserAgent());
@@ -350,8 +350,7 @@ public class Tracker {
      * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
      */
     public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
-        if (confirmVisitorIdFormat(visitorId))
-            mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
+        if (confirmVisitorIdFormat(visitorId)) mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
         return this;
     }
 
@@ -362,10 +361,8 @@ public class Tracker {
     private static final Pattern PATTERN_VISITOR_ID = Pattern.compile("^[0-9a-f]{16}$");
 
     private boolean confirmVisitorIdFormat(String visitorId) throws IllegalArgumentException {
-        Matcher visitorIdMatcher = PATTERN_VISITOR_ID.matcher(visitorId);
-        if (visitorIdMatcher.matches()) {
-            return true;
-        }
+        if (PATTERN_VISITOR_ID.matcher(visitorId).matches()) return true;
+
         throw new IllegalArgumentException("VisitorId: " + visitorId + " is not of valid format, " +
                 " the format must match the regular expression: " + PATTERN_VISITOR_ID.pattern());
     }
@@ -417,8 +414,8 @@ public class Tracker {
         // trySet because the developer could have modded these after creating the Tracker
         mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
         mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
-        if (previousVisit != -1)
-            mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+
+        if (previousVisit != -1) mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
 
         trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
         trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
@@ -470,29 +467,24 @@ public class Tracker {
         boolean newSession;
         synchronized (mSessionLock) {
             newSession = tryNewSession();
-            if (newSession)
-                mSessionStartLatch = new CountDownLatch(1);
+            if (newSession) mSessionStartLatch = new CountDownLatch(1);
         }
         if (newSession) {
             injectInitialParams(trackMe);
         } else {
             try {
-                // Another thread is currently creating a sessions first transmission, wait until it's done.
+                // Another thread might be creating a sessions first transmission.
                 mSessionStartLatch.await(getDispatchTimeout(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            } catch (InterruptedException e) { Timber.tag(TAG).e(e, null); }
         }
 
         injectBaseParams(trackMe);
 
         mLastEvent = trackMe;
-        if (mOptOut) {
-            Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
-        } else {
+        if (!mOptOut) {
             mDispatcher.submit(trackMe);
             Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
-        }
+        } else Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
 
         // we did a first transmission, let the other through.
         if (newSession) mSessionStartLatch.countDown();

@@ -37,17 +37,18 @@ public class Dispatcher {
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
     private final Connectivity mConnectivity;
-
-    private List<Packet> mDryRunTarget = null;
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
-    private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
-    private volatile boolean mRunning = false;
-
-    public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
-    private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
-    private boolean mDispatchGzipped = false;
     private final PacketFactory mPacketFactory;
+
+    static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
+    private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
+
+    static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
+    private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
+
+    private boolean mDispatchGzipped = false;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile boolean mRunning = false;
+    private List<Packet> mDryRunTarget = null;
 
     public Dispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory) {
         mConnectivity = connectivity;

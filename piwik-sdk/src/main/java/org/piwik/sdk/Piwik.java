@@ -34,8 +34,7 @@ public class Piwik {
     private SharedPreferences mBasePreferences;
 
     public static synchronized Piwik getInstance(Context context) {
-        if (sInstance == null)
-            sInstance = new Piwik(context);
+        if (sInstance == null) sInstance = new Piwik(context);
         return sInstance;
     }
 
@@ -61,9 +60,7 @@ public class Piwik {
             if (url.endsWith("piwik.php") || url.endsWith("piwik-proxy.php")) {
                 trackerUrl = new URL(url);
             } else {
-                if (!url.endsWith("/")) {
-                    url += "/";
-                }
+                if (!url.endsWith("/")) url += "/";
                 trackerUrl = new URL(url + "piwik.php");
             }
         } catch (MalformedURLException e) { throw new RuntimeException(e); }

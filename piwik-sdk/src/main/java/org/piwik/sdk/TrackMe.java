@@ -20,18 +20,15 @@ public class TrackMe {
     private static final int DEFAULT_QUERY_CAPACITY = 14;
     private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
 
-    public TrackMe() {
-    }
+    public TrackMe() { }
 
     public TrackMe(TrackMe trackMe) {
         mQueryParams.putAll(trackMe.mQueryParams);
     }
 
     protected synchronized TrackMe set(@NonNull String key, String value) {
-        if (value == null)
-            mQueryParams.remove(key);
-        else if (value.length() > 0)
-            mQueryParams.put(key, value);
+        if (value == null) mQueryParams.remove(key);
+        else if (value.length() > 0) mQueryParams.put(key, value);
         return this;
     }
 
@@ -106,8 +103,7 @@ public class TrackMe {
      * @return this (for chaining)
      */
     public synchronized TrackMe trySet(@NonNull QueryParams key, String value) {
-        if (!has(key))
-            set(key, value);
+        if (!has(key)) set(key, value);
         return this;
     }
 
