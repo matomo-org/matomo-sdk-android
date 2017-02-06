@@ -10,11 +10,27 @@ import org.piwik.sdk.TrackMe;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("deprecation")
 public class CustomVariablesTest {
+
+    @Test
+    public void testPutAll() throws Exception {
+        CustomVariables target = new CustomVariables();
+        target.put(1, "name1", "value1");
+        target.put(2, "name2", "value2");
+
+        CustomVariables toPut = new CustomVariables();
+        target.put(2, "name2X", "value2X");
+        target.put(3, "name3", "value3");
+
+        target.putAll(toPut);
+
+        assertTrue(target.toString().contains("\"1\":[\"name1\",\"value1\"]"));
+        assertTrue(target.toString().contains("\"2\":[\"name2X\",\"value2X\"]"));
+        assertTrue(target.toString().contains("\"3\":[\"name3\",\"value3\"]"));
+    }
 
     @Test
     public void testInherit() throws Exception {
@@ -78,10 +94,10 @@ public class CustomVariablesTest {
     @Test
     public void testWrongValueSize() throws Exception {
         CustomVariables cv = new CustomVariables();
-
-        assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2", "3"))));
+        cv.put("test", new JSONArray(Arrays.asList("1", "2", "3")));
+        assertEquals(0, cv.size());
         assertEquals(null, cv.toString());
-        assertNull(cv.put("test", new JSONArray(Arrays.asList("1", "2"))));
+        cv.put("test", new JSONArray(Arrays.asList("1", "2")));
         assertEquals(
                 "{\"test\":[\"1\",\"2\"]}",
                 cv.toString()

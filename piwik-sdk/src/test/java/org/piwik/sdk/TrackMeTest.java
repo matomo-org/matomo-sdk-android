@@ -29,6 +29,26 @@ public class TrackMeTest {
     }
 
     @Test
+    public void testAdd_overwrite() {
+        TrackMe a = new TrackMe();
+        a.set(QueryParams.URL_PATH, "pathA");
+        a.set(QueryParams.EVENT_NAME, "name");
+        TrackMe b = new TrackMe();
+        b.set(QueryParams.URL_PATH, "pathB");
+        a.putAll(b);
+        assertEquals("pathB", a.get(QueryParams.URL_PATH));
+        assertEquals("pathB", b.get(QueryParams.URL_PATH));
+        assertEquals("name", a.get(QueryParams.EVENT_NAME));
+
+        b.putAll(a);
+        assertEquals("pathB", a.get(QueryParams.URL_PATH));
+        assertEquals("pathB", b.get(QueryParams.URL_PATH));
+        assertEquals("name", a.get(QueryParams.EVENT_NAME));
+        assertEquals("name", b.get(QueryParams.EVENT_NAME));
+
+    }
+
+    @Test
     public void testSet() throws Exception {
         TrackMe trackMe = new TrackMe();
         trackMe.set(QueryParams.HOURS, "String");

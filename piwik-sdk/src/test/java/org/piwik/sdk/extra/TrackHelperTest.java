@@ -116,32 +116,53 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testVisitCustomVariables_singles() throws Exception {
-        CustomVariables _testHelp = new CustomVariables();
-        _testHelp.put(1, "visit1", "A");
-        _testHelp.put(2, "visit2", "B");
+    public void testVisitCustomVariables_merge_base() throws Exception {
+        CustomVariables varsA = new CustomVariables().put(1, "visit1", "A");
+        CustomVariables varsB = new CustomVariables().put(2, "visit2", "B");
+        CustomVariables combined = new CustomVariables().put(1, "visit1", "A").put(2, "visit2", "B");
+
+        TrackHelper.track(varsA.toVisitVariables())
+                .visitVariables(varsB)
+                .screen("/path")
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals(combined.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
+    }
+
+    @Test
+    public void testVisitCustomVariables_merge_singles() throws Exception {
+        CustomVariables varsA = new CustomVariables().put(1, "visit1", "A");
+        CustomVariables varsB = new CustomVariables().put(2, "visit2", "B");
+        CustomVariables combined = new CustomVariables().put(1, "visit1", "A").put(2, "visit2", "B");
+
+        TrackHelper.track()
+                .visitVariables(varsA)
+                .visitVariables(varsB)
+                .screen("/path")
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals(combined.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
+    }
+
+    @Test
+    public void testVisitCustomVariables_add() throws Exception {
+        CustomVariables _vars = new CustomVariables();
+        _vars.put(1, "visit1", "A");
+        _vars.put(2, "visit2", "B");
 
         TrackHelper.track()
                 .visitVariables(1, "visit1", "A")
                 .visitVariables(2, "visit2", "B")
+                .screen("/path")
                 .with(mTracker);
 
         verify(mTracker).track(mCaptor.capture());
-        assertEquals(_testHelp.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
-    }
-
-    @Test
-    public void testVisitCustomVariables_whole() throws Exception {
-        CustomVariables vars = new CustomVariables();
-        vars.put(1, "visit1", "A");
-        vars.put(2, "visit2", "B");
-
-        TrackHelper.track()
-                .visitVariables(vars)
-                .with(mTracker);
-
-        verify(mTracker).track(mCaptor.capture());
-        assertEquals(vars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals(_vars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 
     @Test
@@ -178,19 +199,10 @@ public class TrackHelperTest {
         TrackHelper.track()
                 .dimension(1, "visit")
                 .dimension(2, "screen")
-                .with(mTracker);
-
-        verify(mTracker).track(mCaptor.capture());
-        assertEquals("visit", CustomDimension.getDimension(mCaptor.getValue(), 1));
-        assertEquals("screen", CustomDimension.getDimension(mCaptor.getValue(), 2));
-
-        TrackHelper.track()
-                .dimension(1, "visit")
-                .dimension(2, "screen")
                 .event("category", "action")
                 .with(mTracker);
 
-        verify(mTracker, times(2)).track(mCaptor.capture());
+        verify(mTracker).track(mCaptor.capture());
         assertEquals("visit", CustomDimension.getDimension(mCaptor.getValue(), 1));
         assertEquals("screen", CustomDimension.getDimension(mCaptor.getValue(), 2));
         assertEquals("category", mCaptor.getValue().get(QueryParams.EVENT_CATEGORY));

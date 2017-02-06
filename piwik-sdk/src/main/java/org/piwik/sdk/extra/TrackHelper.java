@@ -833,15 +833,12 @@ public class TrackHelper {
             CustomDimension.setDimension(mBaseTrackMe, id, value);
             return this;
         }
-
-        public void with(@NonNull Tracker tracker) {
-            tracker.track(mBaseTrackMe);
-        }
     }
 
 
     /**
      * To track visit scoped custom variables.
+     *
      * @see CustomVariables#put(int, String, String)
      * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
      */
@@ -862,27 +859,24 @@ public class TrackHelper {
         return new VisitVariables(this, customVariables);
     }
 
-    public static class VisitVariables extends BaseEvent {
-        private final CustomVariables mCustomVariables;
+    @SuppressWarnings("deprecation")
+    public static class VisitVariables extends TrackHelper {
 
         public VisitVariables(TrackHelper baseBuilder, CustomVariables customVariables) {
-            super(baseBuilder);
-            mCustomVariables = customVariables;
+            super(baseBuilder.mBaseTrackMe);
+            CustomVariables mergedVariables = new CustomVariables(mBaseTrackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+            mergedVariables.putAll(customVariables);
+            mBaseTrackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mergedVariables.toString());
         }
 
         /**
          * @see CustomVariables#put(int, String, String)
          */
         public VisitVariables visitVariables(int id, String name, String value) {
-            mCustomVariables.put(id, name, value);
+            CustomVariables customVariables = new CustomVariables(mBaseTrackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+            customVariables.put(id, name, value);
+            mBaseTrackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, customVariables.toString());
             return this;
-        }
-
-        @Nullable
-        @Override
-        public TrackMe build() {
-            //noinspection deprecation
-            return new TrackMe(getBaseTrackMe()).set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString());
         }
     }
 }

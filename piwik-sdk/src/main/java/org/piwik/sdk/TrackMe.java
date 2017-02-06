@@ -28,6 +28,14 @@ public class TrackMe {
     }
 
     /**
+     * Adds TrackMe to this TrackMe, overriding values if necessary.
+     */
+    public TrackMe putAll(@NonNull TrackMe trackMe) {
+        mQueryParams.putAll(trackMe.toMap());
+        return this;
+    }
+
+    /**
      * Consider using {@link QueryParams} instead of raw strings
      */
     public synchronized TrackMe set(@NonNull String key, String value) {
