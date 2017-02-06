@@ -117,21 +117,17 @@ public class TrackHelperTest {
 
     @Test
     public void testVisitCustomVariables() throws Exception {
-        CustomVariables visitVars = new CustomVariables();
-        visitVars.put(1, "visit", "valueX");
+        CustomVariables _testHelp = new CustomVariables();
+        _testHelp.put(1, "visit1", "A");
+        _testHelp.put(2, "visit2", "B");
 
-        CustomVariables _screen = new CustomVariables();
-        _screen.put(1, "screen", "valueY");
-
-        TrackHelper.track(visitVars.toVisitVariables())
-                .screen("/path")
-                .variable(1, "screen", "valueY")
+        TrackHelper.track()
+                .visitVariables(1, "visit1", "A")
+                .visitVariables(2, "visit2", "B")
                 .with(mTracker);
 
         verify(mTracker).track(mCaptor.capture());
-        assertEquals(visitVars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
-        assertEquals(_screen.toString(), mCaptor.getValue().get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
-        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
+        assertEquals(_testHelp.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 
     @Test

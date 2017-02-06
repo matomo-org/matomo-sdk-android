@@ -105,4 +105,22 @@ public class CustomVariablesTest {
         assertEquals(cv.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 
+    @Test
+    public void testVisitCustomVariables() throws Exception {
+        CustomVariables visitVars = new CustomVariables();
+        visitVars.put(1, "visit", "valueX");
+
+        CustomVariables _screen = new CustomVariables();
+        _screen.put(1, "screen", "valueY");
+
+        final TrackMe trackMe = TrackHelper.track(visitVars.toVisitVariables())
+                .screen("/path")
+                .variable(1, "screen", "valueY")
+                .build();
+
+        assertEquals(visitVars.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals(_screen.toString(), trackMe.get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", trackMe.get(QueryParams.URL_PATH));
+    }
+
 }
