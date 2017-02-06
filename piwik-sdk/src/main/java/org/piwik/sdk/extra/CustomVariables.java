@@ -7,9 +7,13 @@
 
 package org.piwik.sdk.extra;
 
+import android.support.annotation.NonNull;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -18,6 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import timber.log.Timber;
 
 /**
+ * A custom variable is a custom name-value pair that you can assign to your users or screen views,
+ * and then visualize the reports of how many visits, conversions, etc. for each custom variable.
+ * A custom variable is defined by a name — for example,
+ * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
+ * <p>
  * You can track up to 5 custom variables for each user to your app,
  * and up to 5 custom variables for each screen view.
  * You may configure Piwik to track more custom variables: http://piwik.org/faq/how-to/faq_17931/
@@ -94,6 +103,24 @@ public class CustomVariables {
     public String toString() {
         JSONObject json = new JSONObject(mVars);
         return json.length() > 0 ? json.toString() : null;
+    }
+
+    public int size() {
+        return mVars.size();
+    }
+
+    /**
+     * Sets the custom variables with scope VISIT to a {@link TrackMe}.
+     */
+    public TrackMe inject(@NonNull TrackMe trackMe) {
+        //noinspection deprecation
+        trackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.toString());
+        return trackMe;
+    }
+
+    @NonNull
+    public TrackMe toTrackMe() {
+        return inject(new TrackMe());
     }
 
 }

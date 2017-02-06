@@ -14,7 +14,6 @@ import android.support.annotation.VisibleForTesting;
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Packet;
-import org.piwik.sdk.extra.CustomVariables;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -67,7 +66,6 @@ public class Tracker {
      */
     private final int mSiteId;
     private final Object mSessionLock = new Object();
-    private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
     private final String mName;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
@@ -441,8 +439,6 @@ public class Tracker {
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
         trackMe.trySet(QueryParams.USER_ID, mDefaultTrackMe.get(QueryParams.USER_ID));
 
-        trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
-
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
             urlPath = mDefaultTrackMe.get(QueryParams.URL_PATH);
@@ -497,25 +493,6 @@ public class Tracker {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
-    /**
-     * A custom variable is a custom name-value pair that you can assign to your users or screen views,
-     * and then visualize the reports of how many visits, conversions, etc. for each custom variable.
-     * A custom variable is defined by a name — for example,
-     * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
-     * You can track up to 5 custom variables for each user to your app.
-     *
-     * @param index this Integer accepts values from 1 to 5.
-     *              A given custom variable name must always be stored in the same "index" per session.
-     *              For example, if you choose to store the variable name = "Gender" in
-     *              index = 1 and you record another custom variable in index = 1, then the
-     *              "Gender" variable will be deleted and replaced with the new custom variable stored in index 1.
-     * @param name  String defines the name of a specific Custom Variable such as "User type".
-     * @param value String defines the value of a specific Custom Variable such as "Customer".
-     */
-    public Tracker setVisitCustomVariable(int index, String name, String value) {
-        mVisitCustomVariable.put(index, name, value);
-        return this;
-    }
 
     public SharedPreferences getPreferences() {
         if (mPreferences == null) mPreferences = mPiwik.getTrackerPreferences(this);

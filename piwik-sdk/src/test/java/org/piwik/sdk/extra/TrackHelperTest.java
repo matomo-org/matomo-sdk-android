@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.piwik.sdk.extra.TrackHelper.track;
 
 
+@SuppressWarnings("deprecation")
 public class TrackHelperTest {
     ArgumentCaptor<TrackMe> mCaptor = ArgumentCaptor.forClass(TrackMe.class);
     @Mock Tracker mTracker;
@@ -123,6 +124,24 @@ public class TrackHelperTest {
 
         verify(mTracker).track(mCaptor.capture());
         assertEquals("{'1':['2','3']}".replaceAll("'", "\""), mCaptor.getValue().get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
+    }
+
+    @Test
+    public void testSetScreenCustomDimension() throws Exception {
+        track()
+                .screen("")
+                .dimension(1, "dim1")
+                .dimension(2, "dim2")
+                .dimension(3, "dim3")
+                .dimension(3, null)
+                .dimension(4, null)
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals("dim1", CustomDimension.getDimension(mCaptor.getValue(), 1));
+        assertEquals("dim2", CustomDimension.getDimension(mCaptor.getValue(), 2));
+        assertNull(CustomDimension.getDimension(mCaptor.getValue(), 3));
+        assertNull(CustomDimension.getDimension(mCaptor.getValue(), 4));
     }
 
     @Test
@@ -338,5 +357,20 @@ public class TrackHelperTest {
             exception = true;
         }
         assertTrue(exception);
+    }
+
+    @Test
+    public void testWithCustomVariables() throws Exception {
+        CustomVariables visitVars = new CustomVariables();
+        visitVars.put(1, "visit", "valueX");
+
+        CustomVariables screenVars = new CustomVariables();
+        screenVars.put(1, "screen", "valueY");
+
+        TrackHelper.track(visitVars.toTrackMe()).screen("/path").variable(1, "screen", "valueY").with(mTracker);
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals(visitVars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals(screenVars.toString(), mCaptor.getValue().get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 }

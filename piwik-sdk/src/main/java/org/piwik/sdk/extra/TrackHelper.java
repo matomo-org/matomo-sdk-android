@@ -17,6 +17,8 @@ import org.piwik.sdk.tools.ActivityHelper;
 import org.piwik.sdk.tools.CurrencyFormatter;
 
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import timber.log.Timber;
 
@@ -90,6 +92,7 @@ public class TrackHelper {
     public static class Screen extends BaseEvent {
         private final String mPath;
         private final CustomVariables mCustomVariables = new CustomVariables();
+        private final Map<Integer, String> mCustomDimensions = new HashMap<>();
         private String mTitle;
 
         Screen(TrackHelper baseBuilder, String path) {
@@ -109,9 +112,24 @@ public class TrackHelper {
         }
 
         /**
-         * Just like {@link Tracker#setVisitCustomVariable(int, String, String)} but only valid per screen.
-         * Only takes effect when setting prior to tracking the screen view.
+         * Requires <a href="https://plugins.piwik.org/CustomDimensions">Custom Dimensions</a> plugin (server-side)
+         *
+         * @param index          accepts values greater than 0
+         * @param dimensionValue is limited to 255 characters, you can pass null to delete a value
          */
+        public Screen dimension(int index, String dimensionValue) {
+            mCustomDimensions.put(index, dimensionValue);
+            return this;
+        }
+
+        /**
+         * Custom Variable valid per screen.
+         * Only takes effect when setting prior to tracking the screen view.
+         *
+         * @see org.piwik.sdk.extra.CustomDimension and {@link #dimension(int, String)}
+         * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+         */
+        @Deprecated
         public Screen variable(int index, String name, String value) {
             mCustomVariables.put(index, name, value);
             return this;
@@ -121,10 +139,17 @@ public class TrackHelper {
         @Override
         public TrackMe build() {
             if (mPath == null) return null;
-            return new TrackMe(getBaseTrackMe())
-                    .set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString())
+            final TrackMe trackMe = new TrackMe(getBaseTrackMe())
                     .set(QueryParams.URL_PATH, mPath)
                     .set(QueryParams.ACTION_NAME, mTitle);
+            if (mCustomVariables.size() > 0) {
+                //noinspection deprecation
+                trackMe.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString());
+            }
+            for (Map.Entry<Integer, String> entry : mCustomDimensions.entrySet()) {
+                CustomDimension.setDimension(trackMe, entry.getKey(), entry.getValue());
+            }
+            return trackMe;
         }
     }
 

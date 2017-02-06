@@ -303,14 +303,6 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetVisitCustomVariable() throws Exception {
-        mTracker.setVisitCustomVariable(1, "2& ?", "3@#");
-        TrackHelper.track().screen("").with(mTracker);
-        verify(mDispatcher).submit(mCaptor.capture());
-        assertEquals("{'1':['2& ?','3@#']}".replaceAll("'", "\""), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
-    }
-
-    @Test
     public void testSetNewSession() throws Exception {
         TrackMe trackMe = new TrackMe();
         mTracker.track(trackMe);
