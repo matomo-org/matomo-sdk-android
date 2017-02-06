@@ -4,8 +4,8 @@ def gitSha() {
 
 apply plugin: 'com.android.library'
 
-def versionMajor = 1
-def versionMinor = 1
+def versionMajor = 2
+def versionMinor = 0
 def versionPatch = 0
 def myVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
