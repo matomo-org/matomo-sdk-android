@@ -8,18 +8,23 @@
 package org.piwik.sdk.extra;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import timber.log.Timber;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * A custom variable is a custom name-value pair that you can assign to your users or screen views,
@@ -50,8 +55,26 @@ public class CustomVariables {
 
     }
 
-    public CustomVariables(CustomVariables variables) {
+    public CustomVariables(@NonNull CustomVariables variables) {
         mVars.putAll(variables.mVars);
+    }
+
+    public CustomVariables(@Nullable String json) {
+        if (json != null) {
+            try {
+                JSONObject jsonObject = new JSONObject(json);
+                final Iterator<String> it = jsonObject.keys();
+                while (it.hasNext()) {
+                    String key = it.next();
+                    put(key, jsonObject.getJSONArray(key));
+                }
+            } catch (JSONException e) {Timber.tag(TAG).e(e, "Failed to create CustomVariables from JSON");}
+        }
+    }
+
+    public CustomVariables putAll(CustomVariables customVariables) {
+        mVars.putAll(customVariables.mVars);
+        return this;
     }
 
     /**
@@ -68,7 +91,7 @@ public class CustomVariables {
      * @param value of a specific Custom Variable such as "Customer".
      * @return super.put result if index in right range and name/value pair aren't null
      */
-    public JSONArray put(int index, String name, String value) {
+    public CustomVariables put(int index, String name, String value) {
         if (index > 0 && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) {
@@ -81,10 +104,9 @@ public class CustomVariables {
                 value = value.substring(0, MAX_LENGTH);
             }
 
-            return put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
-        }
-        Timber.tag(LOGGER_TAG).w("Index is out of range or name/value is null");
-        return null;
+            put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
+        } else Timber.tag(LOGGER_TAG).w("Index is out of range or name/value is null");
+        return this;
     }
 
     /**
@@ -92,12 +114,11 @@ public class CustomVariables {
      * @param values packed key/value pair
      * @return super.put result or null if key is null or value length is not equals 2
      */
-    public JSONArray put(String index, JSONArray values) {
-        if (values.length() != 2 || index == null) {
-            Timber.tag(LOGGER_TAG).w("values.length() should be equal 2");
-            return null;
-        }
-        return mVars.put(index, values);
+    public CustomVariables put(String index, JSONArray values) {
+        if (values.length() == 2 && index != null) {
+            mVars.put(index, values);
+        } else Timber.tag(LOGGER_TAG).w("values.length() should be equal 2");
+        return this;
     }
 
     public String toString() {
@@ -122,5 +143,4 @@ public class CustomVariables {
     public TrackMe toVisitVariables() {
         return injectVisitVariables(new TrackMe());
     }
-
 }
