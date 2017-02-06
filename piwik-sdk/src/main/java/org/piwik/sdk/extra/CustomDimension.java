@@ -17,9 +17,6 @@ import timber.log.Timber;
 public class CustomDimension {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomDimension";
 
-    private CustomDimension() {
-    }
-
     /**
      * This method sets a tracking API parameter dimension%dimensionId%=%dimensionValue%.
      * Eg dimension1=foo or dimension2=bar.

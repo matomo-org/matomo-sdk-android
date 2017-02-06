@@ -93,7 +93,7 @@ public class CustomVariablesTest {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
         TrackMe trackMe = new TrackMe();
-        cv.inject(trackMe);
+        cv.injectVisitVariables(trackMe);
         assertEquals(cv.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 
@@ -101,7 +101,7 @@ public class CustomVariablesTest {
     public void testToTrackMe() throws Exception {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
-        TrackMe trackMe = cv.toTrackMe();
+        TrackMe trackMe = cv.toVisitVariables();
         assertEquals(cv.toString(), trackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 

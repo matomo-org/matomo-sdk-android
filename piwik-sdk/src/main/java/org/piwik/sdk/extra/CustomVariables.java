@@ -112,15 +112,15 @@ public class CustomVariables {
     /**
      * Sets the custom variables with scope VISIT to a {@link TrackMe}.
      */
-    public TrackMe inject(@NonNull TrackMe trackMe) {
+    public TrackMe injectVisitVariables(@NonNull TrackMe trackMe) {
         //noinspection deprecation
         trackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, this.toString());
         return trackMe;
     }
 
     @NonNull
-    public TrackMe toTrackMe() {
-        return inject(new TrackMe());
+    public TrackMe toVisitVariables() {
+        return injectVisitVariables(new TrackMe());
     }
 
 }
