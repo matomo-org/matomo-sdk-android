@@ -7,6 +7,8 @@
 
 package com.piwik.demo;
 
+import android.os.StrictMode;
+
 import org.piwik.sdk.extra.DownloadTracker;
 import org.piwik.sdk.extra.PiwikApplication;
 import org.piwik.sdk.extra.TrackHelper;
@@ -28,6 +30,10 @@ public class DemoApp extends PiwikApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build());
         initPiwik();
     }
 
