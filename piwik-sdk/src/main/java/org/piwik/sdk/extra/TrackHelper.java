@@ -838,4 +838,35 @@ public class TrackHelper {
             tracker.track(mBaseTrackMe);
         }
     }
+
+
+    /**
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     */
+    @Deprecated
+    public VisitVariables visitVariables(int id, String name, String value) {
+        return new VisitVariables(this, id, name, value);
+    }
+
+    public static class VisitVariables extends BaseEvent {
+
+        private final CustomVariables mCustomVariables = new CustomVariables();
+
+        public VisitVariables(TrackHelper baseBuilder, int id, String name, String value) {
+            super(baseBuilder);
+            mCustomVariables.put(id, name, value);
+        }
+
+        public VisitVariables visitVariables(int id, String name, String value) {
+            mCustomVariables.put(id, name, value);
+            return this;
+        }
+
+        @Nullable
+        @Override
+        public TrackMe build() {
+            //noinspection deprecation
+            return new TrackMe(getBaseTrackMe()).set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString());
+        }
+    }
 }
