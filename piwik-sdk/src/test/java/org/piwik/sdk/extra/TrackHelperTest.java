@@ -116,7 +116,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testVisitCustomVariables() throws Exception {
+    public void testVisitCustomVariables_singles() throws Exception {
         CustomVariables _testHelp = new CustomVariables();
         _testHelp.put(1, "visit1", "A");
         _testHelp.put(2, "visit2", "B");
@@ -128,6 +128,20 @@ public class TrackHelperTest {
 
         verify(mTracker).track(mCaptor.capture());
         assertEquals(_testHelp.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+    }
+
+    @Test
+    public void testVisitCustomVariables_whole() throws Exception {
+        CustomVariables vars = new CustomVariables();
+        vars.put(1, "visit1", "A");
+        vars.put(2, "visit2", "B");
+
+        TrackHelper.track()
+                .visitVariables(vars)
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals(vars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
     }
 
     @Test

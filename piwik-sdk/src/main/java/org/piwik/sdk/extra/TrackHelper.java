@@ -841,22 +841,38 @@ public class TrackHelper {
 
 
     /**
+     * To track visit scoped custom variables.
+     * @see CustomVariables#put(int, String, String)
      * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
      */
     @Deprecated
     public VisitVariables visitVariables(int id, String name, String value) {
-        return new VisitVariables(this, id, name, value);
+        CustomVariables customVariables = new CustomVariables();
+        customVariables.put(id, name, value);
+        return visitVariables(customVariables);
+    }
+
+    /**
+     * To track visit scoped custom variables.
+     *
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     */
+    @Deprecated
+    public VisitVariables visitVariables(CustomVariables customVariables) {
+        return new VisitVariables(this, customVariables);
     }
 
     public static class VisitVariables extends BaseEvent {
+        private final CustomVariables mCustomVariables;
 
-        private final CustomVariables mCustomVariables = new CustomVariables();
-
-        public VisitVariables(TrackHelper baseBuilder, int id, String name, String value) {
+        public VisitVariables(TrackHelper baseBuilder, CustomVariables customVariables) {
             super(baseBuilder);
-            mCustomVariables.put(id, name, value);
+            mCustomVariables = customVariables;
         }
 
+        /**
+         * @see CustomVariables#put(int, String, String)
+         */
         public VisitVariables visitVariables(int id, String name, String value) {
             mCustomVariables.put(id, name, value);
             return this;
