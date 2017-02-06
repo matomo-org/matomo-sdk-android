@@ -24,7 +24,7 @@ import timber.log.Timber;
 
 public class TrackHelper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "TrackHelper";
-    private final TrackMe mBaseTrackMe;
+    protected final TrackMe mBaseTrackMe;
 
     private TrackHelper() {
         this(null);
@@ -815,6 +815,27 @@ public class TrackHelper {
             };
             mApplication.registerActivityLifecycleCallbacks(callback);
             return callback;
+        }
+    }
+
+    public Dimension dimension(int id, String value) {
+        return new Dimension(mBaseTrackMe).dimension(id, value);
+    }
+
+    public static class Dimension extends TrackHelper {
+
+        Dimension(TrackMe base) {
+            super(base);
+        }
+
+        @Override
+        public Dimension dimension(int id, String value) {
+            CustomDimension.setDimension(mBaseTrackMe, id, value);
+            return this;
+        }
+
+        public void with(@NonNull Tracker tracker) {
+            tracker.track(mBaseTrackMe);
         }
     }
 }

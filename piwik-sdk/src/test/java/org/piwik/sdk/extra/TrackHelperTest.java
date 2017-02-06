@@ -116,6 +116,25 @@ public class TrackHelperTest {
     }
 
     @Test
+    public void testVisitCustomVariables() throws Exception {
+        CustomVariables visitVars = new CustomVariables();
+        visitVars.put(1, "visit", "valueX");
+
+        CustomVariables _screen = new CustomVariables();
+        _screen.put(1, "screen", "valueY");
+
+        TrackHelper.track(visitVars.toVisitVariables())
+                .screen("/path")
+                .variable(1, "screen", "valueY")
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals(visitVars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertEquals(_screen.toString(), mCaptor.getValue().get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
+    }
+
+    @Test
     public void testSetScreenCustomVariable() throws Exception {
         track()
                 .screen("")
@@ -142,6 +161,45 @@ public class TrackHelperTest {
         assertEquals("dim2", CustomDimension.getDimension(mCaptor.getValue(), 2));
         assertNull(CustomDimension.getDimension(mCaptor.getValue(), 3));
         assertNull(CustomDimension.getDimension(mCaptor.getValue(), 4));
+    }
+
+    @Test
+    public void testCustomDimension_trackHelperAny() {
+        TrackHelper.track()
+                .dimension(1, "visit")
+                .dimension(2, "screen")
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertEquals("visit", CustomDimension.getDimension(mCaptor.getValue(), 1));
+        assertEquals("screen", CustomDimension.getDimension(mCaptor.getValue(), 2));
+
+        TrackHelper.track()
+                .dimension(1, "visit")
+                .dimension(2, "screen")
+                .event("category", "action")
+                .with(mTracker);
+
+        verify(mTracker, times(2)).track(mCaptor.capture());
+        assertEquals("visit", CustomDimension.getDimension(mCaptor.getValue(), 1));
+        assertEquals("screen", CustomDimension.getDimension(mCaptor.getValue(), 2));
+        assertEquals("category", mCaptor.getValue().get(QueryParams.EVENT_CATEGORY));
+        assertEquals("action", mCaptor.getValue().get(QueryParams.EVENT_ACTION));
+    }
+
+    @Test
+    public void testCustomDimension_override() {
+        TrackHelper.track()
+                .dimension(1, "visit")
+                .dimension(2, "screen")
+                .screen("/path")
+                .dimension(1, null)
+                .with(mTracker);
+
+        verify(mTracker).track(mCaptor.capture());
+        assertNull(CustomDimension.getDimension(mCaptor.getValue(), 1));
+        assertEquals("screen", CustomDimension.getDimension(mCaptor.getValue(), 2));
+        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 
     @Test
@@ -357,20 +415,5 @@ public class TrackHelperTest {
             exception = true;
         }
         assertTrue(exception);
-    }
-
-    @Test
-    public void testWithCustomVariables() throws Exception {
-        CustomVariables visitVars = new CustomVariables();
-        visitVars.put(1, "visit", "valueX");
-
-        CustomVariables screenVars = new CustomVariables();
-        screenVars.put(1, "screen", "valueY");
-
-        TrackHelper.track(visitVars.toTrackMe()).screen("/path").variable(1, "screen", "valueY").with(mTracker);
-        verify(mTracker).track(mCaptor.capture());
-        assertEquals(visitVars.toString(), mCaptor.getValue().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
-        assertEquals(screenVars.toString(), mCaptor.getValue().get(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES));
-        assertEquals("/path", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 }
