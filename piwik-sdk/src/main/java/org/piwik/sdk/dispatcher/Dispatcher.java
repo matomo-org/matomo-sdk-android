@@ -214,41 +214,45 @@ public class Dispatcher {
             return true;
         }
 
-        HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
-        urlConnection.setConnectTimeout(mTimeOut);
-        urlConnection.setReadTimeout(mTimeOut);
+        HttpURLConnection urlConnection = null;
+        try {
+            urlConnection = (HttpURLConnection) packet.openConnection();
+            urlConnection.setConnectTimeout(mTimeOut);
+            urlConnection.setReadTimeout(mTimeOut);
 
-        // IF there is json data we want to do a post
-        if (packet.getPostData() != null) {
-            // POST
-            urlConnection.setDoOutput(true); // Forces post
-            urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestProperty("charset", "utf-8");
+            // IF there is json data we want to do a post
+            if (packet.getPostData() != null) {
+                // POST
+                urlConnection.setDoOutput(true); // Forces post
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty("charset", "utf-8");
 
-            String toPost = packet.getPostData().toString();
-            if (mDispatchGzipped) {
-                urlConnection.addRequestProperty("Content-Encoding", "gzip");
-                ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-                GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
-                gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                gzipOutputStream.close();
-                urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
+                String toPost = packet.getPostData().toString();
+                if (mDispatchGzipped) {
+                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
+                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+                    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
+                    gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                    gzipOutputStream.close();
+                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
+                } else {
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                    writer.write(toPost);
+                    writer.flush();
+                    writer.close();
+                }
+
             } else {
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                writer.write(toPost);
-                writer.flush();
-                writer.close();
+                // GET
+                urlConnection.setDoOutput(false); // Defaults to false, but for readability
             }
 
-        } else {
-            // GET
-            urlConnection.setDoOutput(false); // Defaults to false, but for readability
+            int statusCode = urlConnection.getResponseCode();
+            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
+            return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
+        } finally {
+            if (urlConnection != null) urlConnection.disconnect();
         }
-
-        int statusCode = urlConnection.getResponseCode();
-        Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
-        return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
-
     }
 
     public void setDryRunTarget(List<Packet> dryRunTarget) {
