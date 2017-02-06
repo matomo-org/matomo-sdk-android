@@ -250,7 +250,7 @@ public class Tracker {
      * Events older than the set limit will be discarded on the next dispatch attempt.<br>
      * The Piwik backend accepts backdated events for up to 24 hours by default.
      * <p>
-     * >0 = limit in ms<br>
+     * &gt;0 = limit in ms<br>
      * 0 = unlimited<br>
      * -1 = disabled offline cache<br>
      *
@@ -275,7 +275,7 @@ public class Tracker {
      * Events older than the set limit will be discarded on the next dispatch attempt.<br>
      * The Piwik backend accepts backdated events for up to 24 hours by default.
      * <p>
-     * >0 = limit in byte<br>
+     * &gt;0 = limit in byte<br>
      * 0 = unlimited<br>
      *
      * @param size in byte
