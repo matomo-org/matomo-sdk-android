@@ -1,9 +1,11 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+
+import org.piwik.sdk.Piwik;
 
 import java.util.Collections;
 import java.util.List;

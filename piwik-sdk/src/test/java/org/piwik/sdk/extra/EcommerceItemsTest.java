@@ -1,4 +1,4 @@
-package org.piwik.sdk.ecommerce;
+package org.piwik.sdk.extra;
 
 import org.json.JSONArray;
 import org.junit.Test;

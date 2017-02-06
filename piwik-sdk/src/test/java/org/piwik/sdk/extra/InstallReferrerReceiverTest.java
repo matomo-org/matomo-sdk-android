@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.content.Intent;
 
@@ -13,7 +13,7 @@ import static junit.framework.Assert.assertTrue;
 
 public class InstallReferrerReceiverTest extends DefaultTestCase {
     // How to test on a live device:
-    // adb shell am broadcast -a com.android.vending.INSTALL_REFERRER -n com.piwik.demo/org.piwik.sdk.InstallReferrerReceiver --es "referrer" "utm_medium%3Dpartner%26utm_campaign%3Dpart
+    // adb shell am broadcast -a com.android.vending.INSTALL_REFERRER -n com.piwik.demo/org.piwik.sdk.extra.InstallReferrerReceiver --es "referrer" "utm_medium%3Dpartner%26utm_campaign%3Dpart
     @Test
     public void testReceiveGooglePlay() throws Exception {
         InstallReferrerReceiver receiver = new InstallReferrerReceiver();

@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -10,7 +10,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 
 import java.net.URL;
 import java.util.Locale;
@@ -31,7 +34,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.piwik.sdk.TrackHelper.track;
+import static org.piwik.sdk.extra.TrackHelper.track;
 
 
 public class TrackHelperTest {
@@ -305,7 +308,7 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.EVENT_CATEGORY), "Exception");
         StackTraceElement traceElement = catchedException.getStackTrace()[0];
         assertNotNull(traceElement);
-        assertEquals(mCaptor.getValue().get(QueryParams.EVENT_ACTION), "org.piwik.sdk.TrackHelperTest" + "/" + "testTrackException" + ":" + traceElement.getLineNumber());
+        assertEquals(mCaptor.getValue().get(QueryParams.EVENT_ACTION), "org.piwik.sdk.extra.TrackHelperTest" + "/" + "testTrackException" + ":" + traceElement.getLineNumber());
         assertEquals(mCaptor.getValue().get(QueryParams.EVENT_NAME), "<Null> exception");
     }
 
@@ -324,7 +327,7 @@ public class TrackHelperTest {
         verify(mTracker).track(mCaptor.capture());
         TrackMe tracked = mCaptor.getValue();
         assertEquals(tracked.get(QueryParams.EVENT_CATEGORY), "Exception");
-        assertTrue(tracked.get(QueryParams.EVENT_ACTION).startsWith("org.piwik.sdk.TrackHelperTest/testPiwikExceptionHandler:"));
+        assertTrue(tracked.get(QueryParams.EVENT_ACTION).startsWith("org.piwik.sdk.extra.TrackHelperTest/testPiwikExceptionHandler:"));
         assertEquals(tracked.get(QueryParams.EVENT_NAME), "/ by zero");
         assertEquals(tracked.get(QueryParams.EVENT_VALUE), "1");
 

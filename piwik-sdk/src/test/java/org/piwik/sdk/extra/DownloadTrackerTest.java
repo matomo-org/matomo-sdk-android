@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -11,6 +11,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.testhelper.TestPreferences;
 
 import java.io.File;

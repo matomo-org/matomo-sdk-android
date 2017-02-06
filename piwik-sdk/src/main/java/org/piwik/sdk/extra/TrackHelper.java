@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 
 import android.annotation.TargetApi;
@@ -9,7 +9,10 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.ActivityHelper;
 import org.piwik.sdk.tools.CurrencyFormatter;
 
@@ -18,6 +21,7 @@ import java.net.URL;
 import timber.log.Timber;
 
 public class TrackHelper {
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "TrackHelper";
     private final TrackMe mBaseTrackMe;
 
     private TrackHelper() {
@@ -672,7 +676,7 @@ public class TrackHelper {
                 StackTraceElement trace = mThrowable.getStackTrace()[0];
                 className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
             } catch (java.lang.Exception e) {
-                Timber.tag(Tracker.LOGGER_TAG).w(e, "Couldn't get stack info");
+                Timber.tag(LOGGER_TAG).w(e, "Couldn't get stack info");
                 className = mThrowable.getClass().getName();
             }
             String actionName = "exception/" + (mIsFatal ? "fatal/" : "") + (className + "/") + mDescription;

@@ -5,10 +5,13 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.app.Application;
 import android.os.Build;
+
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.Tracker;
 
 import java.net.MalformedURLException;
 

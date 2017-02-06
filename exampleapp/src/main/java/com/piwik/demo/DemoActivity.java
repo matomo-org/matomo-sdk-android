@@ -15,10 +15,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
-import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackHelper;
 import org.piwik.sdk.Tracker;
-import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.extra.EcommerceItems;
+import org.piwik.sdk.extra.PiwikApplication;
+import org.piwik.sdk.extra.TrackHelper;
 
 import java.util.Arrays;
 import java.util.List;

@@ -1,7 +1,7 @@
 package org.piwik.sdk.testhelper;
 
 
-import org.piwik.sdk.PiwikApplication;
+import org.piwik.sdk.extra.PiwikApplication;
 import org.robolectric.TestLifecycleApplication;
 import org.robolectric.shadows.ShadowLog;
 

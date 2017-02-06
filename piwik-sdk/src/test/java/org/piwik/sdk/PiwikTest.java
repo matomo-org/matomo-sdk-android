@@ -12,6 +12,7 @@ import android.app.Application;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
