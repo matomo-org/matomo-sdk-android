@@ -12,8 +12,10 @@ import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
 import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.tools.BuildInfo;
 import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.DeviceHelper;
+import org.piwik.sdk.tools.PropertySource;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -104,6 +106,6 @@ public class Piwik {
     }
 
     DeviceHelper getDeviceHelper() {
-        return new DeviceHelper(mContext);
+        return new DeviceHelper(mContext, new PropertySource(), new BuildInfo());
     }
 }

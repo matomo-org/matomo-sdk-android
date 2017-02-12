@@ -26,8 +26,14 @@ import timber.log.Timber;
 public class DeviceHelper {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DeviceHelper";
     private final Context mContext;
+    private final PropertySource mPropertySource;
+    private final BuildInfo mBuildInfo;
 
-    public DeviceHelper(Context context) {mContext = context;}
+    public DeviceHelper(Context context, PropertySource propertySource, BuildInfo buildInfo) {
+        mContext = context;
+        mPropertySource = propertySource;
+        mBuildInfo = buildInfo;
+    }
 
     /**
      * Returns user language
@@ -44,7 +50,19 @@ public class DeviceHelper {
      * @return well formatted user agent
      */
     public String getUserAgent() {
-        return System.getProperty("http.agent");
+        String httpAgent = mPropertySource.getHttpAgent();
+        if (httpAgent == null || httpAgent.startsWith("Apache-HttpClient/UNAVAILABLE (java")) {
+            String dalvik = mPropertySource.getJVMVersion();
+            if (dalvik == null) dalvik = "0.0.0";
+            String android = mBuildInfo.getRelease();
+            String model = mBuildInfo.getModel();
+            String build = mBuildInfo.getBuildId();
+            httpAgent = String.format(Locale.US,
+                    "Dalvik/%s (Linux; U; Android %s; %s Build/%s)",
+                    dalvik, android, model, build
+            );
+        }
+        return httpAgent;
     }
 
     /**
