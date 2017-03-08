@@ -154,9 +154,8 @@ public class Dispatcher {
                 try {
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
+
                 boolean connected = isConnected();
                 mEventCache.updateState(connected);
                 if (connected) {
@@ -220,35 +219,39 @@ public class Dispatcher {
             urlConnection.setConnectTimeout(mTimeOut);
             urlConnection.setReadTimeout(mTimeOut);
 
-            // IF there is json data we want to do a post
-            if (packet.getPostData() != null) {
-                // POST
+            // IF there is json data we have to do a post
+            if (packet.getPostData() != null) { // POST
                 urlConnection.setDoOutput(true); // Forces post
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("charset", "utf-8");
 
-                String toPost = packet.getPostData().toString();
+                final String toPost = packet.getPostData().toString();
                 if (mDispatchGzipped) {
                     urlConnection.addRequestProperty("Content-Encoding", "gzip");
                     ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-                    GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
-                    gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                    gzipOutputStream.close();
+
+                    GZIPOutputStream gzipStream = null;
+                    try {
+                        gzipStream = new GZIPOutputStream(byteArrayOS);
+                        gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                    } finally { if (gzipStream != null) gzipStream.close();}
+
                     urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
                 } else {
-                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                    writer.write(toPost);
-                    writer.flush();
-                    writer.close();
+                    BufferedWriter writer = null;
+                    try {
+                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                        writer.write(toPost);
+                    } finally { if (writer != null) writer.close(); }
                 }
 
-            } else {
-                // GET
+            } else { // GET
                 urlConnection.setDoOutput(false); // Defaults to false, but for readability
             }
 
             int statusCode = urlConnection.getResponseCode();
             Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
+
             return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
