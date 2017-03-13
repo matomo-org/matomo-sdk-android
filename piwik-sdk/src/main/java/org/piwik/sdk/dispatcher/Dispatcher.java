@@ -156,9 +156,7 @@ public class Dispatcher {
                     mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
 
-                boolean connected = isConnected();
-                mEventCache.updateState(connected);
-                if (connected) {
+                if (mEventCache.updateState(isConnected())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
