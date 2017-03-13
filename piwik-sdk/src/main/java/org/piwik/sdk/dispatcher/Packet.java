@@ -8,7 +8,6 @@ package org.piwik.sdk.dispatcher;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import org.json.JSONObject;
 
@@ -19,7 +18,7 @@ import java.net.URLConnection;
 /**
  * Data that can be send to the backend API via the Dispatcher
  */
-@VisibleForTesting
+
 public class Packet {
     private final URL mTargetURL;
     private final JSONObject mPostData;
