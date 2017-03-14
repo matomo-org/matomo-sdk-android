@@ -156,20 +156,24 @@ public class Dispatcher {
                     mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
 
-                boolean connected = isConnected();
-                mEventCache.updateState(connected);
-                if (connected) {
+                if (mEventCache.updateState(isConnected())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
                     Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
                     for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
+                        boolean success = false;
                         try {
-                            if (dispatch(packet)) count += packet.getEventCount();
+                            success = dispatch(packet);
                         } catch (IOException e) {
                             // While rapidly dispatching, it's possible that we are connected, but can't resolve hostnames yet
                             // java.net.UnknownHostException: Unable to resolve host "...": No address associated with hostname
-                            Timber.tag(LOGGER_TAG).w(e, "Dispatch failed, assuming OFFLINE, requeuing events.");
+                            Timber.tag(LOGGER_TAG).d(e);
+                        }
+                        if (success) {
+                            count += packet.getEventCount();
+                        } else {
+                            Timber.tag(LOGGER_TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
                             mEventCache.updateState(false);
                             mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
                             break;
@@ -252,10 +256,14 @@ public class Dispatcher {
             int statusCode = urlConnection.getResponseCode();
             Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
 
-            return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
+            return checkResponseCode(statusCode);
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
         }
+    }
+
+    private boolean checkResponseCode(int code) {
+        return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK;
     }
 
     public void setDryRunTarget(List<Packet> dryRunTarget) {
