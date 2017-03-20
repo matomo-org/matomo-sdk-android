@@ -10,8 +10,7 @@ that gives you valuable insights into your website's visitors, your marketing ca
 For the not so quick start, [see here](https://github.com/piwik/piwik-sdk-android/wiki/Getting-started) or look at our [demo app](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp)
 
 * [Setup Piwik](https://piwik.org/docs/installation/) on your server.
-* Include the library
-
+* Include the library in your app modules `build.gradle` file
 ```groovy
     compile 'org.piwik.sdk:piwik-sdk:2.0.0'
 ```
@@ -27,16 +26,15 @@ public class YourApplication extends Application {
 }
 ```
 
-* Track a screen view
+* Done, your app is ready to use Piwik. Maybe start by tracking a screen view
 ```java
-public class YourActivity extends Activity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
-        TrackHelper.track().screen("/your_activity").title("Title").with(tracker);
-    }
-}
+Tracker tracker = ((PiwikApplication) getApplication()).getTracker();
+TrackHelper.track().screen("/activity_main/activity_settings").title("Settings").with(tracker);
+```
+
+* or by monitoring your app installs
+```java
+TrackHelper.track().download().with(tracker);
 ```
 
 ## License
