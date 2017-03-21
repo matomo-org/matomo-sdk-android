@@ -1,6 +1,7 @@
 package org.piwik.sdk.testhelper;
 
 
+import org.piwik.sdk.TrackerConfig;
 import org.piwik.sdk.extra.PiwikApplication;
 import org.robolectric.TestLifecycleApplication;
 import org.robolectric.shadows.ShadowLog;
@@ -34,13 +35,9 @@ public class PiwikTestApplication extends PiwikApplication implements TestLifecy
         return "11";
     }
 
-    @Override
-    public String getTrackerUrl() {
-        return "http://example.com";
-    }
 
     @Override
-    public Integer getSiteId() {
-        return 1;
+    public TrackerConfig onCreateTrackerConfig() {
+        return TrackerConfig.createDefault("http://example.com", 1);
     }
 }

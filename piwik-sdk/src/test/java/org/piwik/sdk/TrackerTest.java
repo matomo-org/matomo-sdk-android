@@ -19,7 +19,6 @@ import org.piwik.sdk.testhelper.TestPreferences;
 import org.piwik.sdk.tools.DeviceHelper;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,9 +53,10 @@ public class TrackerTest {
     @Mock DeviceHelper mDeviceHelper;
     SharedPreferences mTrackerPreferences = new TestPreferences();
     SharedPreferences mPiwikPreferences = new TestPreferences();
-    private URL mApiUrl;
-    private int mSiteId;
+    private final String mApiUrl = "http://example.com";
+    private final int mSiteId = 11;
     private final String mName = "Default Tracker";
+    private final TrackerConfig mTrackerConfig = new TrackerConfig(mApiUrl, mSiteId, mName);
 
     @Before
     public void setup() throws PackageManager.NameNotFoundException, MalformedURLException {
@@ -73,16 +73,14 @@ public class TrackerTest {
         when(mDeviceHelper.getUserAgent()).thenReturn("aUserAgent");
         when(mDeviceHelper.getUserLanguage()).thenReturn("en");
 
-        mApiUrl = new URL("http://example.com");
-        mSiteId = 11;
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, mName);
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
     }
 
     @Test
     public void testGetPreferences() {
-        Tracker tracker1 = new Tracker(mApiUrl, mSiteId, mPiwik, "Tracker1");
+        Tracker tracker1 = new Tracker(mPiwik, new TrackerConfig(mApiUrl, mSiteId, "Tracker1"));
         verify(mPiwik).getTrackerPreferences(tracker1);
-        Tracker tracker2 = new Tracker(mApiUrl, mSiteId, mPiwik, "Tracker2");
+        Tracker tracker2 = new Tracker(mPiwik, new TrackerConfig(mApiUrl, mSiteId, "Tracker2"));
         verify(mPiwik).getTrackerPreferences(tracker2);
     }
 
@@ -180,10 +178,10 @@ public class TrackerTest {
     @Test
     public void testOptOut_init() throws Exception {
         mTrackerPreferences.edit().putBoolean(Tracker.PREF_KEY_TRACKER_OPTOUT, false).apply();
-        Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik, mName);
+        Tracker tracker = new Tracker(mPiwik, mTrackerConfig);
         assertFalse(tracker.isOptOut());
         mTrackerPreferences.edit().putBoolean(Tracker.PREF_KEY_TRACKER_OPTOUT, true).apply();
-        tracker = new Tracker(mApiUrl, mSiteId, mPiwik, mName);
+        tracker = new Tracker(mPiwik, mTrackerConfig);
         assertTrue(tracker.isOptOut());
     }
 
@@ -334,7 +332,7 @@ public class TrackerTest {
                     return null;
                 }
             }).when(mDispatcher).submit(any(TrackMe.class));
-            final Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+            final Tracker tracker = new Tracker(mPiwik, mTrackerConfig);
             tracker.setDispatchInterval(0);
             int count = 20;
             for (int i = 0; i < count; i++) {
@@ -394,8 +392,8 @@ public class TrackerTest {
 
     @Test
     public void testTrackerEquals() throws Exception {
-        Tracker tracker2 = new Tracker(new URL("http://localhost"), 100, mPiwik, "Default Tracker");
-        Tracker tracker3 = new Tracker(new URL("http://example.com"), 11, mPiwik, "Default Tracker");
+        Tracker tracker2 = new Tracker(mPiwik, new TrackerConfig("http://localhost", 100, "Default Tracker"));
+        Tracker tracker3 = new Tracker(mPiwik, new TrackerConfig("http://example.com", 11, "Default Tracker"));
         assertNotNull(mTracker);
         assertFalse(mTracker.equals(tracker2));
         assertTrue(mTracker.equals(tracker3));
@@ -403,10 +401,7 @@ public class TrackerTest {
 
     @Test
     public void testTrackerHashCode() throws Exception {
-        int result = mApiUrl.hashCode();
-        result = 31 * result + mSiteId;
-        result = 31 * result + mName.hashCode();
-        assertEquals(result, mTracker.hashCode());
+        assertEquals(mTrackerConfig.hashCode(), mTracker.hashCode());
     }
 
     @Test
@@ -451,7 +446,7 @@ public class TrackerTest {
         // make sure we are tracking in seconds
         assertTrue(Math.abs((System.currentTimeMillis() / 1000) - Long.parseLong(trackMe1.get(FIRST_VISIT_TIMESTAMP))) < 2);
 
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
         verify(mDispatcher, times(2)).submit(mCaptor.capture());
         TrackMe trackMe2 = mCaptor.getValue();
@@ -468,7 +463,7 @@ public class TrackerTest {
         verify(mDispatcher).submit(mCaptor.capture());
         assertEquals(1, Integer.parseInt(mCaptor.getValue().get(QueryParams.TOTAL_NUMBER_OF_VISITS)));
 
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         assertEquals(1, mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
         assertNull(mTracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
@@ -488,7 +483,7 @@ public class TrackerTest {
                     try {
                         Thread.sleep(new Random().nextInt(20 - 0) + 0);
                     } catch (InterruptedException e) { e.printStackTrace(); }
-                    TrackHelper.track().event("TestCategory", "TestAction").with(new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker"));
+                    TrackHelper.track().event("TestCategory", "TestAction").with(new Tracker(mPiwik, mTrackerConfig));
                     countDownLatch.countDown();
                 }
             }).start();
@@ -510,7 +505,7 @@ public class TrackerTest {
         when(mDispatcher.getConnectionTimeOut()).thenReturn(1000);
         for (int i = 0; i < 1000; i++) {
             trackMes.clear();
-            final Tracker tracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+            final Tracker tracker = new Tracker(mPiwik, mTrackerConfig);
             final CountDownLatch countDownLatch = new CountDownLatch(10);
             for (int j = 0; j < 10; j++) {
                 new Thread(new Runnable() {
@@ -598,7 +593,7 @@ public class TrackerTest {
     public void testPreviousVisit() throws Exception {
         // No timestamp yet
         assertEquals(-1, mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
         verify(mDispatcher).submit(mCaptor.capture());
         long _startTime = System.currentTimeMillis() / 1000;
@@ -610,14 +605,14 @@ public class TrackerTest {
         long previousVisit = mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
         assertTrue(previousVisit - _startTime < 2000);
         assertNotEquals(-1, previousVisit);
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
         verify(mDispatcher, times(2)).submit(mCaptor.capture());
         // Transmitted timestamp is the one from the first visit visit
         assertEquals(previousVisit, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
 
         Thread.sleep(1000);
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
         verify(mDispatcher, times(3)).submit(mCaptor.capture());
         // Now the timestamp changed as this is the 3rd visit.
@@ -625,7 +620,7 @@ public class TrackerTest {
         Thread.sleep(1000);
 
         previousVisit = mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-        mTracker = new Tracker(mApiUrl, mSiteId, mPiwik, "Default Tracker");
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
         verify(mDispatcher, times(4)).submit(mCaptor.capture());
         // Just make sure the timestamp in the 4th visit is from the 3rd visit

@@ -81,17 +81,15 @@ public class Tracker {
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
-     * @param apiUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId (required) id of site
-     * @param piwik  piwik object used to gain access to application params such as name, resolution or lang
-     * @param name   unique name for this Tracker. Used to store Tracker settings independent of URL and id changes.
+     * @param piwik         piwik object used to gain access to application params such as name, resolution or lang
+     * @param trackerConfig configuration for this Tracker.
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public Tracker(@NonNull URL apiUrl, int siteId, @NonNull Piwik piwik, String name) {
-        mApiUrl = apiUrl;
+    public Tracker(@NonNull Piwik piwik, @NonNull TrackerConfig trackerConfig) {
         mPiwik = piwik;
-        mSiteId = siteId;
-        mName = name;
+        mApiUrl = trackerConfig.getApiUrl();
+        mSiteId = trackerConfig.getSiteId();
+        mName = trackerConfig.getTrackerName();
 
         new LegacySettingsPorter(piwik).port(this);
 
