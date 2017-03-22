@@ -17,8 +17,6 @@ import org.piwik.sdk.tools.Checksum;
 import org.piwik.sdk.tools.DeviceHelper;
 import org.piwik.sdk.tools.PropertySource;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +34,11 @@ public class Piwik {
     private SharedPreferences mBasePreferences;
 
     public static synchronized Piwik getInstance(Context context) {
-        if (sInstance == null) sInstance = new Piwik(context);
+        if (sInstance == null) {
+            synchronized (Piwik.class) {
+                if (sInstance == null) sInstance = new Piwik(context);
+            }
+        }
         return sInstance;
     }
 
@@ -50,23 +52,12 @@ public class Piwik {
     }
 
     /**
-     * @param url    (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId (required) id of site
-     * @param name   unique name for this Tracker. Used to store Tracker settings independent of URL and id changes.
+     * @param trackerConfig the Tracker configuration
      * @return Tracker object
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public synchronized Tracker newTracker(@NonNull String url, int siteId, String name) {
-        URL trackerUrl;
-        try {
-            if (url.endsWith("piwik.php") || url.endsWith("piwik-proxy.php")) {
-                trackerUrl = new URL(url);
-            } else {
-                if (!url.endsWith("/")) url += "/";
-                trackerUrl = new URL(url + "piwik.php");
-            }
-        } catch (MalformedURLException e) { throw new RuntimeException(e); }
-        return new Tracker(trackerUrl, siteId, this, name);
+    public synchronized Tracker newTracker(@NonNull TrackerConfig trackerConfig) {
+        return new Tracker(this, trackerConfig);
     }
 
     public String getApplicationDomain() {

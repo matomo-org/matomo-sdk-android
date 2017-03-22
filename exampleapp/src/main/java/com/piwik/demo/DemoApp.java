@@ -9,6 +9,7 @@ package com.piwik.demo;
 
 import android.os.StrictMode;
 
+import org.piwik.sdk.TrackerConfig;
 import org.piwik.sdk.extra.DownloadTracker;
 import org.piwik.sdk.extra.PiwikApplication;
 import org.piwik.sdk.extra.TrackHelper;
@@ -18,13 +19,8 @@ import timber.log.Timber;
 public class DemoApp extends PiwikApplication {
 
     @Override
-    public String getTrackerUrl() {
-        return "http://demo.piwik.org/";
-    }
-
-    @Override
-    public Integer getSiteId() {
-        return 53;
+    public TrackerConfig onCreateTrackerConfig() {
+        return TrackerConfig.createDefault("http://demo.piwik.org/", 53);
     }
 
     @Override

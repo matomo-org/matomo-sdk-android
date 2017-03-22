@@ -14,7 +14,7 @@ import java.net.MalformedURLException;
 public abstract class DefaultTestCase {
     public Tracker createTracker() throws MalformedURLException {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        final Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId(), "Default Tracker");
+        final Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.onCreateTrackerConfig());
         tracker.getPreferences().edit().clear().apply();
         return tracker;
     }

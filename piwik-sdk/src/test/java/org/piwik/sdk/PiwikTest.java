@@ -7,6 +7,7 @@
 
 package org.piwik.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 
 import org.junit.Test;
@@ -18,7 +19,6 @@ import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -38,24 +38,18 @@ public class PiwikTest {
     @Test
     public void testNewTracker() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId(), "Default Tracker");
+        Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.onCreateTrackerConfig());
         assertNotNull(tracker);
-        assertEquals(new URL(app.getTrackerUrl() + "/piwik.php"), tracker.getAPIUrl());
-        assertEquals(app.getSiteId(), Integer.valueOf(tracker.getSiteId()));
+        assertEquals(app.onCreateTrackerConfig().getApiUrl(), tracker.getAPIUrl());
+        assertEquals(app.onCreateTrackerConfig().getSiteId(), tracker.getSiteId());
     }
 
     @Test
     public void testNormalTracker() throws Exception {
         Piwik piwik = Piwik.getInstance(Robolectric.application);
-        Tracker tracker = piwik.newTracker("http://test", 1, "Default Tracker");
+        Tracker tracker = piwik.newTracker(new TrackerConfig("http://test", 1, "Default Tracker"));
         assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
         assertEquals(1, tracker.getSiteId());
-
-        tracker = piwik.newTracker("http://test/piwik.php", 1, "Default Tracker");
-        assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
-
-        tracker = piwik.newTracker("http://test/piwik-proxy.php", 1, "Default Tracker");
-        assertEquals("http://test/piwik-proxy.php", tracker.getAPIUrl().toString());
     }
 
     @Test
@@ -64,6 +58,7 @@ public class PiwikTest {
         // Would probably requiring us to track created trackers
     }
 
+    @SuppressLint("InlinedApi")
     @Test
     public void testLowMemoryDispatch() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
@@ -84,22 +79,6 @@ public class PiwikTest {
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN);
         Thread.sleep(50);
         assertFalse(tracker.getDryRunTarget().isEmpty());
-    }
-
-    @Test
-    public void testSetAPIUrl() throws Exception {
-        Piwik piwik = Piwik.getInstance(Robolectric.application);
-        String[] urls = new String[]{
-                "https://demo.org/piwik/piwik.php",
-                "https://demo.org/piwik/",
-                "https://demo.org/piwik",
-        };
-
-        for (String url : urls) {
-            assertEquals(piwik.newTracker(url, 1, "Default Tracker").getAPIUrl().toString(), "https://demo.org/piwik/piwik.php");
-        }
-
-        assertEquals(piwik.newTracker("http://demo.org/piwik-proxy.php", 1, "Default Tracker").getAPIUrl(), new URL("http://demo.org/piwik-proxy.php"));
     }
 
     @Test
