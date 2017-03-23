@@ -1,6 +1,7 @@
 package org.piwik.sdk.extra;
 
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -30,17 +31,86 @@ public class DownloadTracker {
     private String mVersion;
     private PackageInfo mPkgInfo;
 
-    public enum Extra {
+    public interface Extra {
+
+        /**
+         * Does your {@link Extra} implementation do work intensive stuff?
+         * Network? IO?
+         *
+         * @return true if this should be run async and on a sepperate thread.
+         */
+        boolean isIntensiveWork();
+
+        /**
+         * Example:
+         * <br>
+         * com.example.pkg:1/ABCDEF01234567
+         * <br>
+         * "ABCDEF01234567" is the extra identifier here.
+         *
+         * @return a string that will be used as extra identifier or null
+         */
+        @Nullable
+        String buildExtraIdentifier();
+
         /**
          * The MD5 checksum of the apk file.
          * com.example.pkg:1/ABCDEF01234567
          */
-        APK_CHECKSUM,
+        class ApkChecksum implements Extra {
+            private PackageInfo mPackageInfo;
+
+            public ApkChecksum(Context context) {
+                try {
+                    mPackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+                } catch (Exception e) {
+                    Timber.tag(LOGGER_TAG).e(e);
+                    mPackageInfo = null;
+                }
+            }
+
+            public ApkChecksum(PackageInfo packageInfo) {mPackageInfo = packageInfo;}
+
+            @Override
+            public boolean isIntensiveWork() {
+                return true;
+            }
+
+            @Nullable
+            @Override
+            public String buildExtraIdentifier() {
+                if (mPackageInfo != null && mPackageInfo.applicationInfo != null && mPackageInfo.applicationInfo.sourceDir != null) {
+                    try {
+                        return Checksum.getMD5Checksum(new File(mPackageInfo.applicationInfo.sourceDir));
+                    } catch (Exception e) { Timber.tag(LOGGER_TAG).e(e); }
+                }
+                return null;
+            }
+        }
+
+        /**
+         * Custom exta identifier. Supply your own \o/.
+         */
+        abstract class Custom implements Extra {
+        }
+
         /**
          * No extra identifier.
          * com.example.pkg:1
          */
-        NONE
+        class None implements Extra {
+
+            @Override
+            public boolean isIntensiveWork() {
+                return false;
+            }
+
+            @Nullable
+            @Override
+            public String buildExtraIdentifier() {
+                return null;
+            }
+        }
     }
 
     public DownloadTracker(Tracker tracker) {
@@ -87,7 +157,7 @@ public class DownloadTracker {
                 trackNewAppDownloadInternal(baseTrackme, extra);
             }
         });
-        if (!delay && extra == Extra.NONE) trackTask.run();
+        if (!delay && !extra.isIntensiveWork()) trackTask.run();
         else trackTask.start();
     }
 
@@ -97,17 +167,8 @@ public class DownloadTracker {
         StringBuilder installIdentifier = new StringBuilder();
         installIdentifier.append("http://").append(mPackageName).append(":").append(getVersion());
 
-        if (extra == Extra.APK_CHECKSUM) {
-            if (mPkgInfo == null) return;
-            if (mPkgInfo.applicationInfo != null && mPkgInfo.applicationInfo.sourceDir != null) {
-                try {
-                    String md5Identifier = Checksum.getMD5Checksum(new File(mPkgInfo.applicationInfo.sourceDir));
-                    if (md5Identifier != null) installIdentifier.append("/").append(md5Identifier);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        String extraIdentifier = extra.buildExtraIdentifier();
+        if (extraIdentifier != null) installIdentifier.append("/").append(extraIdentifier);
 
         // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
         // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
