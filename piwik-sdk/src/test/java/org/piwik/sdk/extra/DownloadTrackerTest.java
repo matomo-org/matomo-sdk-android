@@ -51,6 +51,7 @@ public class DownloadTrackerTest {
 
         mPackageInfo = new PackageInfo();
         mPackageInfo.versionCode = 123;
+        mPackageInfo.packageName = "package";
         //noinspection WrongConstant
         when(mPackageManager.getPackageInfo(anyString(), anyInt())).thenReturn(mPackageInfo);
         when(mPackageManager.getInstallerPackageName("package")).thenReturn("installer");
