@@ -354,12 +354,10 @@ public class TrackHelper {
      * {@link Download#force()}
      * <p class="note">
      * Resulting download url:<p>
-     * Case {@link DownloadTracker.Extra#APK_CHECKSUM}:<br>
+     * Case {@link org.piwik.sdk.extra.DownloadTracker.Extra.ApkChecksum}:<br>
      * http://packageName:versionCode/apk-md5-checksum<br>
-     * Usually the installer-packagename is something like "com.android.vending" (Google Play),
-     * but users can modify this value, don't be surprised by some random values.<p>
      * <p>
-     * Case {@link DownloadTracker.Extra#NONE}:<br>
+     * Case {@link org.piwik.sdk.extra.DownloadTracker.Extra.None}:<br>
      * http://packageName:versionCode<p>
      *
      * @return this object, to chain calls.
@@ -375,7 +373,7 @@ public class TrackHelper {
     public static class Download {
         private DownloadTracker mDownloadTracker;
         private final TrackHelper mBaseBuilder;
-        private DownloadTracker.Extra mExtra = DownloadTracker.Extra.NONE;
+        private DownloadTracker.Extra mExtra = new DownloadTracker.Extra.None();
         private boolean mForced = false;
         private String mVersion;
 
@@ -387,7 +385,7 @@ public class TrackHelper {
         /**
          * Sets the identifier type for this download
          *
-         * @param identifier {@link DownloadTracker.Extra#APK_CHECKSUM} or {@link DownloadTracker.Extra#NONE}
+         * @param identifier {@link org.piwik.sdk.extra.DownloadTracker.Extra.ApkChecksum} or {@link org.piwik.sdk.extra.DownloadTracker.Extra.None}
          * @return this object, to chain calls.
          */
         public Download identifier(DownloadTracker.Extra identifier) {
@@ -421,11 +419,8 @@ public class TrackHelper {
         public void with(Tracker tracker) {
             if (mDownloadTracker == null) mDownloadTracker = new DownloadTracker(tracker);
             if (mVersion != null) mDownloadTracker.setVersion(mVersion);
-            if (mForced) {
-                mDownloadTracker.trackNewAppDownload(mBaseBuilder.mBaseTrackMe, mExtra);
-            } else {
-                mDownloadTracker.trackOnce(mBaseBuilder.mBaseTrackMe, mExtra);
-            }
+            if (mForced) mDownloadTracker.trackNewAppDownload(mBaseBuilder.mBaseTrackMe, mExtra);
+            else mDownloadTracker.trackOnce(mBaseBuilder.mBaseTrackMe, mExtra);
         }
     }
 

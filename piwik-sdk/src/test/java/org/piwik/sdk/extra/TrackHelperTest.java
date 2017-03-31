@@ -28,7 +28,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -94,15 +93,15 @@ public class TrackHelperTest {
     @Test
     public void testDownloadTrackChecksum() throws Exception {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
-        track().download(downloadTracker).identifier(DownloadTracker.Extra.APK_CHECKSUM).with(mTracker);
-        verify(downloadTracker).trackOnce(any(TrackMe.class), eq(DownloadTracker.Extra.APK_CHECKSUM));
+        track().download(downloadTracker).identifier(new DownloadTracker.Extra.ApkChecksum(mContext)).with(mTracker);
+        verify(downloadTracker).trackOnce(any(TrackMe.class), any(DownloadTracker.Extra.ApkChecksum.class));
     }
 
     @Test
     public void testDownloadTrackForced() throws Exception {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
         track().download(downloadTracker).force().with(mTracker);
-        verify(downloadTracker).trackNewAppDownload(any(TrackMe.class), eq(DownloadTracker.Extra.NONE));
+        verify(downloadTracker).trackNewAppDownload(any(TrackMe.class), any(DownloadTracker.Extra.None.class));
     }
 
     @Test

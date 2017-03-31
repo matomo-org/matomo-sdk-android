@@ -1,6 +1,7 @@
 package org.piwik.sdk.extra;
 
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -23,36 +24,116 @@ public class DownloadTracker {
     protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "DownloadTrackingHelper";
     private static final String INSTALL_SOURCE_GOOGLE_PLAY = "com.android.vending";
     private final Tracker mTracker;
-    private final Object TRACK_ONCE_LOCK = new Object();
+    private final Object mTrackOnceLock = new Object();
     private final PackageManager mPackMan;
-    private final String mPackageName;
     private final SharedPreferences mPreferences;
+    private final Context mContext;
+    private final boolean mInternalTracking;
     private String mVersion;
-    private PackageInfo mPkgInfo;
+    private final PackageInfo mPkgInfo;
 
-    public enum Extra {
+    public interface Extra {
+
+        /**
+         * Does your {@link Extra} implementation do work intensive stuff?
+         * Network? IO?
+         *
+         * @return true if this should be run async and on a sepperate thread.
+         */
+        boolean isIntensiveWork();
+
+        /**
+         * Example:
+         * <br>
+         * com.example.pkg:1/ABCDEF01234567
+         * <br>
+         * "ABCDEF01234567" is the extra identifier here.
+         *
+         * @return a string that will be used as extra identifier or null
+         */
+        @Nullable
+        String buildExtraIdentifier();
+
         /**
          * The MD5 checksum of the apk file.
          * com.example.pkg:1/ABCDEF01234567
          */
-        APK_CHECKSUM,
+        class ApkChecksum implements Extra {
+            private PackageInfo mPackageInfo;
+
+            public ApkChecksum(Context context) {
+                try {
+                    mPackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+                } catch (Exception e) {
+                    Timber.tag(LOGGER_TAG).e(e);
+                    mPackageInfo = null;
+                }
+            }
+
+            public ApkChecksum(PackageInfo packageInfo) {mPackageInfo = packageInfo;}
+
+            @Override
+            public boolean isIntensiveWork() {
+                return true;
+            }
+
+            @Nullable
+            @Override
+            public String buildExtraIdentifier() {
+                if (mPackageInfo != null && mPackageInfo.applicationInfo != null && mPackageInfo.applicationInfo.sourceDir != null) {
+                    try {
+                        return Checksum.getMD5Checksum(new File(mPackageInfo.applicationInfo.sourceDir));
+                    } catch (Exception e) { Timber.tag(LOGGER_TAG).e(e); }
+                }
+                return null;
+            }
+        }
+
+        /**
+         * Custom exta identifier. Supply your own \o/.
+         */
+        abstract class Custom implements Extra {
+        }
+
         /**
          * No extra identifier.
          * com.example.pkg:1
          */
-        NONE
+        class None implements Extra {
+
+            @Override
+            public boolean isIntensiveWork() {
+                return false;
+            }
+
+            @Nullable
+            @Override
+            public String buildExtraIdentifier() {
+                return null;
+            }
+        }
     }
 
     public DownloadTracker(Tracker tracker) {
-        mTracker = tracker;
-        mPreferences = tracker.getPreferences();
-        mPackageName = tracker.getPiwik().getContext().getPackageName();
-        mPackMan = tracker.getPiwik().getContext().getPackageManager();
+        this(tracker, getOurPackageInfo(tracker.getPiwik().getContext()));
+    }
+
+    private static PackageInfo getOurPackageInfo(Context context) {
         try {
-            mPkgInfo = mPackMan.getPackageInfo(mPackageName, 0);
+            return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            Timber.tag(LOGGER_TAG).e(e);
+            throw new RuntimeException(e);
         }
+    }
+
+    public DownloadTracker(Tracker tracker, @NonNull PackageInfo packageInfo) {
+        mTracker = tracker;
+        mContext = tracker.getPiwik().getContext();
+        mPreferences = tracker.getPreferences();
+        mPackMan = tracker.getPiwik().getContext().getPackageManager();
+        mPkgInfo = packageInfo;
+        mInternalTracking = mPkgInfo.packageName.equals(mContext.getPackageName());
     }
 
     public void setVersion(@Nullable String version) {
@@ -65,8 +146,8 @@ public class DownloadTracker {
     }
 
     public void trackOnce(TrackMe baseTrackme, @NonNull Extra extra) {
-        String firedKey = "downloaded:" + mPackageName + ":" + getVersion();
-        synchronized (TRACK_ONCE_LOCK) {
+        String firedKey = "downloaded:" + mPkgInfo.packageName + ":" + getVersion();
+        synchronized (mTrackOnceLock) {
             if (!mPreferences.getBoolean(firedKey, false)) {
                 mPreferences.edit().putBoolean(firedKey, true).apply();
                 trackNewAppDownload(baseTrackme, extra);
@@ -75,7 +156,8 @@ public class DownloadTracker {
     }
 
     public void trackNewAppDownload(final TrackMe baseTrackme, @NonNull final Extra extra) {
-        final boolean delay = INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPackageName));
+        // We can only get referrer information if we are tracking our own app download.
+        final boolean delay = mInternalTracking && INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPkgInfo.packageName));
         if (delay) {
             // Delay tracking incase we were called from within Application.onCreate
             Timber.tag(LOGGER_TAG).d("Google Play is install source, deferring tracking.");
@@ -87,7 +169,7 @@ public class DownloadTracker {
                 trackNewAppDownloadInternal(baseTrackme, extra);
             }
         });
-        if (!delay && extra == Extra.NONE) trackTask.run();
+        if (!delay && !extra.isIntensiveWork()) trackTask.run();
         else trackTask.start();
     }
 
@@ -95,23 +177,14 @@ public class DownloadTracker {
         Timber.tag(LOGGER_TAG).d("Tracking app download...");
 
         StringBuilder installIdentifier = new StringBuilder();
-        installIdentifier.append("http://").append(mPackageName).append(":").append(getVersion());
+        installIdentifier.append("http://").append(mPkgInfo.packageName).append(":").append(getVersion());
 
-        if (extra == Extra.APK_CHECKSUM) {
-            if (mPkgInfo == null) return;
-            if (mPkgInfo.applicationInfo != null && mPkgInfo.applicationInfo.sourceDir != null) {
-                try {
-                    String md5Identifier = Checksum.getMD5Checksum(new File(mPkgInfo.applicationInfo.sourceDir));
-                    if (md5Identifier != null) installIdentifier.append("/").append(md5Identifier);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        String extraIdentifier = extra.buildExtraIdentifier();
+        if (extraIdentifier != null) installIdentifier.append("/").append(extraIdentifier);
 
         // Usual USEFUL values of this field will be: "com.android.vending" or "com.android.browser", i.e. app packagenames.
         // This is not guaranteed, values can also look like: app_process /system/bin com.android.commands.pm.Pm install -r /storage/sdcard0/...
-        String referringApp = mPackMan.getInstallerPackageName(mPackageName);
+        String referringApp = mPackMan.getInstallerPackageName(mPkgInfo.packageName);
         if (referringApp != null && referringApp.length() > 200) referringApp = referringApp.substring(0, 200);
 
         if (referringApp != null && referringApp.equals(INSTALL_SOURCE_GOOGLE_PLAY)) {
