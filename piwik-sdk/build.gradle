@@ -4,43 +4,19 @@ def gitSha() {
 
 apply plugin: 'com.android.library'
 
-def versionMajor = 1
+def versionMajor = 2
 def versionMinor = 0
-def versionPatch = 2
+def versionPatch = 0
 def myVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'piwik-sdk-android'
-
-    publishedGroupId = 'org.piwik.sdk'
-    libraryName = 'Piwik SDK for Android'
-    artifact = 'piwik-sdk'
-
-    libraryDescription = 'SDK for Android to measure your apps with Piwik '
-
-    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
-    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
-
-    libraryVersion = myVersionName
-
-    developerId = 'darken'
-    developerName = 'Matthias Urhahn'
-    developerEmail = 'darken@darken.eu'
-
-    licenseName = 'BSD-3 Clause'
-    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
-    allLicenses = ["BSD 3-Clause"]
-}
-
 android {
-    compileSdkVersion 23
-    buildToolsVersion '23.0.3'
+    compileSdkVersion project.ext.globalCompileSdkVersion
+    buildToolsVersion project.ext.globalBuildToolsVersion
 
     defaultConfig {
-        minSdkVersion 10
-        targetSdkVersion 23
+        minSdkVersion project.ext.globalMinSdkVersion
+        targetSdkVersion project.ext.globalTargetSdkVersion
         versionCode myVersionCode
         versionName myVersionName
     }
@@ -50,16 +26,18 @@ dependencies {
     repositories {
         jcenter()
     }
-    compile 'com.android.support:support-annotations:23.4.0'
-    compile 'com.jakewharton.timber:timber:4.1.2'
-    // Espresso
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.0')
-    androidTestCompile('com.android.support.test:testing-support-lib:0.1')
+    compile "com.android.support:support-annotations:${supportLibVersion}"
+    compile "com.jakewharton.timber:timber:${timberVersion}"
+
     // Robolectric
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-core:1.3'
     testCompile 'org.hamcrest:hamcrest-library:1.3'
     testCompile 'org.hamcrest:hamcrest-integration:1.3'
+
+    // Mocktio
+    testCompile 'org.mockito:mockito-core:2.2.9'
+    testCompile 'org.json:json:20140107'
     testCompile('org.robolectric:robolectric:2.4') {
         exclude module: 'classworlds'
         exclude module: 'commons-logging'
@@ -161,5 +139,37 @@ android.libraryVariants.all { variant ->
     }
 }
 
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
-//apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
+def credentialsFile = new File(System.properties['user.home'], ".bintray/bintray.properties")
+ext {
+    if (credentialsFile.canRead()) {
+        def Properties props = new Properties()
+        props.load(new FileInputStream(credentialsFile))
+        bintrayUser = props['bintray.user']
+        bintrayApiKey = props['bintray.apikey']
+    }
+
+    bintrayRepo = 'maven'
+    bintrayName = 'piwik-sdk-android'
+
+    publishedGroupId = 'org.piwik.sdk'
+    libraryName = 'Piwik SDK for Android'
+    artifact = 'piwik-sdk'
+
+    libraryDescription = 'SDK for Android to measure your apps with Piwik '
+
+    siteUrl = 'https://github.com/piwik/piwik-sdk-android'
+    gitUrl = 'https://github.com/piwik/piwik-sdk-android.git'
+
+    libraryVersion = myVersionName
+
+    developerId = 'darken'
+    developerName = 'Matthias Urhahn'
+    developerEmail = 'darken@darken.eu'
+
+    licenseName = 'BSD-3 Clause'
+    licenseUrl = 'https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE'
+    allLicenses = ["BSD 3-Clause"]
+}
+if (credentialsFile.canRead()) {
+    apply from: '../publish-to-bintray.gradle'
+}

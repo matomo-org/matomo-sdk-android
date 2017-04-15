@@ -7,22 +7,28 @@
 
 package org.piwik.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
-import java.net.URL;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
@@ -32,65 +38,62 @@ public class PiwikTest {
     @Test
     public void testNewTracker() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.getTrackerUrl(), app.getSiteId());
+        Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.onCreateTrackerConfig());
         assertNotNull(tracker);
-        assertEquals(new URL(app.getTrackerUrl() + "/piwik.php"), tracker.getAPIUrl());
-        assertEquals(app.getSiteId(), Integer.valueOf(tracker.getSiteId()));
+        assertEquals(app.onCreateTrackerConfig().getApiUrl(), tracker.getAPIUrl());
+        assertEquals(app.onCreateTrackerConfig().getSiteId(), tracker.getSiteId());
     }
 
     @Test
     public void testNormalTracker() throws Exception {
         Piwik piwik = Piwik.getInstance(Robolectric.application);
-        Tracker tracker = piwik.newTracker("http://test", 1);
+        Tracker tracker = piwik.newTracker(new TrackerConfig("http://test", 1, "Default Tracker"));
         assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
         assertEquals(1, tracker.getSiteId());
-
-        tracker = piwik.newTracker("http://test/piwik.php", 1);
-        assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
-
-        tracker = piwik.newTracker("http://test/piwik-proxy.php", 1);
-        assertEquals("http://test/piwik-proxy.php", tracker.getAPIUrl().toString());
     }
 
     @Test
-    public void testAuthTokenTracker() throws Exception {
-        Piwik piwik = Piwik.getInstance(Robolectric.application);
-        String token = UUID.randomUUID().toString();
-        Tracker tracker = piwik.newTracker("http://test", 1, token);
-        assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
-        assertEquals(1, tracker.getSiteId());
-        assertEquals(token, tracker.getAuthToken());
+    public void testTrackerNaming() {
+        // TODO can we somehow detect naming collisions on tracker creation?
+        // Would probably requiring us to track created trackers
     }
 
-    @Test
-    public void testOptions() throws Exception {
-        Piwik piwik = Piwik.getInstance(Robolectric.application);
-
-        piwik.setDryRun(true);
-        piwik.setOptOut(true);
-
-        assertTrue(piwik.isDryRun());
-        assertTrue(piwik.isOptOut());
-
-        piwik.setDryRun(false);
-        piwik.setOptOut(false);
-
-        assertFalse(piwik.isDryRun());
-        assertFalse(piwik.isOptOut());
-    }
-
+    @SuppressLint("InlinedApi")
     @Test
     public void testLowMemoryDispatch() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        app.getPiwik().setDryRun(true);
         Tracker tracker = app.getTracker();
         assertNotNull(tracker);
+        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         tracker.setDispatchInterval(-1);
+
+        tracker.track(TrackHelper.track().screen("test").build());
+        tracker.dispatch();
+        Thread.sleep(50);
+        assertFalse(tracker.getDryRunTarget().isEmpty());
+        tracker.getDryRunTarget().clear();
+
         tracker.track(TrackHelper.track().screen("test").build());
         Thread.sleep(50);
-        assertTrue(tracker.getDispatcher().getDryRunOutput().isEmpty());
+        assertTrue(tracker.getDryRunTarget().isEmpty());
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN);
         Thread.sleep(50);
-        assertFalse(tracker.getDispatcher().getDryRunOutput().isEmpty());
+        assertFalse(tracker.getDryRunTarget().isEmpty());
     }
+
+    @Test
+    public void testGetSettings() {
+        Tracker tracker1 = mock(Tracker.class);
+        when(tracker1.getName()).thenReturn("1");
+        Tracker tracker2 = mock(Tracker.class);
+        when(tracker2.getName()).thenReturn("2");
+        Tracker tracker3 = mock(Tracker.class);
+        when(tracker3.getName()).thenReturn("1");
+
+        final Piwik piwik = Piwik.getInstance(Robolectric.application);
+        assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker1));
+        assertNotEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker2));
+        assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker3));
+    }
+
 }

@@ -16,8 +16,12 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
-import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackHelper;
+import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.extra.PiwikApplication;
+import org.piwik.sdk.extra.TrackHelper;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 import timber.log.Timber;
 
@@ -36,21 +40,21 @@ public class SettingsActivity extends Activity {
 
         // Dry run
         CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
-        dryRun.setChecked(((PiwikApplication) getApplication()).getPiwik().isDryRun());
+        dryRun.setChecked(((PiwikApplication) getApplication()).getTracker().getDryRunTarget() != null);
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setDryRun(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getTracker().setDryRunTarget(((CheckBox) v).isChecked() ? Collections.synchronizedList(new ArrayList<Packet>()) : null);
             }
         });
 
         // out out
         CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
-        optOut.setChecked(((PiwikApplication) getApplication()).getPiwik().isOptOut());
+        optOut.setChecked(((PiwikApplication) getApplication()).getTracker().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((PiwikApplication) getApplication()).getPiwik().setOptOut(((CheckBox) v).isChecked());
+                ((PiwikApplication) getApplication()).getTracker().setOptOut(((CheckBox) v).isChecked());
             }
         });
 

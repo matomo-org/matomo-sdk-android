@@ -12,7 +12,7 @@
     <application>
         <!-- Suppress warning about unrestricted access to this receiver this is need to check which app store installed the app -->
         <receiver
-            android:name=".InstallReferrerReceiver"
+            android:name=".extra.InstallReferrerReceiver"
             android:exported="true"
             tools:ignore="ExportedReceiver">
             <intent-filter>

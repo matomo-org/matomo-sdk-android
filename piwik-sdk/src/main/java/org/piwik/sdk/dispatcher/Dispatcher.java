@@ -7,64 +7,53 @@
 
 package org.piwik.sdk.dispatcher;
 
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
-import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.tools.Connectivity;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import timber.log.Timber;
 
 /**
- * Sends json POST request to tracking url http://piwik.example.com/piwik.php with body
- * <p/>
- * {
- * "requests": [
- * "?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
- * "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"
- * ],
- * "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
- * }
+ * Responsible for transmitting packets to a server
  */
-@SuppressWarnings("deprecation")
 public class Dispatcher {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Dispatcher";
-    private final BlockingQueue<String> mDispatchQueue = new LinkedBlockingQueue<>();
     private final Object mThreadControl = new Object();
+    private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
-    private final Piwik mPiwik;
-    private final URL mApiUrl;
-    private final String mAuthToken;
+    private final Connectivity mConnectivity;
+    private final PacketFactory mPacketFactory;
 
-    private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
+    static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
-    private volatile boolean mRunning = false;
 
-    public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
+    static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
 
-    public Dispatcher(Piwik piwik, URL apiUrl, String authToken) {
-        mPiwik = piwik;
-        mApiUrl = apiUrl;
-        mAuthToken = authToken;
+    private boolean mDispatchGzipped = false;
+    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile boolean mRunning = false;
+    private List<Packet> mDryRunTarget = null;
+
+    public Dispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory) {
+        mConnectivity = connectivity;
+        mEventCache = eventCache;
+        mPacketFactory = packetFactory;
     }
 
     /**
@@ -93,19 +82,42 @@ public class Dispatcher {
      */
     public void setDispatchInterval(long dispatchInterval) {
         mDispatchInterval = dispatchInterval;
-        if (mDispatchInterval != -1)
-            launch();
+        if (mDispatchInterval != -1) launch();
     }
 
     public long getDispatchInterval() {
         return mDispatchInterval;
     }
 
+    /**
+     * Packets are collected and dispatched in batches. This boolean sets if post must be
+     * gzipped or not. Use of gzip needs mod_deflate/Apache ou lua_zlib/NGINX
+     *
+     * @param dispatchGzipped boolean
+     */
+    public void setDispatchGzipped(boolean dispatchGzipped) {
+        mDispatchGzipped = dispatchGzipped;
+    }
+
+    public boolean getDispatchGzipped() {
+        return mDispatchGzipped;
+    }
+
+    public void setDispatchMode(DispatchMode dispatchMode) {
+        this.mDispatchMode = dispatchMode;
+    }
+
+    public DispatchMode getDispatchMode() {
+        return mDispatchMode;
+    }
+
     private boolean launch() {
         synchronized (mThreadControl) {
             if (!mRunning) {
                 mRunning = true;
-                new Thread(mLoop).start();
+                Thread thread = new Thread(mLoop);
+                thread.setPriority(Thread.MIN_PRIORITY);
+                thread.start();
                 return true;
             }
         }
@@ -124,52 +136,54 @@ public class Dispatcher {
         return true;
     }
 
-    public void submit(String query) {
-        mDispatchQueue.add(query);
-        if (mDispatchInterval != -1)
-            launch();
+    public void clear() {
+        mEventCache.clear();
+        // Try to exit the loop as the queue is empty
+        if (mRunning) forceDispatch();
+    }
+
+    public void submit(TrackMe trackMe) {
+        mEventCache.add(new Event(trackMe.toMap()));
+        if (mDispatchInterval != -1) launch();
     }
 
     private Runnable mLoop = new Runnable() {
         @Override
         public void run() {
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             while (mRunning) {
                 try {
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
 
-                int count = 0;
-                List<String> availableEvents = new ArrayList<>();
-                mDispatchQueue.drainTo(availableEvents);
-                Timber.tag(LOGGER_TAG).d("Drained %s events.", availableEvents.size());
-                TrackerBulkURLWrapper wrapper = new TrackerBulkURLWrapper(mApiUrl, availableEvents, mAuthToken);
-                Iterator<TrackerBulkURLWrapper.Page> pageIterator = wrapper.iterator();
-                while (pageIterator.hasNext()) {
-                    TrackerBulkURLWrapper.Page page = pageIterator.next();
-
-                    // use doGET when only event on current page
-                    if (page.elementsCount() > 1) {
-                        JSONObject eventData = wrapper.getEvents(page);
-                        if (eventData == null)
-                            continue;
-                        if (dispatch(new Packet(wrapper.getApiUrl(), eventData)))
-                            count += page.elementsCount();
-                    } else {
-                        URL targetURL = wrapper.getEventUrl(page);
-                        if (targetURL == null)
-                            continue;
-                        if (dispatch(new Packet(targetURL)))
-                            count += 1;
+                if (mEventCache.updateState(isConnected())) {
+                    int count = 0;
+                    List<Event> drainedEvents = new ArrayList<>();
+                    mEventCache.drainTo(drainedEvents);
+                    Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
+                    for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
+                        boolean success = false;
+                        try {
+                            success = dispatch(packet);
+                        } catch (IOException e) {
+                            // While rapidly dispatching, it's possible that we are connected, but can't resolve hostnames yet
+                            // java.net.UnknownHostException: Unable to resolve host "...": No address associated with hostname
+                            Timber.tag(LOGGER_TAG).d(e);
+                        }
+                        if (success) {
+                            count += packet.getEventCount();
+                        } else {
+                            Timber.tag(LOGGER_TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
+                            mEventCache.updateState(false);
+                            mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                            break;
+                        }
                     }
+                    Timber.tag(LOGGER_TAG).d("Dispatched %d events.", count);
                 }
-                Timber.tag(LOGGER_TAG).d("Dispatched %s events.", count);
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
-                    if (mDispatchQueue.isEmpty() || mDispatchInterval < 0) {
+                    if (mEventCache.isEmpty() || mDispatchInterval < 0) {
                         mRunning = false;
                         break;
                     }
@@ -178,92 +192,85 @@ public class Dispatcher {
         }
     };
 
-    @VisibleForTesting
-    public boolean dispatch(@NonNull Packet packet) {
-        // Some error checking
-        if (packet.getTargetURL() == null)
-            return false;
-        if (packet.getJSONObject() != null && packet.getJSONObject().length() == 0)
-            return false;
+    private boolean isConnected() {
+        if (!mConnectivity.isConnected()) return false;
 
-        if (mPiwik.isDryRun()) {
-            mDryRunOutput.add(packet);
-            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
+        switch (mDispatchMode) {
+            case ALWAYS:
+                return true;
+            case WIFI_ONLY:
+                return mConnectivity.getType() == Connectivity.Type.WIFI;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * @param packet to dispatch
+     * @return true if dispatch was successful
+     */
+    @VisibleForTesting
+    public boolean dispatch(@NonNull Packet packet) throws IOException {
+        if (mDryRunTarget != null) {
+            mDryRunTarget.add(packet);
+            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunTarget.size());
             return true;
         }
 
-        if (!mDryRunOutput.isEmpty())
-            mDryRunOutput.clear();
-
+        HttpURLConnection urlConnection = null;
         try {
-            HttpURLConnection urlConnection = (HttpURLConnection) packet.getTargetURL().openConnection();
+            urlConnection = (HttpURLConnection) packet.openConnection();
             urlConnection.setConnectTimeout(mTimeOut);
             urlConnection.setReadTimeout(mTimeOut);
 
-            // IF there is json data we want to do a post
-            if (packet.getJSONObject() != null) {
-                // POST
+            // IF there is json data we have to do a post
+            if (packet.getPostData() != null) { // POST
                 urlConnection.setDoOutput(true); // Forces post
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("charset", "utf-8");
 
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                writer.write(packet.getJSONObject().toString());
-                writer.flush();
-                writer.close();
-            } else {
-                // GET
+                final String toPost = packet.getPostData().toString();
+                if (mDispatchGzipped) {
+                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
+                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
+
+                    GZIPOutputStream gzipStream = null;
+                    try {
+                        gzipStream = new GZIPOutputStream(byteArrayOS);
+                        gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                    } finally { if (gzipStream != null) gzipStream.close();}
+
+                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
+                } else {
+                    BufferedWriter writer = null;
+                    try {
+                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                        writer.write(toPost);
+                    } finally { if (writer != null) writer.close(); }
+                }
+
+            } else { // GET
                 urlConnection.setDoOutput(false); // Defaults to false, but for readability
             }
 
             int statusCode = urlConnection.getResponseCode();
             Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
-            return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
-        } catch (Exception e) {
-            // Broad but an analytics app shouldn't impact it's host app.
-            Timber.tag(LOGGER_TAG).w(e, "Cannot send request");
-        }
-        return false;
-    }
 
-    /**
-     * http://stackoverflow.com/q/4737841
-     *
-     * @param param raw data
-     * @return encoded string
-     */
-    public static String urlEncodeUTF8(String param) {
-        try {
-            return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
-        } catch (UnsupportedEncodingException e) {
-            Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
-            return "";
-        } catch (NullPointerException e) {
-            return "";
+            return checkResponseCode(statusCode);
+        } finally {
+            if (urlConnection != null) urlConnection.disconnect();
         }
     }
 
-    /**
-     * For bulk tracking purposes
-     *
-     * @param map query map
-     * @return String "?idsite=1&url=http://example.org&action_name=Test bulk log view&rec=1"
-     */
-    public static String urlEncodeUTF8(Map<String, String> map) {
-        StringBuilder sb = new StringBuilder(100);
-        sb.append('?');
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(urlEncodeUTF8(entry.getKey()));
-            sb.append('=');
-            sb.append(urlEncodeUTF8(entry.getValue()));
-            sb.append('&');
-        }
-
-        return sb.substring(0, sb.length() - 1);
+    private boolean checkResponseCode(int code) {
+        return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK;
     }
 
-    public List<Packet> getDryRunOutput() {
-        return mDryRunOutput;
+    public void setDryRunTarget(List<Packet> dryRunTarget) {
+        mDryRunTarget = dryRunTarget;
     }
 
+    public List<Packet> getDryRunTarget() {
+        return mDryRunTarget;
+    }
 }

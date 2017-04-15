@@ -5,12 +5,14 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.app.Application;
 import android.os.Build;
 
-import java.net.MalformedURLException;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.Tracker;
+import org.piwik.sdk.TrackerConfig;
 
 public abstract class PiwikApplication extends Application {
     private Tracker mPiwikTracker;
@@ -25,27 +27,17 @@ public abstract class PiwikApplication extends Application {
      * @return a shared Tracker
      */
     public synchronized Tracker getTracker() {
-        if (mPiwikTracker == null) {
-            try {
-                mPiwikTracker = getPiwik().newTracker(getTrackerUrl(), getSiteId());
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Tracker URL was malformed.");
-            }
-        }
+        if (mPiwikTracker == null) mPiwikTracker = getPiwik().newTracker(onCreateTrackerConfig());
         return mPiwikTracker;
     }
 
     /**
-     * The URL of your remote Piwik server.
+     * See {@link TrackerConfig}.
+     * You may be interested in {@link TrackerConfig#createDefault(String, int)} (String, int)}
+     *
+     * @return the tracker configuration you want to use.
      */
-    public abstract String getTrackerUrl();
-
-    /**
-     * The siteID you specified for this application in Piwik.
-     */
-    public abstract Integer getSiteId();
-
+    public abstract TrackerConfig onCreateTrackerConfig();
 
     @Override
     public void onLowMemory() {

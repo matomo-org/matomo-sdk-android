@@ -1,11 +1,13 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
-import java.util.Arrays;
+import org.piwik.sdk.Piwik;
+
+import java.util.Collections;
 import java.util.List;
 
 import timber.log.Timber;
@@ -19,7 +21,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
     static final String ARG_KEY_GPLAY_REFERRER = "referrer";
 
     static final String PREF_KEY_INSTALL_REFERRER_EXTRAS = "referrer.extras";
-    static final List<String> RESPONSIBILITIES = Arrays.asList(REFERRER_SOURCE_GPLAY);
+    static final List<String> RESPONSIBILITIES = Collections.singletonList(REFERRER_SOURCE_GPLAY);
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -32,7 +34,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
             Timber.tag(LOGGER_TAG).d("Dropping forwarded intent");
             return;
         }
-        SharedPreferences piwikPreferences = Piwik.getInstance(context.getApplicationContext()).getSharedPreferences();
+        SharedPreferences piwikPreferences = Piwik.getInstance(context.getApplicationContext()).getPiwikPreferences();
         if (intent.getAction().equals(REFERRER_SOURCE_GPLAY)) {
             String referrer = intent.getStringExtra(ARG_KEY_GPLAY_REFERRER);
             if (referrer != null) {

@@ -1,18 +1,8 @@
 package org.piwik.sdk;
 
-import android.util.Pair;
-
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.testhelper.DefaultTestCase;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.piwik.sdk.tools.UrlHelper;
-import org.robolectric.annotation.Config;
 
-import java.net.URI;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,9 +13,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
-public class TrackMeTest extends DefaultTestCase {
+public class TrackMeTest {
     @Test
     public void testSourcingFromOtherTrackMe() throws Exception {
         TrackMe base = new TrackMe();
@@ -38,6 +26,26 @@ public class TrackMeTest extends DefaultTestCase {
         for (QueryParams param : QueryParams.values()) {
             assertEquals(base.get(param), offSpring.get(param));
         }
+    }
+
+    @Test
+    public void testAdd_overwrite() {
+        TrackMe a = new TrackMe();
+        a.set(QueryParams.URL_PATH, "pathA");
+        a.set(QueryParams.EVENT_NAME, "name");
+        TrackMe b = new TrackMe();
+        b.set(QueryParams.URL_PATH, "pathB");
+        a.putAll(b);
+        assertEquals("pathB", a.get(QueryParams.URL_PATH));
+        assertEquals("pathB", b.get(QueryParams.URL_PATH));
+        assertEquals("name", a.get(QueryParams.EVENT_NAME));
+
+        b.putAll(a);
+        assertEquals("pathB", a.get(QueryParams.URL_PATH));
+        assertEquals("pathB", b.get(QueryParams.URL_PATH));
+        assertEquals("name", a.get(QueryParams.EVENT_NAME));
+        assertEquals("name", b.get(QueryParams.EVENT_NAME));
+
     }
 
     @Test
@@ -112,37 +120,4 @@ public class TrackMeTest extends DefaultTestCase {
             assertNull(trackMe.get(param));
         }
     }
-
-    @Test
-    public void testEncondingSingles() throws Exception {
-        for (QueryParams param : QueryParams.values()) {
-            String testVal = UUID.randomUUID().toString();
-            TrackMe trackMe = new TrackMe();
-            trackMe.set(param, testVal);
-            assertEquals("?" + param.toString() + "=" + testVal, Dispatcher.urlEncodeUTF8(trackMe.toMap()));
-        }
-    }
-
-    @Test
-    public void testEncodingMultiples() throws Exception {
-        TrackMe trackMe = new TrackMe();
-        Map<String, String> testValues = new HashMap<>();
-        for (QueryParams param : QueryParams.values()) {
-            String testVal = UUID.randomUUID().toString();
-            trackMe.set(param, testVal);
-            testValues.put(param.toString(), testVal);
-        }
-        final Map<String, String> parsedParams = parseEncoding(Dispatcher.urlEncodeUTF8(trackMe.toMap()));
-        for (Map.Entry<String, String> pair : parsedParams.entrySet()) {
-            assertEquals(testValues.get(pair.getKey()), pair.getValue());
-        }
-    }
-
-    private static Map<String, String> parseEncoding(String url) throws Exception {
-        Map<String, String> values = new HashMap<>();
-        List<Pair<String, String>> params = UrlHelper.parse(new URI("http://localhost/" + url), "UTF-8");
-        for (Pair<String, String> param : params) values.put(param.first, param.second);
-        return values;
-    }
-
 }

@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,19 +21,35 @@ public class TrackMe {
     private static final int DEFAULT_QUERY_CAPACITY = 14;
     private final HashMap<String, String> mQueryParams = new HashMap<>(DEFAULT_QUERY_CAPACITY);
 
-    public TrackMe() {
-    }
+    public TrackMe() { }
 
     public TrackMe(TrackMe trackMe) {
         mQueryParams.putAll(trackMe.mQueryParams);
     }
 
-    protected synchronized TrackMe set(@NonNull String key, String value) {
-        if (value == null)
-            mQueryParams.remove(key);
-        else if (value.length() > 0)
-            mQueryParams.put(key, value);
+    /**
+     * Adds TrackMe to this TrackMe, overriding values if necessary.
+     */
+    public TrackMe putAll(@NonNull TrackMe trackMe) {
+        mQueryParams.putAll(trackMe.toMap());
         return this;
+    }
+
+    /**
+     * Consider using {@link QueryParams} instead of raw strings
+     */
+    public synchronized TrackMe set(@NonNull String key, String value) {
+        if (value == null) mQueryParams.remove(key);
+        else if (value.length() > 0) mQueryParams.put(key, value);
+        return this;
+    }
+
+    /**
+     * Consider using {@link QueryParams} instead of raw strings
+     */
+    @Nullable
+    public synchronized String get(@NonNull String queryParams) {
+        return mQueryParams.get(queryParams);
     }
 
     /**
@@ -106,13 +123,12 @@ public class TrackMe {
      * @return this (for chaining)
      */
     public synchronized TrackMe trySet(@NonNull QueryParams key, String value) {
-        if (!has(key))
-            set(key, value);
+        if (!has(key)) set(key, value);
         return this;
     }
 
     /**
-     * The tracker calls this to build the final query to be sent via HTTP
+     * The tracker calls this to get the final data that will be transmitted
      *
      * @return the parameter map, but without the base URL
      */
@@ -124,4 +140,7 @@ public class TrackMe {
         return mQueryParams.get(queryParams.toString());
     }
 
+    public synchronized boolean isEmpty() {
+        return mQueryParams.isEmpty();
+    }
 }

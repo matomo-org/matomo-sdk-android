@@ -1,4 +1,4 @@
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 
 import android.annotation.TargetApi;
@@ -8,18 +8,23 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 
-import org.piwik.sdk.ecommerce.EcommerceItems;
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.QueryParams;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 import org.piwik.sdk.tools.ActivityHelper;
 import org.piwik.sdk.tools.CurrencyFormatter;
 
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import timber.log.Timber;
 
 public class TrackHelper {
-    private final TrackMe mBaseTrackMe;
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "TrackHelper";
+    protected final TrackMe mBaseTrackMe;
 
     private TrackHelper() {
         this(null);
@@ -34,7 +39,7 @@ public class TrackHelper {
         return new TrackHelper();
     }
 
-    public static TrackHelper track(@NonNull TrackMe base) {
+    public static TrackHelper track(@Nullable TrackMe base) {
         return new TrackHelper(base);
     }
 
@@ -87,6 +92,7 @@ public class TrackHelper {
     public static class Screen extends BaseEvent {
         private final String mPath;
         private final CustomVariables mCustomVariables = new CustomVariables();
+        private final Map<Integer, String> mCustomDimensions = new HashMap<>();
         private String mTitle;
 
         Screen(TrackHelper baseBuilder, String path) {
@@ -106,9 +112,24 @@ public class TrackHelper {
         }
 
         /**
-         * Just like {@link Tracker#setVisitCustomVariable(int, String, String)} but only valid per screen.
-         * Only takes effect when setting prior to tracking the screen view.
+         * Requires <a href="https://plugins.piwik.org/CustomDimensions">Custom Dimensions</a> plugin (server-side)
+         *
+         * @param index          accepts values greater than 0
+         * @param dimensionValue is limited to 255 characters, you can pass null to delete a value
          */
+        public Screen dimension(int index, String dimensionValue) {
+            mCustomDimensions.put(index, dimensionValue);
+            return this;
+        }
+
+        /**
+         * Custom Variable valid per screen.
+         * Only takes effect when setting prior to tracking the screen view.
+         *
+         * @see org.piwik.sdk.extra.CustomDimension and {@link #dimension(int, String)}
+         * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+         */
+        @Deprecated
         public Screen variable(int index, String name, String value) {
             mCustomVariables.put(index, name, value);
             return this;
@@ -118,10 +139,17 @@ public class TrackHelper {
         @Override
         public TrackMe build() {
             if (mPath == null) return null;
-            return new TrackMe(getBaseTrackMe())
-                    .set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString())
+            final TrackMe trackMe = new TrackMe(getBaseTrackMe())
                     .set(QueryParams.URL_PATH, mPath)
                     .set(QueryParams.ACTION_NAME, mTitle);
+            if (mCustomVariables.size() > 0) {
+                //noinspection deprecation
+                trackMe.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString());
+            }
+            for (Map.Entry<Integer, String> entry : mCustomDimensions.entrySet()) {
+                CustomDimension.setDimension(trackMe, entry.getKey(), entry.getValue());
+            }
+            return trackMe;
         }
     }
 
@@ -269,39 +297,95 @@ public class TrackHelper {
     }
 
     /**
+     * Tracks an  <a href="http://piwik.org/docs/site-search/">site search</a>
+     *
+     * @param keyword Searched query in the app
+     * @return this Tracker for chaining
+     */
+    public Search search(String keyword) {
+        return new Search(this, keyword);
+    }
+
+    public static class Search extends BaseEvent {
+        private final String mKeyword;
+        private String mCategory;
+        private Integer mCount;
+
+        Search(TrackHelper baseBuilder, String keyword) {
+            super(baseBuilder);
+            mKeyword = keyword;
+        }
+
+        /**
+         * You can optionally specify a search category with this parameter.
+         *
+         * @return this object, to chain calls.
+         */
+        public Search category(String category) {
+            mCategory = category;
+            return this;
+        }
+
+        /**
+         * We recommend to set the search count to the number of search results displayed on the results page.
+         * When keywords are tracked with a count of 0, they will appear in the "No Result Search Keyword" report.
+         *
+         * @return this object, to chain calls.
+         */
+        public Search count(Integer count) {
+            mCount = count;
+            return this;
+        }
+
+        @Nullable
+        @Override
+        public TrackMe build() {
+            TrackMe trackMe = new TrackMe(getBaseTrackMe())
+                    .set(QueryParams.SEARCH_KEYWORD, mKeyword)
+                    .set(QueryParams.SEARCH_CATEGORY, mCategory);
+            if (mCount != null) trackMe.set(QueryParams.SEARCH_NUMBER_OF_HITS, mCount);
+            return trackMe;
+        }
+    }
+
+    /**
      * Sends a download event for this app.
-     * This only triggers an event once per app version unless you force it.<p/>
+     * This only triggers an event once per app version unless you force it.<p>
      * {@link Download#force()}
      * <p class="note">
-     * Resulting download url:<p/>
-     * Case {@link DownloadTracker.Extra#APK_CHECKSUM}:<br/>
-     * http://packageName:versionCode/apk-md5-checksum<br/>
-     * Usually the installer-packagename is something like "com.android.vending" (Google Play),
-     * but users can modify this value, don't be surprised by some random values.<p/>
-     * <p/>
-     * Case {@link DownloadTracker.Extra#NONE}:<br/>
-     * http://packageName:versionCode<p/>
+     * Resulting download url:<p>
+     * Case {@link org.piwik.sdk.extra.DownloadTracker.Extra.ApkChecksum}:<br>
+     * http://packageName:versionCode/apk-md5-checksum<br>
+     * <p>
+     * Case {@link org.piwik.sdk.extra.DownloadTracker.Extra.None}:<br>
+     * http://packageName:versionCode<p>
      *
      * @return this object, to chain calls.
      */
+    public Download download(DownloadTracker downloadTracker) {
+        return new Download(downloadTracker, this);
+    }
+
     public Download download() {
-        return new Download(this);
+        return new Download(null, this);
     }
 
     public static class Download {
+        private DownloadTracker mDownloadTracker;
         private final TrackHelper mBaseBuilder;
-        private DownloadTracker.Extra mExtra = DownloadTracker.Extra.NONE;
+        private DownloadTracker.Extra mExtra = new DownloadTracker.Extra.None();
         private boolean mForced = false;
         private String mVersion;
 
-        Download(TrackHelper baseBuilder) {
+        Download(DownloadTracker downloadTracker, TrackHelper baseBuilder) {
+            mDownloadTracker = downloadTracker;
             mBaseBuilder = baseBuilder;
         }
 
         /**
          * Sets the identifier type for this download
          *
-         * @param identifier {@link DownloadTracker.Extra#APK_CHECKSUM} or {@link DownloadTracker.Extra#NONE}
+         * @param identifier {@link org.piwik.sdk.extra.DownloadTracker.Extra.ApkChecksum} or {@link org.piwik.sdk.extra.DownloadTracker.Extra.None}
          * @return this object, to chain calls.
          */
         public Download identifier(DownloadTracker.Extra identifier) {
@@ -333,13 +417,10 @@ public class TrackHelper {
         }
 
         public void with(Tracker tracker) {
-            final DownloadTracker downloadTracker = new DownloadTracker(tracker, mBaseBuilder.mBaseTrackMe);
-            if (mVersion != null) downloadTracker.setVersion(mVersion);
-            if (mForced) {
-                downloadTracker.trackNewAppDownload(mExtra);
-            } else {
-                downloadTracker.trackOnce(mExtra);
-            }
+            if (mDownloadTracker == null) mDownloadTracker = new DownloadTracker(tracker);
+            if (mVersion != null) mDownloadTracker.setVersion(mVersion);
+            if (mForced) mDownloadTracker.trackNewAppDownload(mBaseBuilder.mBaseTrackMe, mExtra);
+            else mDownloadTracker.trackOnce(mBaseBuilder.mBaseTrackMe, mExtra);
         }
     }
 
@@ -381,7 +462,7 @@ public class TrackHelper {
         @Nullable
         @Override
         public TrackMe build() {
-            if (TextUtils.isEmpty(mContentName)) return null;
+            if (mContentName == null || mContentName.length() == 0) return null;
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -390,7 +471,7 @@ public class TrackHelper {
     }
 
     /**
-     * Tracking the interactions</p>
+     * Tracking the interactions<p>
      * To map an interaction to an impression make sure to set the same value for contentName and contentPiece as
      * the impression has.
      *
@@ -432,7 +513,8 @@ public class TrackHelper {
         @Nullable
         @Override
         public TrackMe build() {
-            if (TextUtils.isEmpty(mContentName) || TextUtils.isEmpty(mInteraction)) return null;
+            if (mContentName == null || mContentName.length() == 0) return null;
+            if (mInteraction == null || mInteraction.length() == 0) return null;
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -566,10 +648,10 @@ public class TrackHelper {
     /**
      * Caught exceptions are errors in your app for which you've defined exception handling code,
      * such as the occasional timeout of a network connection during a request for data.
-     * <p/>
+     * <p>
      * This is just a different way to define an event.
      * Keep in mind Piwik is not a crash tracker, use this sparingly.
-     * <p/>
+     * <p>
      * For this to be useful you should ensure that proguard does not remove all classnames and line numbers.
      * Also note that if this is used across different app versions and obfuscation is used, the same exception might be mapped to different obfuscated names by proguard.
      * This would mean the same exception (event) is tracked as different events by Piwik.
@@ -614,7 +696,7 @@ public class TrackHelper {
                 StackTraceElement trace = mThrowable.getStackTrace()[0];
                 className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
             } catch (java.lang.Exception e) {
-                Timber.tag(Tracker.LOGGER_TAG).w(e, "Couldn't get stack info");
+                Timber.tag(LOGGER_TAG).w(e, "Couldn't get stack info");
                 className = mThrowable.getClass().getName();
             }
             String actionName = "exception/" + (mIsFatal ? "fatal/" : "") + (className + "/") + mDescription;
@@ -630,10 +712,10 @@ public class TrackHelper {
     /**
      * This will create an exception handler that wraps any existing exception handler.
      * Exceptions will be caught, tracked, dispatched and then rethrown to the previous exception handler.
-     * <p/>
+     * <p>
      * Be wary of relying on this for complete crash tracking..
      * Think about how to deal with older app versions still throwing already fixed exceptions.
-     * <p/>
+     * <p>
      * See discussion here: https://github.com/piwik/piwik-sdk-android/issues/28
      */
     public UncaughtExceptions uncaughtExceptions() {
@@ -728,6 +810,68 @@ public class TrackHelper {
             };
             mApplication.registerActivityLifecycleCallbacks(callback);
             return callback;
+        }
+    }
+
+    public Dimension dimension(int id, String value) {
+        return new Dimension(mBaseTrackMe).dimension(id, value);
+    }
+
+    public static class Dimension extends TrackHelper {
+
+        Dimension(TrackMe base) {
+            super(base);
+        }
+
+        @Override
+        public Dimension dimension(int id, String value) {
+            CustomDimension.setDimension(mBaseTrackMe, id, value);
+            return this;
+        }
+    }
+
+
+    /**
+     * To track visit scoped custom variables.
+     *
+     * @see CustomVariables#put(int, String, String)
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     */
+    @Deprecated
+    public VisitVariables visitVariables(int id, String name, String value) {
+        CustomVariables customVariables = new CustomVariables();
+        customVariables.put(id, name, value);
+        return visitVariables(customVariables);
+    }
+
+    /**
+     * To track visit scoped custom variables.
+     *
+     * @deprecated Consider using <a href="http://piwik.org/docs/custom-dimensions/">Custom Dimensions</a>
+     */
+    @Deprecated
+    public VisitVariables visitVariables(CustomVariables customVariables) {
+        return new VisitVariables(this, customVariables);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static class VisitVariables extends TrackHelper {
+
+        public VisitVariables(TrackHelper baseBuilder, CustomVariables customVariables) {
+            super(baseBuilder.mBaseTrackMe);
+            CustomVariables mergedVariables = new CustomVariables(mBaseTrackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+            mergedVariables.putAll(customVariables);
+            mBaseTrackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mergedVariables.toString());
+        }
+
+        /**
+         * @see CustomVariables#put(int, String, String)
+         */
+        public VisitVariables visitVariables(int id, String name, String value) {
+            CustomVariables customVariables = new CustomVariables(mBaseTrackMe.get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+            customVariables.put(id, name, value);
+            mBaseTrackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, customVariables.toString());
+            return this;
         }
     }
 }
