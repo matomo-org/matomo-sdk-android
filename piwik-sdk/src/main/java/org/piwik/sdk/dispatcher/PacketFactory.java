@@ -16,7 +16,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.QueryParams;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -32,11 +31,9 @@ public class PacketFactory {
     @VisibleForTesting
     public static final int PAGE_SIZE = 20;
     private final URL mApiUrl;
-    private final String mAuthtoken;
 
-    public PacketFactory(@NonNull final URL apiUrl, @Nullable final String authToken) {
+    public PacketFactory(@NonNull final URL apiUrl) {
         mApiUrl = apiUrl;
-        mAuthtoken = authToken;
     }
 
     @NonNull
@@ -63,8 +60,7 @@ public class PacketFactory {
 
     //{
     //    "requests": ["?idsite=1&url=http://example.org&action_name=Test bulk log Pageview&rec=1",
-    //    "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"],
-    //    "token_auth": "33dc3f2536d3025974cccb4b4d2d98f4"
+    //    "?idsite=1&url=http://example.net/test.htm&action_name=Another bul k page view&rec=1"]
     //}
     @Nullable
     private Packet buildPacketForPost(List<Event> events) {
@@ -73,10 +69,8 @@ public class PacketFactory {
             JSONObject params = new JSONObject();
 
             JSONArray jsonArray = new JSONArray();
-            for (Event event : events) jsonArray.put(event.getQuery());
+            for (Event event : events) jsonArray.put(event.getEncodedQuery());
             params.put("requests", jsonArray);
-
-            if (mAuthtoken != null) params.put(QueryParams.AUTHENTICATION_TOKEN.toString(), mAuthtoken);
             return new Packet(mApiUrl, params, events.size());
         } catch (JSONException e) {
             Timber.tag(LOGGER_TAG).w(e, "Cannot create json object:\n%s", TextUtils.join(", ", events));
@@ -87,7 +81,7 @@ public class PacketFactory {
     // "http://domain.com/piwik.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
     @Nullable
     private Packet buildPacketForGet(@NonNull Event event) {
-        if (event.getQuery().isEmpty()) return null;
+        if (event.getEncodedQuery().isEmpty()) return null;
         try {
             return new Packet(new URL(mApiUrl.toString() + event));
         } catch (MalformedURLException e) {

@@ -1,9 +1,6 @@
 package org.piwik.sdk.tools;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.io.File;
 
@@ -11,9 +8,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
 public class ChecksumTest {
 
     @Test

@@ -5,10 +5,14 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk;
+package org.piwik.sdk.extra;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
+import org.piwik.sdk.Piwik;
+import org.piwik.sdk.TrackMe;
+import org.piwik.sdk.Tracker;
 
 import timber.log.Timber;
 
@@ -18,6 +22,7 @@ import timber.log.Timber;
  * Also see documentation for {@link TrackHelper#uncaughtExceptions()}
  */
 public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "PiwikExceptionHandler";
     private final Tracker mTracker;
     private final TrackMe mTrackMe;
     private final Thread.UncaughtExceptionHandler mDefaultExceptionHandler;
@@ -47,7 +52,7 @@ public class PiwikExceptionHandler implements Thread.UncaughtExceptionHandler {
             // Immediately dispatch as the app might be dying after rethrowing the exception
             getTracker().dispatch();
         } catch (Exception e) {
-            Timber.tag(Tracker.LOGGER_TAG).e(e, "Couldn't track uncaught exception");
+            Timber.tag(LOGGER_TAG).e(e, "Couldn't track uncaught exception");
         } finally {
             // re-throw critical exception further to the os (important)
             if (getDefaultExceptionHandler() != null && getDefaultExceptionHandler() != this) {

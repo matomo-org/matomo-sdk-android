@@ -7,26 +7,21 @@
 
 package org.piwik.sdk.dispatcher;
 
-import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.Piwik;
-import org.piwik.sdk.Tracker;
+import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
@@ -41,25 +36,24 @@ public class Dispatcher {
     private final Object mThreadControl = new Object();
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
-    private final Tracker mTracker;
     private final Connectivity mConnectivity;
+    private final PacketFactory mPacketFactory;
 
-    private List<Packet> mDryRunOutput = Collections.synchronizedList(new ArrayList<Packet>());
-    public static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
+    static final int DEFAULT_CONNECTION_TIMEOUT = 5 * 1000;  // 5s
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
-    private volatile boolean mRunning = false;
 
-    public static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
+    static final long DEFAULT_DISPATCH_INTERVAL = 120 * 1000; // 120s
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
-    private boolean mDispatchGzipped = false;
-    private final PacketFactory packetFactory;
-    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
 
-    public Dispatcher(Tracker tracker, EventCache eventCache, Connectivity connectivity) {
-        mTracker = tracker;
+    private boolean mDispatchGzipped = false;
+    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile boolean mRunning = false;
+    private List<Packet> mDryRunTarget = null;
+
+    public Dispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory) {
         mConnectivity = connectivity;
         mEventCache = eventCache;
-        packetFactory = new PacketFactory(mTracker.getAPIUrl(), mTracker.getAuthToken());
+        mPacketFactory = packetFactory;
     }
 
     /**
@@ -121,7 +115,9 @@ public class Dispatcher {
         synchronized (mThreadControl) {
             if (!mRunning) {
                 mRunning = true;
-                new Thread(mLoop).start();
+                Thread thread = new Thread(mLoop);
+                thread.setPriority(Thread.MIN_PRIORITY);
+                thread.start();
                 return true;
             }
         }
@@ -140,36 +136,44 @@ public class Dispatcher {
         return true;
     }
 
-    public void submit(String query) {
-        mEventCache.add(new Event(query));
+    public void clear() {
+        mEventCache.clear();
+        // Try to exit the loop as the queue is empty
+        if (mRunning) forceDispatch();
+    }
+
+    public void submit(TrackMe trackMe) {
+        mEventCache.add(new Event(trackMe.toMap()));
         if (mDispatchInterval != -1) launch();
     }
 
     private Runnable mLoop = new Runnable() {
         @Override
         public void run() {
-            android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             while (mRunning) {
                 try {
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                boolean connected = isConnected();
-                mEventCache.updateState(connected);
-                if (connected) {
+                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
+
+                if (mEventCache.updateState(isConnected())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
                     Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
-                    for (Packet packet : packetFactory.buildPackets(drainedEvents)) {
+                    for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
+                        boolean success = false;
                         try {
-                            if (dispatch(packet)) count += packet.getEventCount();
+                            success = dispatch(packet);
                         } catch (IOException e) {
                             // While rapidly dispatching, it's possible that we are connected, but can't resolve hostnames yet
                             // java.net.UnknownHostException: Unable to resolve host "...": No address associated with hostname
-                            Timber.tag(LOGGER_TAG).w(e, "Dispatch failed, assuming OFFLINE, requeuing events.");
+                            Timber.tag(LOGGER_TAG).d(e);
+                        }
+                        if (success) {
+                            count += packet.getEventCount();
+                        } else {
+                            Timber.tag(LOGGER_TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
                             mEventCache.updateState(false);
                             mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
                             break;
@@ -207,86 +211,66 @@ public class Dispatcher {
      */
     @VisibleForTesting
     public boolean dispatch(@NonNull Packet packet) throws IOException {
-        if (mTracker.isDryRun()) {
-            mDryRunOutput.add(packet);
-            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunOutput.size());
+        if (mDryRunTarget != null) {
+            mDryRunTarget.add(packet);
+            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunTarget.size());
             return true;
         }
 
-        if (!mDryRunOutput.isEmpty()) mDryRunOutput.clear();
+        HttpURLConnection urlConnection = null;
+        try {
+            urlConnection = (HttpURLConnection) packet.openConnection();
+            urlConnection.setConnectTimeout(mTimeOut);
+            urlConnection.setReadTimeout(mTimeOut);
 
-        HttpURLConnection urlConnection = (HttpURLConnection) packet.openConnection();
-        urlConnection.setConnectTimeout(mTimeOut);
-        urlConnection.setReadTimeout(mTimeOut);
+            // IF there is json data we have to do a post
+            if (packet.getPostData() != null) { // POST
+                urlConnection.setDoOutput(true); // Forces post
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+                urlConnection.setRequestProperty("charset", "utf-8");
 
-        // IF there is json data we want to do a post
-        if (packet.getPostData() != null) {
-            // POST
-            urlConnection.setDoOutput(true); // Forces post
-            urlConnection.setRequestProperty("Content-Type", "application/json");
-            urlConnection.setRequestProperty("charset", "utf-8");
+                final String toPost = packet.getPostData().toString();
+                if (mDispatchGzipped) {
+                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
+                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
 
-            String toPost = packet.getPostData().toString();
-            if (mDispatchGzipped) {
-                urlConnection.addRequestProperty("Content-Encoding", "gzip");
-                ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-                GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOS);
-                gzipOutputStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                gzipOutputStream.close();
-                urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
-            } else {
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                writer.write(toPost);
-                writer.flush();
-                writer.close();
+                    GZIPOutputStream gzipStream = null;
+                    try {
+                        gzipStream = new GZIPOutputStream(byteArrayOS);
+                        gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
+                    } finally { if (gzipStream != null) gzipStream.close();}
+
+                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
+                } else {
+                    BufferedWriter writer = null;
+                    try {
+                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                        writer.write(toPost);
+                    } finally { if (writer != null) writer.close(); }
+                }
+
+            } else { // GET
+                urlConnection.setDoOutput(false); // Defaults to false, but for readability
             }
 
-        } else {
-            // GET
-            urlConnection.setDoOutput(false); // Defaults to false, but for readability
-        }
+            int statusCode = urlConnection.getResponseCode();
+            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
 
-        int statusCode = urlConnection.getResponseCode();
-        Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
-        return statusCode == HttpURLConnection.HTTP_NO_CONTENT || statusCode == HttpURLConnection.HTTP_OK;
-
-    }
-
-    /**
-     * http://stackoverflow.com/q/4737841
-     *
-     * @param param raw data
-     * @return encoded string
-     */
-    public static String urlEncodeUTF8(String param) {
-        try {
-            return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
-        } catch (UnsupportedEncodingException e) {
-            Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
-            return "";
-        } catch (NullPointerException e) {
-            return "";
+            return checkResponseCode(statusCode);
+        } finally {
+            if (urlConnection != null) urlConnection.disconnect();
         }
     }
 
-    /**
-     * URL encodes a key-value map
-     */
-    public static String urlEncodeUTF8(Map<String, String> map) {
-        StringBuilder sb = new StringBuilder(100);
-        sb.append('?');
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            sb.append(urlEncodeUTF8(entry.getKey()));
-            sb.append('=');
-            sb.append(urlEncodeUTF8(entry.getValue()));
-            sb.append('&');
-        }
-
-        return sb.substring(0, sb.length() - 1);
+    private boolean checkResponseCode(int code) {
+        return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK;
     }
 
-    public List<Packet> getDryRunOutput() {
-        return mDryRunOutput;
+    public void setDryRunTarget(List<Packet> dryRunTarget) {
+        mDryRunTarget = dryRunTarget;
     }
 
+    public List<Packet> getDryRunTarget() {
+        return mDryRunTarget;
+    }
 }

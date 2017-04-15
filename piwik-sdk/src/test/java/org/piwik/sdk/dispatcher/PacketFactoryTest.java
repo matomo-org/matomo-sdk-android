@@ -1,10 +1,6 @@
 package org.piwik.sdk.dispatcher;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.piwik.sdk.QueryParams;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -17,25 +13,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
 public class PacketFactoryTest {
-
-    @Test
-    public void testPOST_authtoken() throws Exception {
-        URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, "token");
-        List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
-        for (Packet p : packets) {
-            assertEquals("token", p.getPostData().getString(QueryParams.AUTHENTICATION_TOKEN.toString()));
-        }
-    }
 
     @Test
     public void testPOST_apiUrl() throws Exception {
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
         for (Packet p : packets) {
             assertEquals(url, p.getTargetURL());
@@ -45,7 +28,7 @@ public class PacketFactoryTest {
     @Test
     public void testPOST_data() throws Exception {
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(Arrays.asList(new Event("straw"), new Event("berries")));
         assertEquals("straw", packets.get(0).getPostData().getJSONArray("requests").get(0));
         assertEquals("berries", packets.get(0).getPostData().getJSONArray("requests").get(1));
@@ -54,20 +37,20 @@ public class PacketFactoryTest {
     @Test
     public void testGET_apiUrl() throws Exception {
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(Collections.singletonList(new Event("strawberries")));
         assertTrue(packets.get(0).getTargetURL().toExternalForm().startsWith(url.toExternalForm()));
     }
 
     @Test
     public void testGET_badUrl() throws Exception {
-        PacketFactory factory = new PacketFactory(new URL("http://example.com/"), null);
+        PacketFactory factory = new PacketFactory(new URL("http://example.com/"));
         assertTrue(factory.buildPackets(Collections.singletonList(new Event(""))).isEmpty());
     }
 
     @Test
     public void testEmptyEvents() throws Exception {
-        PacketFactory factory = new PacketFactory(new URL("http://example.com/"), null);
+        PacketFactory factory = new PacketFactory(new URL("http://example.com/"));
         assertTrue(factory.buildPackets(Collections.<Event>emptyList()).isEmpty());
     }
 
@@ -78,7 +61,7 @@ public class PacketFactoryTest {
             events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(events);
         Packet first = packets.get(0);
         assertEquals(PacketFactory.PAGE_SIZE, first.getEventCount());
@@ -97,7 +80,7 @@ public class PacketFactoryTest {
             events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(events);
         Packet first = packets.get(0);
         assertEquals(PacketFactory.PAGE_SIZE, first.getEventCount());
@@ -116,7 +99,7 @@ public class PacketFactoryTest {
             events.add(new Event("?eve" + i));
         }
         URL url = new URL("http://example.com/");
-        PacketFactory factory = new PacketFactory(url, null);
+        PacketFactory factory = new PacketFactory(url);
         List<Packet> packets = factory.buildPackets(events);
         Packet first = packets.get(0);
         assertEquals(PacketFactory.PAGE_SIZE, first.getEventCount());

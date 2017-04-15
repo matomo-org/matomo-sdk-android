@@ -2,16 +2,13 @@ package org.piwik.sdk.dispatcher;
 
 import android.content.Context;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.robolectric.Robolectric;
-import org.robolectric.annotation.Config;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -28,31 +25,43 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-@Config(emulateSdk = 18, manifest = Config.NONE)
-@RunWith(FullEnvTestRunner.class)
 public class EventDiskCacheTest {
     @Mock Piwik mPiwik;
     @Mock Tracker mTracker;
     @Mock Context mContext;
     private EventDiskCache mDiskCache;
     private File mHostFolder;
+    private File mBaseCacheDir;
+    private File mCacheFolder;
 
     @Before
     public void setup() throws MalformedURLException {
         MockitoAnnotations.initMocks(this);
         when(mTracker.getPiwik()).thenReturn(mPiwik);
         when(mPiwik.getContext()).thenReturn(mContext);
-        when(mContext.getCacheDir()).thenReturn(Robolectric.application.getCacheDir());
+        mBaseCacheDir = new File("baseCacheDir");
+        when(mContext.getCacheDir()).thenReturn(mBaseCacheDir);
 
         URL apiUrl = new URL("http://testhost/piwik.php");
         when(mTracker.getAPIUrl()).thenReturn(apiUrl);
 
         when(mTracker.getOfflineCacheAge()).thenReturn(0L);
 
-        File cacheFolder = new File(Robolectric.application.getCacheDir(), "piwik_cache");
-        mHostFolder = new File(cacheFolder, "testhost");
+        mCacheFolder = new File(mBaseCacheDir, "piwik_cache");
+        mHostFolder = new File(mCacheFolder, "testhost");
 
         mDiskCache = new EventDiskCache(mTracker);
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @After
+    public void tearDown() {
+        for (File file : mBaseCacheDir.listFiles()[0].listFiles()[0].listFiles()) {
+            file.delete();
+        }
+        mHostFolder.delete();
+        mCacheFolder.delete();
+        mBaseCacheDir.delete();
     }
 
     @Test
@@ -65,7 +74,7 @@ public class EventDiskCacheTest {
     @Test
     public void testCachePath() throws Exception {
         mDiskCache.cache(Collections.singletonList(new Event(1000, "test")));
-        File cacheFolder = new File(Robolectric.application.getCacheDir(), "piwik_cache");
+        File cacheFolder = new File(mBaseCacheDir, "piwik_cache");
         File hostFolder = new File(cacheFolder, "testhost");
         assertTrue(hostFolder.exists());
         assertEquals(1, hostFolder.listFiles().length);
@@ -235,7 +244,7 @@ public class EventDiskCacheTest {
     @Test
     public void stressTest_singles() throws Exception {
         final Semaphore sem = new Semaphore(0);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 8; i++) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -247,10 +256,10 @@ public class EventDiskCacheTest {
                 }
             }).start();
         }
-        sem.acquire(4);
-        assertEquals(400, mHostFolder.listFiles().length);
+        sem.acquire(8);
+        assertEquals(800, mHostFolder.listFiles().length);
         final List<Event> events = mDiskCache.uncache();
-        assertEquals(400, events.size());
+        assertEquals(800, events.size());
         assertEquals(0, mHostFolder.listFiles().length);
     }
 

@@ -11,30 +11,40 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
-import java.net.MalformedURLException;
+import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.tools.BuildInfo;
+import org.piwik.sdk.tools.Checksum;
+import org.piwik.sdk.tools.DeviceHelper;
+import org.piwik.sdk.tools.PropertySource;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import timber.log.Timber;
 
 
 public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
-    public static final String PREFERENCE_FILE_NAME = "org.piwik.sdk";
-    public static final String PREFERENCE_KEY_OPTOUT = "piwik.optout";
+    private static final String LOGGER_TAG = "PIWIK";
+    private static final String BASE_PREFERENCE_FILE = "org.piwik.sdk";
+    private final Map<Tracker, SharedPreferences> mPreferenceMap = new HashMap<>();
     private final Context mContext;
-    private boolean mOptOut = false;
-    private boolean mDryRun = false;
 
     private static Piwik sInstance;
-    private final SharedPreferences mSharedPreferences;
+    private SharedPreferences mBasePreferences;
 
     public static synchronized Piwik getInstance(Context context) {
-        if (sInstance == null)
-            sInstance = new Piwik(context);
+        if (sInstance == null) {
+            synchronized (Piwik.class) {
+                if (sInstance == null) sInstance = new Piwik(context);
+            }
+        }
         return sInstance;
     }
 
     private Piwik(Context context) {
         mContext = context.getApplicationContext();
-        mSharedPreferences = getContext().getSharedPreferences(PREFERENCE_FILE_NAME, Context.MODE_PRIVATE);
-        mOptOut = getSharedPreferences().getBoolean(PREFERENCE_KEY_OPTOUT, false);
+        mBasePreferences = context.getSharedPreferences(BASE_PREFERENCE_FILE, Context.MODE_PRIVATE);
     }
 
     public Context getContext() {
@@ -42,60 +52,12 @@ public class Piwik {
     }
 
     /**
-     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId     (required) id of site
-     * @param authToken  (optional) could be null or valid auth token.
-     * @return Tracker object
-     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
-     * @deprecated Use {@link #newTracker(String, int)} as there are security concerns over the authToken.
-     */
-    @Deprecated
-    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId, String authToken) throws MalformedURLException {
-        return new Tracker(trackerUrl, siteId, authToken, this);
-    }
-
-    /**
-     * @param trackerUrl (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId     (required) id of site
+     * @param trackerConfig the Tracker configuration
      * @return Tracker object
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    public synchronized Tracker newTracker(@NonNull String trackerUrl, int siteId) throws MalformedURLException {
-        return new Tracker(trackerUrl, siteId, null, this);
-    }
-
-    /**
-     * Use this to disable Piwik, e.g. if the user opted out of tracking.
-     * Piwik will persist the choice and remain disable on next instance creation.<p>
-     * The choice is stored in {@link #PREFERENCE_FILE_NAME} under the key {@link #PREFERENCE_KEY_OPTOUT}.
-     *
-     * @param optOut true to disable reporting
-     */
-    public void setOptOut(boolean optOut) {
-        mOptOut = optOut;
-        getSharedPreferences().edit().putBoolean(PREFERENCE_KEY_OPTOUT, optOut).apply();
-    }
-
-    /**
-     * @return true if Piwik is currently disabled
-     */
-    public boolean isOptOut() {
-        return mOptOut;
-    }
-
-    public boolean isDryRun() {
-        return mDryRun;
-    }
-
-    /**
-     * The dryRun flag set to true prevents any data from being sent to Piwik.
-     * The dryRun flag should be set whenever you are testing or debugging an implementation and do not want
-     * test data to appear in your Piwik reports. To set the dry run flag, use:
-     *
-     * @param dryRun true if you don't want to send any data to piwik
-     */
-    public void setDryRun(boolean dryRun) {
-        mDryRun = dryRun;
+    public synchronized Tracker newTracker(@NonNull TrackerConfig trackerConfig) {
+        return new Tracker(this, trackerConfig);
     }
 
     public String getApplicationDomain() {
@@ -103,11 +65,38 @@ public class Piwik {
     }
 
     /**
-     * Returns the shared preferences used by Piwik that are stored under {@link #PREFERENCE_FILE_NAME}
-     *
-     * @return Piwik's SharedPreferences instance
+     * Base preferences, tracker idenpendent.
      */
-    public SharedPreferences getSharedPreferences() {
-        return mSharedPreferences;
+    public SharedPreferences getPiwikPreferences() {
+        return mBasePreferences;
+    }
+
+    /**
+     * @return Tracker specific settings object
+     */
+    public SharedPreferences getTrackerPreferences(@NonNull Tracker tracker) {
+        synchronized (mPreferenceMap) {
+            SharedPreferences newPrefs = mPreferenceMap.get(tracker);
+            if (newPrefs == null) {
+                String prefName;
+                try {
+                    prefName = "org.piwik.sdk_" + Checksum.getMD5Checksum(tracker.getName());
+                } catch (Exception e) {
+                    Timber.tag(LOGGER_TAG).e(e, null);
+                    prefName = "org.piwik.sdk_" + tracker.getName();
+                }
+                newPrefs = getContext().getSharedPreferences(prefName, Context.MODE_PRIVATE);
+                mPreferenceMap.put(tracker, newPrefs);
+            }
+            return newPrefs;
+        }
+    }
+
+    protected DispatcherFactory getDispatcherFactory() {
+        return new DispatcherFactory();
+    }
+
+    DeviceHelper getDeviceHelper() {
+        return new DeviceHelper(mContext, new PropertySource(), new BuildInfo());
     }
 }

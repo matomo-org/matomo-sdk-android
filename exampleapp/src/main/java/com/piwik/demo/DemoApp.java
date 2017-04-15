@@ -7,27 +7,29 @@
 
 package com.piwik.demo;
 
-import org.piwik.sdk.DownloadTracker;
-import org.piwik.sdk.PiwikApplication;
-import org.piwik.sdk.TrackHelper;
+import android.os.StrictMode;
+
+import org.piwik.sdk.TrackerConfig;
+import org.piwik.sdk.extra.DownloadTracker;
+import org.piwik.sdk.extra.PiwikApplication;
+import org.piwik.sdk.extra.TrackHelper;
 
 import timber.log.Timber;
 
 public class DemoApp extends PiwikApplication {
 
     @Override
-    public String getTrackerUrl() {
-        return "http://demo.piwik.org/";
-    }
-
-    @Override
-    public Integer getSiteId() {
-        return 53;
+    public TrackerConfig onCreateTrackerConfig() {
+        return TrackerConfig.createDefault("http://demo.piwik.org/", 53);
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build());
         initPiwik();
     }
 
@@ -46,7 +48,7 @@ public class DemoApp extends PiwikApplication {
 
         // Track this app install, this will only trigger once per app version.
         // i.e. "http://com.piwik.demo:1/185DECB5CFE28FDB2F45887022D668B4"
-        TrackHelper.track().download().identifier(DownloadTracker.Extra.APK_CHECKSUM).with(getTracker());
+        TrackHelper.track().download().identifier(new DownloadTracker.Extra.ApkChecksum(this)).with(getTracker());
         // Alternative:
         // i.e. "http://com.piwik.demo:1/com.android.vending"
         // getTracker().download();

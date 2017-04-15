@@ -13,31 +13,30 @@ import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
-import org.piwik.sdk.dispatcher.EventCache;
-import org.piwik.sdk.dispatcher.EventDiskCache;
-import org.piwik.sdk.tools.Connectivity;
-import org.piwik.sdk.tools.DeviceHelper;
+import org.piwik.sdk.dispatcher.Packet;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import timber.log.Timber;
+
+import static android.content.ContentValues.TAG;
+
 
 /**
  * Main tracking class
  * This class is threadsafe.
  */
 public class Tracker {
-    protected static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
+    private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
 
     // Piwik default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
@@ -46,12 +45,13 @@ public class Tracker {
     private static final String DEFAULT_API_VERSION_VALUE = "1";
 
     // Sharedpreference keys for persisted values
+    protected static final String PREF_KEY_TRACKER_OPTOUT = "tracker.optout";
     protected static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
     protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
     protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
     protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
-    protected static final String PREFERENCE_KEY_OFFLINE_CACHE_AGE = "tracker.cache.age";
-    protected static final String PREFERENCE_KEY_OFFLINE_CACHE_SIZE = "tracker.cache.size";
+    protected static final String PREF_KEY_OFFLINE_CACHE_AGE = "tracker.cache.age";
+    protected static final String PREF_KEY_OFFLINE_CACHE_SIZE = "tracker.cache.size";
     protected static final String PREF_KEY_DISPATCHER_MODE = "tracker.dispatcher.mode";
 
     private final Piwik mPiwik;
@@ -65,66 +65,78 @@ public class Tracker {
      * The ID of the website we're tracking a visit/action for.
      */
     private final int mSiteId;
-    private final String mAuthToken;
     private final Object mSessionLock = new Object();
-    private final CustomVariables mVisitCustomVariable = new CustomVariables();
     private final Dispatcher mDispatcher;
+    private final String mName;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
     private final TrackMe mDefaultTrackMe = new TrackMe();
 
-    private String mLastEvent;
+    private TrackMe mLastEvent;
     private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
     private long mSessionStartTime;
+    private boolean mOptOut = false;
+    private SharedPreferences mPreferences;
 
     /**
      * Use Piwik.newTracker() method to create new trackers
      *
-     * @param url       (required) Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     * @param siteId    (required) id of site
-     * @param authToken (optional) could be null
-     * @param piwik     piwik object used to gain access to application params such as name, resolution or lang
+     * @param piwik         piwik object used to gain access to application params such as name, resolution or lang
+     * @param trackerConfig configuration for this Tracker.
      * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
      */
-    protected Tracker(@NonNull final String url, int siteId, String authToken, @NonNull Piwik piwik) {
-        String checkUrl = url;
-        try {
-            if (checkUrl.endsWith("piwik.php") || checkUrl.endsWith("piwik-proxy.php")) {
-                mApiUrl = new URL(checkUrl);
-            } else {
-                if (!checkUrl.endsWith("/")) {
-                    checkUrl += "/";
-                }
-                mApiUrl = new URL(checkUrl + "piwik.php");
-            }
-        } catch (MalformedURLException e) { throw new RuntimeException(e); }
-
+    public Tracker(@NonNull Piwik piwik, @NonNull TrackerConfig trackerConfig) {
         mPiwik = piwik;
-        mSiteId = siteId;
-        mAuthToken = authToken;
+        mApiUrl = trackerConfig.getApiUrl();
+        mSiteId = trackerConfig.getSiteId();
+        mName = trackerConfig.getTrackerName();
 
-        mDispatcher = new Dispatcher(this, new EventCache(new EventDiskCache(this)), new Connectivity(mPiwik.getContext()));
+        new LegacySettingsPorter(piwik).port(this);
 
-        String userId = getSharedPreferences().getString(PREF_KEY_TRACKER_USERID, null);
+        mOptOut = getPreferences().getBoolean(PREF_KEY_TRACKER_OPTOUT, false);
+
+        mDispatcher = piwik.getDispatcherFactory().build(this);
+        String userId = getPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
             userId = UUID.randomUUID().toString();
-            getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
+            getPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
         }
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
 
         mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
         String resolution = DEFAULT_UNKNOWN_VALUE;
-        int[] res = DeviceHelper.getResolution(mPiwik.getContext());
-        if (res != null)
-            resolution = String.format("%sx%s", res[0], res[1]);
+        int[] res = mPiwik.getDeviceHelper().getResolution();
+        if (res != null) resolution = String.format("%sx%s", res[0], res[1]);
         mDefaultTrackMe.set(QueryParams.SCREEN_RESOLUTION, resolution);
 
-        mDefaultTrackMe.set(QueryParams.USER_AGENT, DeviceHelper.getUserAgent());
-        mDefaultTrackMe.set(QueryParams.LANGUAGE, DeviceHelper.getUserLanguage());
-        mDefaultTrackMe.set(QueryParams.COUNTRY, DeviceHelper.getUserCountry());
+        mDefaultTrackMe.set(QueryParams.USER_AGENT, mPiwik.getDeviceHelper().getUserAgent());
+        mDefaultTrackMe.set(QueryParams.LANGUAGE, mPiwik.getDeviceHelper().getUserLanguage());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
+    }
+
+    /**
+     * Use this to disable this Tracker, e.g. if the user opted out of tracking.
+     * The Tracker will persist the choice and remain disable on next instance creation.<p>
+     *
+     * @param optOut true to disable reporting
+     */
+    public void setOptOut(boolean optOut) {
+        mOptOut = optOut;
+        getPreferences().edit().putBoolean(PREF_KEY_TRACKER_OPTOUT, optOut).apply();
+        mDispatcher.clear();
+    }
+
+    /**
+     * @return true if Piwik is currently disabled
+     */
+    public boolean isOptOut() {
+        return mOptOut;
+    }
+
+    public String getName() {
+        return mName;
     }
 
     public Piwik getPiwik() {
@@ -133,10 +145,6 @@ public class Tracker {
 
     public URL getAPIUrl() {
         return mApiUrl;
-    }
-
-    public String getAuthToken() {
-        return mAuthToken;
     }
 
     protected int getSiteId() {
@@ -199,15 +207,10 @@ public class Tracker {
 
     /**
      * Processes all queued events in background thread
-     *
-     * @return true if there are any queued events and opt out is inactive
      */
-    public boolean dispatch() {
-        if (!mPiwik.isOptOut()) {
-            mDispatcher.forceDispatch();
-            return true;
-        }
-        return false;
+    public void dispatch() {
+        if (mOptOut) return;
+        mDispatcher.forceDispatch();
     }
 
     /**
@@ -244,14 +247,14 @@ public class Tracker {
      * Events older than the set limit will be discarded on the next dispatch attempt.<br>
      * The Piwik backend accepts backdated events for up to 24 hours by default.
      * <p>
-     * >0 = limit in ms<br>
+     * &gt;0 = limit in ms<br>
      * 0 = unlimited<br>
      * -1 = disabled offline cache<br>
      *
      * @param age in milliseconds
      */
     public void setOfflineCacheAge(long age) {
-        getSharedPreferences().edit().putLong(PREFERENCE_KEY_OFFLINE_CACHE_AGE, age).apply();
+        getPreferences().edit().putLong(PREF_KEY_OFFLINE_CACHE_AGE, age).apply();
     }
 
     /**
@@ -260,7 +263,7 @@ public class Tracker {
      * @return maximum cache age in milliseconds
      */
     public long getOfflineCacheAge() {
-        return getSharedPreferences().getLong(PREFERENCE_KEY_OFFLINE_CACHE_AGE, 24 * 60 * 60 * 1000);
+        return getPreferences().getLong(PREF_KEY_OFFLINE_CACHE_AGE, 24 * 60 * 60 * 1000);
     }
 
     /**
@@ -269,13 +272,13 @@ public class Tracker {
      * Events older than the set limit will be discarded on the next dispatch attempt.<br>
      * The Piwik backend accepts backdated events for up to 24 hours by default.
      * <p>
-     * >0 = limit in byte<br>
+     * &gt;0 = limit in byte<br>
      * 0 = unlimited<br>
      *
      * @param size in byte
      */
     public void setOfflineCacheSize(long size) {
-        getSharedPreferences().edit().putLong(PREFERENCE_KEY_OFFLINE_CACHE_SIZE, size).apply();
+        getPreferences().edit().putLong(PREF_KEY_OFFLINE_CACHE_SIZE, size).apply();
     }
 
     /**
@@ -284,15 +287,16 @@ public class Tracker {
      * @return size in byte
      */
     public long getOfflineCacheSize() {
-        return getSharedPreferences().getLong(PREFERENCE_KEY_OFFLINE_CACHE_SIZE, 4 * 1024 * 1024);
+        return getPreferences().getLong(PREF_KEY_OFFLINE_CACHE_SIZE, 4 * 1024 * 1024);
     }
 
     /**
      * The current dispatch behavior.
+     *
      * @see DispatchMode
      */
     public DispatchMode getDispatchMode() {
-        String raw = getSharedPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
+        String raw = getPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
         DispatchMode mode = DispatchMode.fromString(raw);
         if (mode == null) {
             mode = DispatchMode.ALWAYS;
@@ -303,10 +307,11 @@ public class Tracker {
 
     /**
      * Sets the dispatch mode.
+     *
      * @see DispatchMode
      */
     public void setDispatchMode(DispatchMode mode) {
-        getSharedPreferences().edit().putString(PREF_KEY_DISPATCHER_MODE, mode.toString()).apply();
+        getPreferences().edit().putString(PREF_KEY_DISPATCHER_MODE, mode.toString()).apply();
         mDispatcher.setDispatchMode(mode);
     }
 
@@ -325,7 +330,7 @@ public class Tracker {
      */
     public Tracker setUserId(String userId) {
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
-        getSharedPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
+        getPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
         return this;
     }
 
@@ -342,8 +347,7 @@ public class Tracker {
      * If this value is not set Piwik will still track visits, but the unique visitors metric might be less accurate.
      */
     public Tracker setVisitorId(String visitorId) throws IllegalArgumentException {
-        if (confirmVisitorIdFormat(visitorId))
-            mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
+        if (confirmVisitorIdFormat(visitorId)) mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
         return this;
     }
 
@@ -354,10 +358,8 @@ public class Tracker {
     private static final Pattern PATTERN_VISITOR_ID = Pattern.compile("^[0-9a-f]{16}$");
 
     private boolean confirmVisitorIdFormat(String visitorId) throws IllegalArgumentException {
-        Matcher visitorIdMatcher = PATTERN_VISITOR_ID.matcher(visitorId);
-        if (visitorIdMatcher.matches()) {
-            return true;
-        }
+        if (PATTERN_VISITOR_ID.matcher(visitorId).matches()) return true;
+
         throw new IllegalArgumentException("VisitorId: " + visitorId + " is not of valid format, " +
                 " the format must match the regular expression: " + PATTERN_VISITOR_ID.pattern());
     }
@@ -383,40 +385,39 @@ public class Tracker {
      */
     private void injectInitialParams(TrackMe trackMe) {
         long firstVisitTime;
-        int visitCount;
+        long visitCount;
         long previousVisit;
 
         // Protected against Trackers on other threads trying to do the same thing.
         // This works because they would use the same preference object.
-        synchronized (getSharedPreferences()) {
-            visitCount = 1 + getSharedPreferences().getInt(PREF_KEY_TRACKER_VISITCOUNT, 0);
-            getSharedPreferences().edit().putInt(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
+        synchronized (getPreferences()) {
+            visitCount = 1 + getPreferences().getLong(PREF_KEY_TRACKER_VISITCOUNT, 0);
+            getPreferences().edit().putLong(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
         }
 
-        synchronized (getSharedPreferences()) {
-            firstVisitTime = getSharedPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+        synchronized (getPreferences()) {
+            firstVisitTime = getPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
             if (firstVisitTime == -1) {
                 firstVisitTime = System.currentTimeMillis() / 1000;
-                getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
+                getPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
             }
         }
 
-        synchronized (getSharedPreferences()) {
-            previousVisit = getSharedPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-            getSharedPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
+        synchronized (getPreferences()) {
+            previousVisit = getPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+            getPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
         }
 
         // trySet because the developer could have modded these after creating the Tracker
         mDefaultTrackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, firstVisitTime);
         mDefaultTrackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, visitCount);
-        if (previousVisit != -1)
-            mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
+
+        if (previousVisit != -1) mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
 
         trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
         trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
         trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
         trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
-        trackMe.trySet(QueryParams.COUNTRY, mDefaultTrackMe.get(QueryParams.COUNTRY));
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
         trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
@@ -435,8 +436,6 @@ public class Tracker {
 
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
         trackMe.trySet(QueryParams.USER_ID, mDefaultTrackMe.get(QueryParams.USER_ID));
-
-        trackMe.trySet(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, mVisitCustomVariable.toString());
 
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
@@ -463,33 +462,27 @@ public class Tracker {
         boolean newSession;
         synchronized (mSessionLock) {
             newSession = tryNewSession();
-            if (newSession)
-                mSessionStartLatch = new CountDownLatch(1);
+            if (newSession) mSessionStartLatch = new CountDownLatch(1);
         }
         if (newSession) {
             injectInitialParams(trackMe);
         } else {
             try {
-                // Another thread is currently creating a sessions first transmission, wait until it's done.
-                mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                // Another thread might be creating a sessions first transmission.
+                mSessionStartLatch.await(getDispatchTimeout(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) { Timber.tag(TAG).e(e, null); }
         }
 
         injectBaseParams(trackMe);
-        String event = Dispatcher.urlEncodeUTF8(trackMe.toMap());
-        if (mPiwik.isOptOut()) {
-            mLastEvent = event;
-            Timber.tag(LOGGER_TAG).d("URL omitted due to opt out: %s", event);
-        } else {
-            mDispatcher.submit(event);
-            Timber.tag(LOGGER_TAG).d("URL added to the queue: %s", event);
-        }
+
+        mLastEvent = trackMe;
+        if (!mOptOut) {
+            mDispatcher.submit(trackMe);
+            Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
+        } else Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
 
         // we did a first transmission, let the other through.
-        if (newSession)
-            mSessionStartLatch.countDown();
+        if (newSession) mSessionStartLatch.countDown();
 
         return this;
     }
@@ -498,42 +491,30 @@ public class Tracker {
         return UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
     }
 
-    /**
-     * A custom variable is a custom name-value pair that you can assign to your users or screen views,
-     * and then visualize the reports of how many visits, conversions, etc. for each custom variable.
-     * A custom variable is defined by a name — for example,
-     * "User status" — and a value – for example, "LoggedIn" or "Anonymous".
-     * You can track up to 5 custom variables for each user to your app.
-     *
-     * @param index this Integer accepts values from 1 to 5.
-     *              A given custom variable name must always be stored in the same "index" per session.
-     *              For example, if you choose to store the variable name = "Gender" in
-     *              index = 1 and you record another custom variable in index = 1, then the
-     *              "Gender" variable will be deleted and replaced with the new custom variable stored in index 1.
-     * @param name  String defines the name of a specific Custom Variable such as "User type".
-     * @param value String defines the value of a specific Custom Variable such as "Customer".
-     */
-    public Tracker setVisitCustomVariable(int index, String name, String value) {
-        mVisitCustomVariable.put(index, name, value);
-        return this;
-    }
 
-    public SharedPreferences getSharedPreferences() {
-        return mPiwik.getSharedPreferences();
+    public SharedPreferences getPreferences() {
+        if (mPreferences == null) mPreferences = mPiwik.getTrackerPreferences(this);
+        return mPreferences;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         Tracker tracker = (Tracker) o;
-        return mSiteId == tracker.mSiteId && mApiUrl.equals(tracker.mApiUrl);
+
+        if (mSiteId != tracker.mSiteId) return false;
+        if (!mApiUrl.equals(tracker.mApiUrl)) return false;
+        return mName.equals(tracker.mName);
+
     }
 
     @Override
     public int hashCode() {
-        int result = mSiteId;
-        result = 31 * result + mApiUrl.hashCode();
+        int result = mApiUrl.hashCode();
+        result = 31 * result + mSiteId;
+        result = 31 * result + mName.hashCode();
         return result;
     }
 
@@ -547,22 +528,28 @@ public class Tracker {
      * @return query of the event
      */
     @VisibleForTesting
-    public String getLastEvent() {
+    public TrackMe getLastEventX() {
         return mLastEvent;
     }
 
-    @VisibleForTesting
-    public void clearLastEvent() {
-        mLastEvent = null;
+    /**
+     * Set a data structure here to put the Dispatcher into dry-run-mode.
+     * Data will be processed but at the last step just stored instead of transmitted.
+     * Set it to null to disable it.
+     *
+     * @param dryRunTarget a data structure the data should be passed into
+     */
+    public void setDryRunTarget(List<Packet> dryRunTarget) {
+        mDispatcher.setDryRunTarget(dryRunTarget);
     }
 
-    @VisibleForTesting
-    public Dispatcher getDispatcher() {
-        return mDispatcher;
-    }
-
-    public boolean isDryRun() {
-        return mPiwik.isDryRun();
+    /**
+     * If we are in dry-run mode then this will return a datastructure.
+     *
+     * @return a datastructure or null
+     */
+    public List<Packet> getDryRunTarget() {
+        return mDispatcher.getDryRunTarget();
     }
 }
 
