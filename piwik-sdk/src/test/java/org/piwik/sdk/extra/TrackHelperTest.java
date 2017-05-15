@@ -15,6 +15,7 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.UUID;
@@ -29,7 +30,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,9 +68,6 @@ public class TrackHelperTest {
 
     @Test
     public void testOutlink() throws Exception {
-        track().outlink(new URL("file://mount/sdcard/something")).with(mTracker);
-        verify(mTracker, never()).track(mCaptor.capture());
-
         URL valid = new URL("https://foo.bar");
         track().outlink(valid).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
@@ -88,6 +85,11 @@ public class TrackHelperTest {
         verify(mTracker, times(3)).track(mCaptor.capture());
         assertEquals(valid.toExternalForm(), mCaptor.getValue().get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), mCaptor.getValue().get(QueryParams.URL_PATH));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testOutlink_invalid_url() throws MalformedURLException {
+        track().outlink(new URL("file://mount/sdcard/something"));
     }
 
     @Test
@@ -291,6 +293,11 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.GOAL_ID), "1");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrackGoal_invalid_id() throws Exception {
+        track().goal(-1).revenue(100f);
+    }
+
     @Test
     public void testTrackSiteSearch() throws Exception {
         track().search("keyword").category("category").count(1337).with(mTracker);
@@ -315,12 +322,6 @@ public class TrackHelperTest {
 
         assertEquals("1", mCaptor.getValue().get(QueryParams.GOAL_ID));
         assertTrue(100f == Float.valueOf(mCaptor.getValue().get(QueryParams.REVENUE)));
-    }
-
-    @Test
-    public void testTrackGoalInvalidId() throws Exception {
-        track().goal(-1).revenue(100f).with(mTracker);
-        verify(mTracker, never()).track(mCaptor.capture());
     }
 
     @Test
