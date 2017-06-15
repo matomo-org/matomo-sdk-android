@@ -97,9 +97,6 @@ public class TrackHelper {
         Screen(TrackHelper baseBuilder, String path) {
             super(baseBuilder);
             mPath = path;
-            if (mPath == null) {
-                throw new IllegalArgumentException("Screen tracking requires a non-empty path");
-            }
         }
 
         /**
@@ -139,6 +136,10 @@ public class TrackHelper {
 
         @Override
         public TrackMe build() {
+            if (mPath == null) {
+                throw new IllegalArgumentException("Screen tracking requires a non-empty path");
+            }
+
             final TrackMe trackMe = new TrackMe(getBaseTrackMe())
                     .set(QueryParams.URL_PATH, mPath)
                     .set(QueryParams.ACTION_NAME, mTitle);
@@ -243,9 +244,6 @@ public class TrackHelper {
         Goal(TrackHelper baseBuilder, int idGoal) {
             super(baseBuilder);
             mIdGoal = idGoal;
-            if (mIdGoal < 0) {
-                throw new IllegalArgumentException("Goal id needs to be >=0");
-            }
         }
 
         /**
@@ -260,6 +258,10 @@ public class TrackHelper {
 
         @Override
         public TrackMe build() {
+            if (mIdGoal < 0) {
+                throw new IllegalArgumentException("Goal id needs to be >=0");
+            }
+
             TrackMe trackMe = new TrackMe(getBaseTrackMe()).set(QueryParams.GOAL_ID, mIdGoal);
             if (mRevenue != null) trackMe.set(QueryParams.REVENUE, mRevenue);
             return trackMe;
@@ -282,16 +284,17 @@ public class TrackHelper {
         Outlink(TrackHelper baseBuilder, URL url) {
             super(baseBuilder);
             mURL = url;
-            if (url == null || url.toExternalForm().length() == 0) {
+        }
+
+        @Override
+        public TrackMe build() {
+            if (mURL == null || mURL.toExternalForm().length() == 0) {
                 throw new IllegalArgumentException("Outlink tracking requires a non-empty URL");
             }
             if (!mURL.getProtocol().equals("http") && !mURL.getProtocol().equals("https") && !mURL.getProtocol().equals("ftp")) {
                 throw new IllegalArgumentException("Only http|https|ftp is supported for outlinks");
             }
-        }
 
-        @Override
-        public TrackMe build() {
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.LINK, mURL.toExternalForm())
                     .set(QueryParams.URL_PATH, mURL.toExternalForm());
@@ -442,9 +445,6 @@ public class TrackHelper {
         ContentImpression(TrackHelper baseBuilder, String contentName) {
             super(baseBuilder);
             mContentName = contentName;
-            if (mContentName == null || mContentName.length() == 0) {
-                throw new IllegalArgumentException("Tracking content impressions requires a non-empty content-name");
-            }
         }
 
         /**
@@ -465,6 +465,9 @@ public class TrackHelper {
 
         @Override
         public TrackMe build() {
+            if (mContentName == null || mContentName.length() == 0) {
+                throw new IllegalArgumentException("Tracking content impressions requires a non-empty content-name");
+            }
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -494,12 +497,6 @@ public class TrackHelper {
             super(baseBuilder);
             mContentName = contentName;
             mInteraction = interaction;
-            if (mContentName == null || mContentName.length() == 0) {
-                throw new IllegalArgumentException("Content name needs to be non-empty");
-            }
-            if (mInteraction == null || mInteraction.length() == 0) {
-                throw new IllegalArgumentException("Interaction name needs to be non-empty");
-            }
         }
 
         /**
@@ -520,6 +517,13 @@ public class TrackHelper {
 
         @Override
         public TrackMe build() {
+            if (mContentName == null || mContentName.length() == 0) {
+                throw new IllegalArgumentException("Content name needs to be non-empty");
+            }
+            if (mInteraction == null || mInteraction.length() == 0) {
+                throw new IllegalArgumentException("Interaction name needs to be non-empty");
+            }
+
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)

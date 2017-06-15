@@ -313,11 +313,6 @@ public class TrackerTest {
         assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetNewSession_invalid_argument() throws Exception {
-        TrackHelper.track().screen((String) null);
-    }
-
     @Test
     public void testSetNewSessionRaceCondition() throws Exception {
         for (int retry = 0; retry < 5; retry++) {
