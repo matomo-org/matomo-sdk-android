@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.piwik.sdk.Piwik;
@@ -57,11 +56,11 @@ public class TrackHelper {
 
         public abstract TrackMe build();
 
-        public void with(@NonNull PiwikApplication piwikApplication) {
+        public void with(PiwikApplication piwikApplication) {
             with(piwikApplication.getTracker());
         }
 
-        public void with(@NonNull Tracker tracker) {
+        public void with(Tracker tracker) {
             TrackMe trackMe = build();
             tracker.track(trackMe);
         }
@@ -167,18 +166,18 @@ public class TrackHelper {
      *                 and the action is a button click.
      * @return an object that allows addition of further details.
      */
-    public EventBuilder event(@NonNull String category, @NonNull String action) {
+    public EventBuilder event(String category, String action) {
         return new EventBuilder(this, category, action);
     }
 
     public static class EventBuilder extends BaseEvent {
-        @NonNull private final String mCategory;
-        @NonNull private final String mAction;
+        private final String mCategory;
+        private final String mAction;
         private String mPath;
         private String mName;
         private Float mValue;
 
-        EventBuilder(TrackHelper builder, @NonNull String category, @NonNull String action) {
+        EventBuilder(TrackHelper builder, String category, String action) {
             super(builder);
             mCategory = category;
             mAction = action;
@@ -433,7 +432,7 @@ public class TrackHelper {
      *
      * @param contentName The name of the content. For instance 'Ad Foo Bar'
      */
-    public ContentImpression impression(@NonNull String contentName) {
+    public ContentImpression impression(String contentName) {
         return new ContentImpression(this, contentName);
     }
 
@@ -483,7 +482,7 @@ public class TrackHelper {
      * @param contentInteraction The name of the interaction with the content. For instance a 'click'
      * @param contentName        The name of the content. For instance 'Ad Foo Bar'
      */
-    public ContentInteraction interaction(@NonNull String contentName, @NonNull String contentInteraction) {
+    public ContentInteraction interaction(String contentName, String contentInteraction) {
         return new ContentInteraction(this, contentName, contentInteraction);
     }
 
