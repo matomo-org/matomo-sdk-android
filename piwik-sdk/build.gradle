@@ -1,7 +1,3 @@
-def gitSha() {
-    return 'git rev-parse --short HEAD'.execute().text.trim()
-}
-
 apply plugin: 'com.android.library'
 
 def versionMajor = 2
@@ -23,9 +19,6 @@ android {
 }
 
 dependencies {
-    repositories {
-        jcenter()
-    }
     compile "com.android.support:support-annotations:${supportLibVersion}"
     compile "com.jakewharton.timber:timber:${timberVersion}"
 
@@ -68,7 +61,8 @@ task makeJar(type: Copy) {
     from('build/intermediates/bundles/release/')
     into('jar/')
     include('classes.jar')
-    rename('classes.jar', 'PiwikAndroidSdk-' + gitSha() + '.jar')
+    def fileName = 'PiwikAndroidSdk-' + 'git rev-parse --short HEAD'.execute().text.trim() + '.jar'
+    rename('classes.jar', fileName)
 }
 
 makeJar.dependsOn(clearJar, build)
@@ -81,16 +75,6 @@ apply plugin: 'com.github.kt3k.coveralls'
 
 jacoco {
     toolVersion = "0.7.1.201405082137"
-}
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
-    }
 }
 
 task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {

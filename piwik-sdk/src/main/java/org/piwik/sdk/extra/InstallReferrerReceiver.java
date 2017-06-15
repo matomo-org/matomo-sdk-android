@@ -49,4 +49,3 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
         context.sendBroadcast(intent);
     }
 }
-
