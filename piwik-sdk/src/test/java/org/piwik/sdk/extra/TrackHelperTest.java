@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,6 +67,30 @@ public class TrackHelperTest {
         track().screen("/path").with(mPiwikApplication);
         verify(mPiwikApplication).getTracker();
         verify(mTracker).track(any(TrackMe.class));
+    }
+
+    @Test
+    public void testBaseEvent_track_safely() {
+        final TrackHelper.BaseEvent badTrackMe = new TrackHelper.BaseEvent(null) {
+            @Override
+            public TrackMe build() {
+                throw new IllegalArgumentException();
+            }
+        };
+        assertThat(badTrackMe.safelyWith(mTracker), is(false));
+        assertThat(badTrackMe.safelyWith(mPiwikApplication), is(false));
+        verify(mTracker, never()).track(any(TrackMe.class));
+
+        final TrackHelper.BaseEvent goodTrackMe = new TrackHelper.BaseEvent(null) {
+            @Override
+            public TrackMe build() {
+                return new TrackMe();
+            }
+        };
+        assertThat(goodTrackMe.safelyWith(mTracker), is(true));
+        verify(mTracker, times(1)).track(any(TrackMe.class));
+        assertThat(goodTrackMe.safelyWith(mPiwikApplication), is(true));
+        verify(mTracker, times(2)).track(any(TrackMe.class));
     }
 
     @Test

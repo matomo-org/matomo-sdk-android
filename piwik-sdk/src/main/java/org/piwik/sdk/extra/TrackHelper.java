@@ -54,6 +54,9 @@ public class TrackHelper {
             return mBaseBuilder.mBaseTrackMe;
         }
 
+        /**
+         * May throw an {@link IllegalArgumentException} if the TrackMe was build with incorrect arguments.
+         */
         public abstract TrackMe build();
 
         public void with(PiwikApplication piwikApplication) {
@@ -63,6 +66,27 @@ public class TrackHelper {
         public void with(Tracker tracker) {
             TrackMe trackMe = build();
             tracker.track(trackMe);
+        }
+
+        public boolean safelyWith(PiwikApplication piwikApplication) {
+            return safelyWith(piwikApplication.getTracker());
+        }
+
+        /**
+         * {@link #build()} can throw an exception on illegal arguments.
+         * This can be used to avoid crashes when using dynamic {@link TrackMe} arguments.
+         *
+         * @return false if an error occured, true if the TrackMe has been submitted to be dispatched.
+         */
+        public boolean safelyWith(Tracker tracker) {
+            try {
+                TrackMe trackMe = build();
+                tracker.track(trackMe);
+            } catch (IllegalArgumentException e) {
+                Timber.e(e);
+                return false;
+            }
+            return true;
         }
     }
 
