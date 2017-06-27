@@ -307,17 +307,9 @@ public class TrackerTest {
         verify(mDispatcher).submit(mCaptor.capture());
         assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
 
-        TrackHelper.track().screen("").with(mTracker);
-        verify(mDispatcher, times(2)).submit(mCaptor.capture());
-        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
-
-        TrackHelper.track().screen("").with(mTracker);
-        verify(mDispatcher, times(3)).submit(mCaptor.capture());
-        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
-
         mTracker.startNewSession();
         TrackHelper.track().screen("").with(mTracker);
-        verify(mDispatcher, times(4)).submit(mCaptor.capture());
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
         assertEquals("1", mCaptor.getValue().get(QueryParams.SESSION_START));
     }
 
