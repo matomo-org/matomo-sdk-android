@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
+import org.piwik.sdk.dispatcher.DefaultDispatcherFactory;
 import org.piwik.sdk.dispatcher.DispatcherFactory;
 import org.piwik.sdk.tools.BuildInfo;
 import org.piwik.sdk.tools.Checksum;
@@ -32,6 +33,7 @@ public class Piwik {
 
     private static Piwik sInstance;
     private SharedPreferences mBasePreferences;
+    private DispatcherFactory mDispatcherFactory = new DefaultDispatcherFactory();
 
     public static synchronized Piwik getInstance(Context context) {
         if (sInstance == null) {
@@ -92,8 +94,15 @@ public class Piwik {
         }
     }
 
-    protected DispatcherFactory getDispatcherFactory() {
-        return new DispatcherFactory();
+    /**
+     * If you want to use your own {@link org.piwik.sdk.dispatcher.Dispatcher}
+     */
+    public void setDispatcherFactory(DispatcherFactory dispatcherFactory) {
+        this.mDispatcherFactory = dispatcherFactory;
+    }
+
+    public DispatcherFactory getDispatcherFactory() {
+        return mDispatcherFactory;
     }
 
     DeviceHelper getDeviceHelper() {

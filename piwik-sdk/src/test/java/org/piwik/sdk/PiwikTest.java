@@ -12,6 +12,8 @@ import android.app.Application;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.DispatcherFactory;
 import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
@@ -22,11 +24,16 @@ import org.robolectric.annotation.Config;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +101,18 @@ public class PiwikTest {
         assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker1));
         assertNotEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker2));
         assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker3));
+    }
+
+
+    @Test
+    public void testSetDispatcherFactory() {
+        final Piwik piwik = Piwik.getInstance(Robolectric.application);
+        Dispatcher dispatcher = mock(Dispatcher.class);
+        DispatcherFactory factory = mock(DispatcherFactory.class);
+        when(factory.build(any(Tracker.class))).thenReturn(dispatcher);
+        assertThat(piwik.getDispatcherFactory(), is(not(nullValue())));
+        piwik.setDispatcherFactory(factory);
+        assertThat(piwik.getDispatcherFactory(), is(factory));
     }
 
 }

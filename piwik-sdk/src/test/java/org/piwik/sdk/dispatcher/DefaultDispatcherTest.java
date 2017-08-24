@@ -40,9 +40,9 @@ import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("ALL")
-public class DispatcherTest {
+public class DefaultDispatcherTest {
 
-    Dispatcher mDispatcher;
+    DefaultDispatcher mDispatcher;
     EventCache mEventCache;
     @Mock EventDiskCache mEventDiskCache;
     @Mock Connectivity mConnectivity;
@@ -58,7 +58,7 @@ public class DispatcherTest {
 
         when(mEventDiskCache.isEmpty()).thenReturn(true);
         mEventCache = spy(new EventCache(mEventDiskCache));
-        mDispatcher = new Dispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl));
+        mDispatcher = new DefaultDispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl));
     }
 
     @Test
