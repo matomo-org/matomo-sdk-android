@@ -91,7 +91,7 @@ public class PiwikTest {
 
         tracker.track(TrackHelper.track().screen("test").build());
         tracker.dispatch();
-        verify(packetSender).send(any(Packet.class));
+        verify(packetSender, timeout(500).times(1)).send(any(Packet.class));
 
         tracker.track(TrackHelper.track().screen("test").build());
         verify(packetSender, timeout(500).times(1)).send(any(Packet.class));
