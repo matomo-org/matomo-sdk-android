@@ -9,7 +9,6 @@ package org.piwik.sdk.dispatcher;
 import android.content.Context;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -19,8 +18,6 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -44,6 +40,7 @@ public class DefaultDispatcherTest {
 
     DefaultDispatcher mDispatcher;
     EventCache mEventCache;
+    @Mock PacketSender mPacketSender;
     @Mock EventDiskCache mEventDiskCache;
     @Mock Connectivity mConnectivity;
     @Mock Context mContext;
@@ -58,7 +55,7 @@ public class DefaultDispatcherTest {
 
         when(mEventDiskCache.isEmpty()).thenReturn(true);
         mEventCache = spy(new EventCache(mEventDiskCache));
-        mDispatcher = new DefaultDispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl));
+        mDispatcher = new DefaultDispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl), mPacketSender);
     }
 
     @Test
@@ -131,31 +128,7 @@ public class DefaultDispatcherTest {
         assertFalse(mDispatcher.getDispatchGzipped());
         mDispatcher.setDispatchGzipped(true);
         assertTrue(mDispatcher.getDispatchGzipped());
-    }
-
-    @Test
-    public void testDispatch_gzip() throws Exception {
-        Packet packet = mock(Packet.class);
-
-        URL url = new URL("http://example.com");
-        when(packet.getTargetURL()).thenReturn(url);
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("test", "test");
-        when(packet.getPostData()).thenReturn(jsonObject);
-
-        HttpURLConnection urlConnection = mock(HttpURLConnection.class);
-        when(packet.openConnection()).thenReturn(urlConnection);
-        OutputStream outputStream = mock(OutputStream.class);
-        when(urlConnection.getOutputStream()).thenReturn(outputStream);
-
-        mDispatcher.setDispatchGzipped(false);
-        mDispatcher.dispatch(packet);
-        verify(urlConnection, never()).addRequestProperty("Content-Encoding", "gzip");
-
-        mDispatcher.setDispatchGzipped(true);
-        mDispatcher.dispatch(packet);
-        verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
+        verify(mPacketSender).setGzipData(true);
     }
 
     @Test
@@ -167,6 +140,7 @@ public class DefaultDispatcherTest {
     public void testSetConnectionTimeout() throws Exception {
         mDispatcher.setConnectionTimeOut(100);
         assertEquals(100, mDispatcher.getConnectionTimeOut());
+        verify(mPacketSender).setTimeout(100);
     }
 
     @Test

@@ -7,24 +7,14 @@
 
 package org.piwik.sdk.dispatcher;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
-
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPOutputStream;
 
 import timber.log.Timber;
 
@@ -38,7 +28,7 @@ public class DefaultDispatcher implements Dispatcher {
     private final Semaphore mSleepToken = new Semaphore(0);
     private final Connectivity mConnectivity;
     private final PacketFactory mPacketFactory;
-
+    private final PacketSender mPacketSender;
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
 
@@ -47,10 +37,13 @@ public class DefaultDispatcher implements Dispatcher {
     private volatile boolean mRunning = false;
     private List<Packet> mDryRunTarget = null;
 
-    public DefaultDispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory) {
+    public DefaultDispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory, PacketSender packetSender) {
         mConnectivity = connectivity;
         mEventCache = eventCache;
         mPacketFactory = packetFactory;
+        mPacketSender = packetSender;
+        packetSender.setGzipData(mDispatchGzipped);
+        packetSender.setTimeout(mTimeOut);
     }
 
     /**
@@ -72,6 +65,7 @@ public class DefaultDispatcher implements Dispatcher {
     @Override
     public void setConnectionTimeOut(int timeOut) {
         mTimeOut = timeOut;
+        mPacketSender.setTimeout(mTimeOut);
     }
 
     /**
@@ -99,6 +93,7 @@ public class DefaultDispatcher implements Dispatcher {
     @Override
     public void setDispatchGzipped(boolean dispatchGzipped) {
         mDispatchGzipped = dispatchGzipped;
+        mPacketSender.setGzipData(mDispatchGzipped);
     }
 
     @Override
@@ -170,14 +165,15 @@ public class DefaultDispatcher implements Dispatcher {
                     mEventCache.drainTo(drainedEvents);
                     Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
                     for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
-                        boolean success = false;
-                        try {
-                            success = dispatch(packet);
-                        } catch (IOException e) {
-                            // While rapidly dispatching, it's possible that we are connected, but can't resolve hostnames yet
-                            // java.net.UnknownHostException: Unable to resolve host "...": No address associated with hostname
-                            Timber.tag(LOGGER_TAG).d(e);
+                        boolean success;
+
+                        if (mDryRunTarget != null) {
+                            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %d.", mDryRunTarget.size());
+                            success = mDryRunTarget.add(packet);
+                        } else {
+                            success = mPacketSender.send(packet);
                         }
+
                         if (success) {
                             count += packet.getEventCount();
                         } else {
@@ -211,67 +207,6 @@ public class DefaultDispatcher implements Dispatcher {
             default:
                 return false;
         }
-    }
-
-    /**
-     * @param packet to dispatch
-     * @return true if dispatch was successful
-     */
-    @VisibleForTesting
-    public boolean dispatch(@NonNull Packet packet) throws IOException {
-        if (mDryRunTarget != null) {
-            mDryRunTarget.add(packet);
-            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %s.", mDryRunTarget.size());
-            return true;
-        }
-
-        HttpURLConnection urlConnection = null;
-        try {
-            urlConnection = (HttpURLConnection) packet.openConnection();
-            urlConnection.setConnectTimeout(mTimeOut);
-            urlConnection.setReadTimeout(mTimeOut);
-
-            // IF there is json data we have to do a post
-            if (packet.getPostData() != null) { // POST
-                urlConnection.setDoOutput(true); // Forces post
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-                urlConnection.setRequestProperty("charset", "utf-8");
-
-                final String toPost = packet.getPostData().toString();
-                if (mDispatchGzipped) {
-                    urlConnection.addRequestProperty("Content-Encoding", "gzip");
-                    ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
-
-                    GZIPOutputStream gzipStream = null;
-                    try {
-                        gzipStream = new GZIPOutputStream(byteArrayOS);
-                        gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                    } finally { if (gzipStream != null) gzipStream.close();}
-
-                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
-                } else {
-                    BufferedWriter writer = null;
-                    try {
-                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                        writer.write(toPost);
-                    } finally { if (writer != null) writer.close(); }
-                }
-
-            } else { // GET
-                urlConnection.setDoOutput(false); // Defaults to false, but for readability
-            }
-
-            int statusCode = urlConnection.getResponseCode();
-            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
-
-            return checkResponseCode(statusCode);
-        } finally {
-            if (urlConnection != null) urlConnection.disconnect();
-        }
-    }
-
-    private boolean checkResponseCode(int code) {
-        return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK;
     }
 
     @Override

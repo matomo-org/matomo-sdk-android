@@ -8,7 +8,8 @@ public class DefaultDispatcherFactory implements DispatcherFactory {
         return new DefaultDispatcher(
                 new EventCache(new EventDiskCache(tracker)),
                 new Connectivity(tracker.getPiwik().getContext()),
-                new PacketFactory(tracker.getAPIUrl())
+                new PacketFactory(tracker.getAPIUrl()),
+                new DefaultPacketSender()
         );
     }
 }
