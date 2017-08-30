@@ -27,7 +27,6 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -221,12 +220,10 @@ public class DefaultDispatcherTest {
             @Override
             public void run() {
                 try {
-                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount)
+                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount) {
                         mDispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                    }
+                } catch (Exception e) {e.printStackTrace();}
             }
         }).start();
 
@@ -239,18 +236,26 @@ public class DefaultDispatcherTest {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
         List<String> flattenedQueries;
+        long lastChange = System.currentTimeMillis();
+        int nothingHappenedCounter = 0;
         while (true) {
-            Thread.sleep(500);
+            Thread.sleep(100);
             flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
             if (flattenedQueries.size() == expectedEvents) {
                 break;
             } else {
+                flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
                 int currentEventCount = createdEvents.size();
                 int currentFlatQueryCount = flattenedQueries.size();
-                assertNotEquals(previousEventCount, currentEventCount);
-                assertNotEquals(previousFlatQueryCount, currentFlatQueryCount);
-                previousEventCount = currentEventCount;
-                previousFlatQueryCount = currentFlatQueryCount;
+                if (previousEventCount != currentEventCount && previousFlatQueryCount != currentFlatQueryCount) {
+                    lastChange = System.currentTimeMillis();
+                    previousEventCount = currentEventCount;
+                    previousFlatQueryCount = currentFlatQueryCount;
+                    nothingHappenedCounter = 0;
+                } else {
+                    nothingHappenedCounter++;
+                    if (nothingHappenedCounter > 50) assertTrue("Test seems stuck, nothing happens", false);
+                }
             }
         }
 
