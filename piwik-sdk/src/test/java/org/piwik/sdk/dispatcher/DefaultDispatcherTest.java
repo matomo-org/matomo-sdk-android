@@ -9,7 +9,6 @@ package org.piwik.sdk.dispatcher;
 import android.content.Context;
 
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -19,8 +18,6 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,9 +27,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -40,10 +35,11 @@ import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("ALL")
-public class DispatcherTest {
+public class DefaultDispatcherTest {
 
-    Dispatcher mDispatcher;
+    DefaultDispatcher mDispatcher;
     EventCache mEventCache;
+    @Mock PacketSender mPacketSender;
     @Mock EventDiskCache mEventDiskCache;
     @Mock Connectivity mConnectivity;
     @Mock Context mContext;
@@ -58,7 +54,7 @@ public class DispatcherTest {
 
         when(mEventDiskCache.isEmpty()).thenReturn(true);
         mEventCache = spy(new EventCache(mEventDiskCache));
-        mDispatcher = new Dispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl));
+        mDispatcher = new DefaultDispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl), mPacketSender);
     }
 
     @Test
@@ -131,31 +127,7 @@ public class DispatcherTest {
         assertFalse(mDispatcher.getDispatchGzipped());
         mDispatcher.setDispatchGzipped(true);
         assertTrue(mDispatcher.getDispatchGzipped());
-    }
-
-    @Test
-    public void testDispatch_gzip() throws Exception {
-        Packet packet = mock(Packet.class);
-
-        URL url = new URL("http://example.com");
-        when(packet.getTargetURL()).thenReturn(url);
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("test", "test");
-        when(packet.getPostData()).thenReturn(jsonObject);
-
-        HttpURLConnection urlConnection = mock(HttpURLConnection.class);
-        when(packet.openConnection()).thenReturn(urlConnection);
-        OutputStream outputStream = mock(OutputStream.class);
-        when(urlConnection.getOutputStream()).thenReturn(outputStream);
-
-        mDispatcher.setDispatchGzipped(false);
-        mDispatcher.dispatch(packet);
-        verify(urlConnection, never()).addRequestProperty("Content-Encoding", "gzip");
-
-        mDispatcher.setDispatchGzipped(true);
-        mDispatcher.dispatch(packet);
-        verify(urlConnection).addRequestProperty("Content-Encoding", "gzip");
+        verify(mPacketSender).setGzipData(true);
     }
 
     @Test
@@ -167,6 +139,7 @@ public class DispatcherTest {
     public void testSetConnectionTimeout() throws Exception {
         mDispatcher.setConnectionTimeOut(100);
         assertEquals(100, mDispatcher.getConnectionTimeOut());
+        verify(mPacketSender).setTimeout(100);
     }
 
     @Test
@@ -247,12 +220,10 @@ public class DispatcherTest {
             @Override
             public void run() {
                 try {
-                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount)
+                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount) {
                         mDispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                    }
+                } catch (Exception e) {e.printStackTrace();}
             }
         }).start();
 
@@ -265,18 +236,26 @@ public class DispatcherTest {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
         List<String> flattenedQueries;
+        long lastChange = System.currentTimeMillis();
+        int nothingHappenedCounter = 0;
         while (true) {
-            Thread.sleep(500);
+            Thread.sleep(100);
             flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
             if (flattenedQueries.size() == expectedEvents) {
                 break;
             } else {
+                flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
                 int currentEventCount = createdEvents.size();
                 int currentFlatQueryCount = flattenedQueries.size();
-                assertNotEquals(previousEventCount, currentEventCount);
-                assertNotEquals(previousFlatQueryCount, currentFlatQueryCount);
-                previousEventCount = currentEventCount;
-                previousFlatQueryCount = currentFlatQueryCount;
+                if (previousEventCount != currentEventCount && previousFlatQueryCount != currentFlatQueryCount) {
+                    lastChange = System.currentTimeMillis();
+                    previousEventCount = currentEventCount;
+                    previousFlatQueryCount = currentFlatQueryCount;
+                    nothingHappenedCounter = 0;
+                } else {
+                    nothingHappenedCounter++;
+                    if (nothingHappenedCounter > 50) assertTrue("Test seems stuck, nothing happens", false);
+                }
             }
         }
 

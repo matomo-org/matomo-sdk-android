@@ -34,6 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -633,5 +634,15 @@ public class TrackerTest {
         assertEquals(params.get(QueryParams.VISITOR_ID).length(), 16);
         assertTrue(params.get(QueryParams.URL_PATH).startsWith("http://"));
         assertTrue(Integer.parseInt(params.get(QueryParams.RANDOM_NUMBER)) > 0);
+    }
+
+    @Test
+    public void testCustomDispatcherFactory() {
+        Dispatcher dispatcher = mock(Dispatcher.class);
+        DispatcherFactory factory = mock(DispatcherFactory.class);
+        when(factory.build(any(Tracker.class))).thenReturn(dispatcher);
+        when(mPiwik.getDispatcherFactory()).thenReturn(factory);
+        mTracker = new Tracker(mPiwik, mTrackerConfig);
+        verify(factory).build(mTracker);
     }
 }

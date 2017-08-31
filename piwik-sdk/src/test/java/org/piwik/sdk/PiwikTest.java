@@ -12,22 +12,33 @@ import android.app.Application;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.piwik.sdk.dispatcher.DefaultDispatcher;
+import org.piwik.sdk.dispatcher.DefaultDispatcherFactory;
+import org.piwik.sdk.dispatcher.Dispatcher;
+import org.piwik.sdk.dispatcher.DispatcherFactory;
+import org.piwik.sdk.dispatcher.EventCache;
+import org.piwik.sdk.dispatcher.EventDiskCache;
 import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.dispatcher.PacketFactory;
+import org.piwik.sdk.dispatcher.PacketSender;
 import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.testhelper.FullEnvTestRunner;
 import org.piwik.sdk.testhelper.PiwikTestApplication;
+import org.piwik.sdk.tools.Connectivity;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
@@ -62,23 +73,31 @@ public class PiwikTest {
     @Test
     public void testLowMemoryDispatch() throws Exception {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
+        final PacketSender packetSender = mock(PacketSender.class);
+        app.getPiwik().setDispatcherFactory(new DefaultDispatcherFactory() {
+            @Override
+            public Dispatcher build(Tracker tracker) {
+                return new DefaultDispatcher(
+                        new EventCache(new EventDiskCache(tracker)),
+                        new Connectivity(tracker.getPiwik().getContext()),
+                        new PacketFactory(tracker.getAPIUrl()),
+                        packetSender
+                );
+            }
+        });
         Tracker tracker = app.getTracker();
         assertNotNull(tracker);
-        tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<Packet>()));
         tracker.setDispatchInterval(-1);
 
         tracker.track(TrackHelper.track().screen("test").build());
         tracker.dispatch();
-        Thread.sleep(50);
-        assertFalse(tracker.getDryRunTarget().isEmpty());
-        tracker.getDryRunTarget().clear();
+        verify(packetSender, timeout(500).times(1)).send(any(Packet.class));
 
         tracker.track(TrackHelper.track().screen("test").build());
-        Thread.sleep(50);
-        assertTrue(tracker.getDryRunTarget().isEmpty());
+        verify(packetSender, timeout(500).times(1)).send(any(Packet.class));
+
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN);
-        Thread.sleep(50);
-        assertFalse(tracker.getDryRunTarget().isEmpty());
+        verify(packetSender, timeout(500).atLeast(2)).send(any(Packet.class));
     }
 
     @Test
@@ -94,6 +113,17 @@ public class PiwikTest {
         assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker1));
         assertNotEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker2));
         assertEquals(piwik.getTrackerPreferences(tracker1), piwik.getTrackerPreferences(tracker3));
+    }
+
+    @Test
+    public void testSetDispatcherFactory() {
+        final Piwik piwik = Piwik.getInstance(Robolectric.application);
+        Dispatcher dispatcher = mock(Dispatcher.class);
+        DispatcherFactory factory = mock(DispatcherFactory.class);
+        when(factory.build(any(Tracker.class))).thenReturn(dispatcher);
+        assertThat(piwik.getDispatcherFactory(), is(not(nullValue())));
+        piwik.setDispatcherFactory(factory);
+        assertThat(piwik.getDispatcherFactory(), is(factory));
     }
 
 }

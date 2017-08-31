@@ -32,12 +32,11 @@ public class PacketFactory {
     public static final int PAGE_SIZE = 20;
     private final URL mApiUrl;
 
-    public PacketFactory(@NonNull final URL apiUrl) {
+    public PacketFactory(final URL apiUrl) {
         mApiUrl = apiUrl;
     }
 
-    @NonNull
-    public List<Packet> buildPackets(@NonNull final List<Event> events) {
+    public List<Packet> buildPackets(final List<Event> events) {
         if (events.isEmpty()) return Collections.emptyList();
 
         if (events.size() == 1) {
