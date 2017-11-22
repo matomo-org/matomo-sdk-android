@@ -31,6 +31,7 @@ public class DefaultDispatcher implements Dispatcher {
     private final PacketSender mPacketSender;
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
+    private volatile int mRetryCounter = 0;
 
     private boolean mDispatchGzipped = false;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
@@ -131,6 +132,7 @@ public class DefaultDispatcher implements Dispatcher {
     @Override
     public boolean forceDispatch() {
         if (!launch()) {
+            mRetryCounter = 0;
             mSleepToken.release();
             return false;
         }
@@ -153,12 +155,15 @@ public class DefaultDispatcher implements Dispatcher {
     private Runnable mLoop = new Runnable() {
         @Override
         public void run() {
+            mRetryCounter = 0;
             while (mRunning) {
                 try {
-                    // Either we wait the interval or forceDispatch() granted us one free pass
-                    mSleepToken.tryAcquire(mDispatchInterval, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
+                    long sleepTime = mDispatchInterval;
+                    if (mRetryCounter > 1) sleepTime += Math.min(mRetryCounter * mDispatchInterval, 5 * mDispatchInterval);
 
+                    // Either we wait the interval or forceDispatch() granted us one free pass
+                    mSleepToken.tryAcquire(sleepTime, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
                 if (mEventCache.updateState(isConnected())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
@@ -176,10 +181,12 @@ public class DefaultDispatcher implements Dispatcher {
 
                         if (success) {
                             count += packet.getEventCount();
+                            mRetryCounter = 0;
                         } else {
                             Timber.tag(LOGGER_TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
                             mEventCache.updateState(false);
                             mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                            mRetryCounter++;
                             break;
                         }
                     }
