@@ -1,6 +1,5 @@
-package org.piwik.sdk.testhelper;
+package testhelpers;
 
-import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
@@ -11,7 +10,7 @@ import java.net.MalformedURLException;
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public abstract class DefaultTestCase {
+public abstract class DefaultTestCase extends BaseTest {
     public Tracker createTracker() throws MalformedURLException {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         final Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.onCreateTrackerConfig());
@@ -23,8 +22,4 @@ public abstract class DefaultTestCase {
         return Piwik.getInstance(Robolectric.application);
     }
 
-    @Before
-    public void setup() {
-
-    }
 }

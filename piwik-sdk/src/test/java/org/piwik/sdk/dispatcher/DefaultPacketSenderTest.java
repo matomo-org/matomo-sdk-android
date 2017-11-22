@@ -5,14 +5,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.io.IOException;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import testhelpers.BaseTest;
+import testhelpers.TestHelper;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -22,20 +22,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DefaultPacketSenderTest {
+public class DefaultPacketSenderTest extends BaseTest {
 
     DefaultPacketSender mDefaultPacketSender;
     MockWebServer mMockWebServer;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        super.setup();
         mDefaultPacketSender = new DefaultPacketSender();
         mMockWebServer = new MockWebServer();
     }
 
     @After
-    public void tearDown() throws IOException {
+    public void tearDown() throws Exception {
         mMockWebServer.close();
+        super.tearDown();
     }
 
     @Test
@@ -91,7 +93,7 @@ public class DefaultPacketSenderTest {
         mMockWebServer.setDispatcher(new Dispatcher() {
             @Override
             public MockResponse dispatch(RecordedRequest recordedRequest) throws InterruptedException {
-                Thread.sleep(100);
+                TestHelper.sleep(100);
                 return new MockResponse();
             }
         });

@@ -1,14 +1,19 @@
 package org.piwik.sdk.tools;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class ChecksumTest {
+@RunWith(MockitoJUnitRunner.class)
+public class ChecksumTest extends BaseTest {
 
     @Test
     public void testgetMD5Checksum() throws Exception {

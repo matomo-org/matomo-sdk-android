@@ -1,16 +1,21 @@
 package org.piwik.sdk.extra;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.piwik.sdk.TrackMe;
 
 import java.util.UUID;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class CustomDimensionTest {
+@RunWith(MockitoJUnitRunner.class)
+public class CustomDimensionTest extends BaseTest {
 
     @Test
     public void testSetCustomDimensions() throws Exception {

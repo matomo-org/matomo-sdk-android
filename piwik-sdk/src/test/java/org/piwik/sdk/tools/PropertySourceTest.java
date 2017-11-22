@@ -2,12 +2,14 @@ package org.piwik.sdk.tools;
 
 import org.junit.Test;
 
+import testhelpers.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 
-public class PropertySourceTest {
+public class PropertySourceTest extends BaseTest {
     @Test
     public void testGetHttpAgent() {
         PropertySource propertySource = spy(new PropertySource());

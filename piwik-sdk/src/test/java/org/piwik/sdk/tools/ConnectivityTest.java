@@ -6,23 +6,25 @@ import android.net.NetworkInfo;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ConnectivityTest {
+@RunWith(MockitoJUnitRunner.class)
+public class ConnectivityTest extends BaseTest {
     @Mock Context mContext;
     @Mock ConnectivityManager mConnectivityManager;
     @Mock NetworkInfo mNetworkInfo;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         when(mContext.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(mConnectivityManager);
-
     }
 
     @Test

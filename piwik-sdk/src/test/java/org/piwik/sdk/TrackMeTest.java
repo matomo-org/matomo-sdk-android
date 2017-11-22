@@ -1,10 +1,14 @@
 package org.piwik.sdk;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -13,7 +17,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-public class TrackMeTest {
+@RunWith(MockitoJUnitRunner.class)
+public class TrackMeTest extends BaseTest {
     @Test
     public void testSourcingFromOtherTrackMe() throws Exception {
         TrackMe base = new TrackMe();

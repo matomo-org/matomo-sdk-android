@@ -11,7 +11,6 @@ import timber.log.Timber;
 @RunWith(MockitoJUnitRunner.class)
 public class BaseTest {
 
-
     @Before
     public void setup() throws Exception {
         Timber.plant(new JUnitTree());
