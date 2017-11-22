@@ -470,7 +470,7 @@ public class Tracker {
             try {
                 // Another thread might be creating a sessions first transmission.
                 mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) { Timber.tag(TAG).e(e, null); }
+            } catch (InterruptedException e) { Timber.tag(TAG).e(e); }
         }
 
         injectBaseParams(trackMe);

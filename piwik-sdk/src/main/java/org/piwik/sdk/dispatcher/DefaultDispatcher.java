@@ -152,7 +152,7 @@ public class DefaultDispatcher implements Dispatcher {
         if (mDispatchInterval != -1) launch();
     }
 
-    private Runnable mLoop = new Runnable() {
+    private final Runnable mLoop = new Runnable() {
         @Override
         public void run() {
             mRetryCounter = 0;

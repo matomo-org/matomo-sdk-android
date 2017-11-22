@@ -84,7 +84,7 @@ public class PacketFactory {
         try {
             return new Packet(new URL(mApiUrl.toString() + event));
         } catch (MalformedURLException e) {
-            Timber.tag(LOGGER_TAG).w(e, null);
+            Timber.tag(LOGGER_TAG).w(e);
         }
         return null;
     }
