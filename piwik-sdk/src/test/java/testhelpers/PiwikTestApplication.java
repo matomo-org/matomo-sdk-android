@@ -1,4 +1,4 @@
-package org.piwik.sdk.testhelper;
+package testhelpers;
 
 
 import org.piwik.sdk.TrackerConfig;

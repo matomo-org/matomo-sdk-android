@@ -5,8 +5,9 @@ import android.content.Context;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
 
@@ -20,12 +21,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
+import testhelpers.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class EventDiskCacheTest {
+@RunWith(MockitoJUnitRunner.class)
+public class EventDiskCacheTest extends BaseTest {
     @Mock Piwik mPiwik;
     @Mock Tracker mTracker;
     @Mock Context mContext;
@@ -36,7 +40,6 @@ public class EventDiskCacheTest {
 
     @Before
     public void setup() throws MalformedURLException {
-        MockitoAnnotations.initMocks(this);
         when(mTracker.getPiwik()).thenReturn(mPiwik);
         when(mPiwik.getContext()).thenReturn(mContext);
         mBaseCacheDir = new File("baseCacheDir");
@@ -102,7 +105,7 @@ public class EventDiskCacheTest {
 
     @Test
     public void testCaching_empty() throws Exception {
-        mDiskCache.cache(Collections.<Event>emptyList());
+        mDiskCache.cache(Collections.emptyList());
     }
 
     @Test
@@ -245,15 +248,12 @@ public class EventDiskCacheTest {
     public void stressTest_singles() throws Exception {
         final Semaphore sem = new Semaphore(0);
         for (int i = 0; i < 8; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < 100; j++) {
-                        Event event1 = new Event(System.nanoTime(), UUID.randomUUID().toString());
-                        mDiskCache.cache(Collections.singletonList(event1));
-                    }
-                    sem.release(1);
+            new Thread(() -> {
+                for (int j = 0; j < 100; j++) {
+                    Event event1 = new Event(System.nanoTime(), UUID.randomUUID().toString());
+                    mDiskCache.cache(Collections.singletonList(event1));
                 }
+                sem.release(1);
             }).start();
         }
         sem.acquire(8);
@@ -267,18 +267,15 @@ public class EventDiskCacheTest {
     public void stressTest_multi() throws Exception {
         final Semaphore sem = new Semaphore(0);
         for (int i = 0; i < 4; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < 10; j++) {
-                        List<Event> events = new ArrayList<>();
-                        for (int k = 0; k < 1000; k++) {
-                            events.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
-                        }
-                        mDiskCache.cache(events);
+            new Thread(() -> {
+                for (int j = 0; j < 10; j++) {
+                    List<Event> events = new ArrayList<>();
+                    for (int k = 0; k < 1000; k++) {
+                        events.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
                     }
-                    sem.release(1);
+                    mDiskCache.cache(events);
                 }
+                sem.release(1);
             }).start();
         }
         sem.acquire(4);

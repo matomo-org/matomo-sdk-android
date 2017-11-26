@@ -8,7 +8,6 @@
 package org.piwik.sdk.extra;
 
 import android.app.Application;
-import android.os.Build;
 
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
@@ -41,9 +40,7 @@ public abstract class PiwikApplication extends Application {
 
     @Override
     public void onLowMemory() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH && mPiwikTracker != null) {
-            mPiwikTracker.dispatch();
-        }
+        if (mPiwikTracker != null) mPiwikTracker.dispatch();
         super.onLowMemory();
     }
 

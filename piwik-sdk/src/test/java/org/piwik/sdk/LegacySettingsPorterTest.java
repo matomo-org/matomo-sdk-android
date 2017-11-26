@@ -6,16 +6,17 @@ import android.content.SharedPreferences;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import testhelpers.BaseTest;
+
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,26 +25,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressLint("CommitPrefEdits")
-public class LegacySettingsPorterTest {
+@RunWith(MockitoJUnitRunner.class)
+public class LegacySettingsPorterTest extends BaseTest {
     @Mock Piwik mPiwik;
-    private LegacySettingsPorter mPorter;
     @Mock SharedPreferences mPiwikPrefs;
     @Mock SharedPreferences.Editor mPiwikPrefsEditor;
     @Mock SharedPreferences mTrackerPrefs;
     @Mock SharedPreferences.Editor mTrackerPrefsEditor;
     @Mock Tracker mTracker;
+    private LegacySettingsPorter mPorter;
 
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
         when(mPiwikPrefs.edit()).thenReturn(mPiwikPrefsEditor);
         when(mPiwikPrefsEditor.remove(anyString())).thenReturn(mPiwikPrefsEditor);
 
         when(mTrackerPrefs.edit()).thenReturn(mTrackerPrefsEditor);
         when(mTrackerPrefsEditor.putBoolean(anyString(), anyBoolean())).thenReturn(mTrackerPrefsEditor);
         when(mTrackerPrefsEditor.putLong(anyString(), anyLong())).thenReturn(mTrackerPrefsEditor);
-        when(mTrackerPrefsEditor.putInt(anyString(), anyInt())).thenReturn(mTrackerPrefsEditor);
         when(mTrackerPrefsEditor.putString(anyString(), anyString())).thenReturn(mTrackerPrefsEditor);
 
         when(mPiwik.getPiwikPreferences()).thenReturn(mPiwikPrefs);
@@ -158,12 +158,7 @@ public class LegacySettingsPorterTest {
     @Test
     public void testDownloadMapping_empty() {
         final Map<String, ?> map = new HashMap<>();
-        when(mPiwikPrefs.getAll()).thenAnswer(new Answer<Map<String, ?>>() {
-            @Override
-            public Map<String, ?> answer(InvocationOnMock invocation) throws Throwable {
-                return map;
-            }
-        });
+        when(mPiwikPrefs.getAll()).thenAnswer((Answer<Map<String, ?>>) invocation -> map);
         mPorter.port(mTracker);
 
         verify(mPiwikPrefs).getAll();
@@ -180,12 +175,7 @@ public class LegacySettingsPorterTest {
         String key3 = "testkey2";
         map.put(key3, 123465);
 
-        when(mPiwikPrefs.getAll()).thenAnswer(new Answer<Map<String, ?>>() {
-            @Override
-            public Map<String, ?> answer(InvocationOnMock invocation) throws Throwable {
-                return map;
-            }
-        });
+        when(mPiwikPrefs.getAll()).thenAnswer((Answer<Map<String, ?>>) invocation -> map);
         mPorter.port(mTracker);
 
         verify(mPiwikPrefs).getAll();

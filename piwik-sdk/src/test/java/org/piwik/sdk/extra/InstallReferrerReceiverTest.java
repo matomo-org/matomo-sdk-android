@@ -3,8 +3,9 @@ package org.piwik.sdk.extra;
 import android.content.Intent;
 
 import org.junit.Test;
-import org.piwik.sdk.testhelper.DefaultTestCase;
 import org.robolectric.Robolectric;
+
+import testhelpers.DefaultTestCase;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;

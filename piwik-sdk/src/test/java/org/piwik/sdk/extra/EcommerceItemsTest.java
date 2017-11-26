@@ -2,13 +2,18 @@ package org.piwik.sdk.extra;
 
 import org.json.JSONArray;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Locale;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class EcommerceItemsTest {
+@RunWith(MockitoJUnitRunner.class)
+public class EcommerceItemsTest extends BaseTest {
 
     @Test
     public void testEmptyItems() throws Exception {

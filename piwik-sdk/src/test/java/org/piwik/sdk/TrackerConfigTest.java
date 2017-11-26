@@ -1,14 +1,19 @@
 package org.piwik.sdk;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import testhelpers.BaseTest;
+
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-public class TrackerConfigTest {
+@RunWith(MockitoJUnitRunner.class)
+public class TrackerConfigTest extends BaseTest {
 
     @Test
     public void testURL() throws MalformedURLException {

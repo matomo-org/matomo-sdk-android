@@ -11,9 +11,11 @@ import android.content.Context;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
@@ -24,36 +26,75 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import testhelpers.BaseTest;
+import testhelpers.TestHelper;
+
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("ALL")
-public class DefaultDispatcherTest {
+public class DefaultDispatcherTest extends BaseTest {
 
     DefaultDispatcher mDispatcher;
-    EventCache mEventCache;
+    @Mock EventCache mEventCache;
     @Mock PacketSender mPacketSender;
-    @Mock EventDiskCache mEventDiskCache;
     @Mock Connectivity mConnectivity;
     @Mock Context mContext;
     URL mApiUrl;
 
+    final LinkedBlockingQueue<Event> mEventCacheData = new LinkedBlockingQueue<>();
+
     @Before
     public void setup() throws Exception {
+        super.setup();
         mApiUrl = new URL("http://example.com");
         MockitoAnnotations.initMocks(this);
         when(mConnectivity.isConnected()).thenReturn(true);
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
-        when(mEventDiskCache.isEmpty()).thenReturn(true);
-        mEventCache = spy(new EventCache(mEventDiskCache));
+        doAnswer(invocation -> {
+            mEventCacheData.add((Event) invocation.getArgument(0));
+            return null;
+        }).when(mEventCache).add(any(Event.class));
+        when(mEventCache.isEmpty()).then(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                return mEventCacheData.isEmpty();
+            }
+        });
+        when(mEventCache.updateState(anyBoolean())).thenAnswer(invocation -> {
+            return (Boolean) invocation.getArgument(0) && !mEventCacheData.isEmpty();
+        });
+        doAnswer(invocation -> {
+            List<Event> drainTarget = invocation.getArgument(0);
+            mEventCacheData.drainTo(drainTarget);
+            return null;
+        }).when(mEventCache).drainTo(Matchers.anyList());
+        doAnswer(invocation -> {
+            List<Event> toRequeue = invocation.getArgument(0);
+            mEventCacheData.addAll(toRequeue);
+            return null;
+        }).when(mEventCache).requeue(Matchers.anyList());
+        doAnswer(invocation -> {
+            mEventCacheData.clear();
+            return null;
+        }).when(mEventCache).clear();
         mDispatcher = new DefaultDispatcher(mEventCache, mConnectivity, new PacketFactory(mApiUrl), mPacketSender);
     }
 
@@ -65,23 +106,28 @@ public class DefaultDispatcherTest {
 
     @Test
     public void testClear_cleanExit() throws InterruptedException {
-        final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
         mDispatcher.setDryRunTarget(dryRunData);
-        mDispatcher.submit(getGuestEvent());
+        mDispatcher.submit(getTestEvent());
         mDispatcher.forceDispatch();
-        Thread.sleep(100);
-        assertFalse(dryRunData.isEmpty());
+
+        TestHelper.sleep(100);
+        assertThat(dryRunData.size(), is(1));
         dryRunData.clear();
 
         when(mConnectivity.isConnected()).thenReturn(false);
-        mDispatcher.submit(getGuestEvent());
-        assertFalse(mEventCache.isEmpty());
+        mDispatcher.submit(getTestEvent());
+
+        TestHelper.sleep(100);
+        assertThat(mEventCacheData.size(), is(1));
+
         mDispatcher.clear();
+
         when(mConnectivity.isConnected()).thenReturn(true);
-        assertTrue(mEventCache.isEmpty());
-        verify(mEventCache).clear();
-        Thread.sleep(100);
-        assertTrue(dryRunData.isEmpty());
+        mDispatcher.forceDispatch();
+
+        TestHelper.sleep(100);
+        assertThat(dryRunData.size(), is(0));
     }
 
     @Test
@@ -93,33 +139,45 @@ public class DefaultDispatcherTest {
 
     @Test
     public void testDispatchMode_wifiOnly() throws Exception {
-        when(mEventDiskCache.isEmpty()).thenReturn(false);
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
+
         mDispatcher.setDispatchMode(DispatchMode.WIFI_ONLY);
-        mDispatcher.submit(getGuestEvent());
+        mDispatcher.submit(getTestEvent());
         mDispatcher.forceDispatch();
-        Thread.sleep(50);
-        verify(mEventDiskCache, never()).uncache();
-        verify(mEventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+
+        verify(mEventCache, timeout(1000)).updateState(false);
+        verify(mEventCache, never()).drainTo(Matchers.anyList());
+
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.WIFI);
         mDispatcher.forceDispatch();
-        Thread.sleep(50);
-        verify(mEventDiskCache).uncache();
+        await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
+
+        verify(mEventCache).updateState(true);
+        verify(mEventCache).drainTo(Matchers.anyList());
     }
 
     @Test
     public void testConnectivityChange() throws Exception {
-        when(mEventDiskCache.isEmpty()).thenReturn(false);
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
         when(mConnectivity.isConnected()).thenReturn(false);
-        mDispatcher.submit(getGuestEvent());
+
+        mDispatcher.submit(getTestEvent());
         mDispatcher.forceDispatch();
-        Thread.sleep(50);
-        verify(mEventDiskCache, never()).uncache();
-        verify(mEventDiskCache).cache(ArgumentMatchers.<Event>anyList());
+
+        verify(mEventCache, timeout(1000)).add(any());
+        verify(mEventCache, never()).drainTo(Matchers.anyList());
+        assertThat(dryRunData.size(), is(0));
+
         when(mConnectivity.isConnected()).thenReturn(true);
         mDispatcher.forceDispatch();
-        Thread.sleep(50);
-        verify(mEventDiskCache).uncache();
+
+        await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
+
+        verify(mEventCache).updateState(true);
+        verify(mEventCache).drainTo(Matchers.anyList());
     }
 
     @Test
@@ -151,7 +209,7 @@ public class DefaultDispatcherTest {
     public void testForceDispatchTwice() throws Exception {
         mDispatcher.setDispatchInterval(-1);
         mDispatcher.setConnectionTimeOut(20);
-        mDispatcher.submit(getGuestEvent());
+        mDispatcher.submit(getTestEvent());
 
         assertTrue(mDispatcher.forceDispatch());
         assertFalse(mDispatcher.forceDispatch());
@@ -181,7 +239,7 @@ public class DefaultDispatcherTest {
         final int queryCount = 10;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
-        Thread.sleep(500);
+        TestHelper.sleep(500);
         assertEquals(threadCount * queryCount, createdEvents.size());
         assertEquals(0, dryRunData.size());
         mDispatcher.forceDispatch();
@@ -199,12 +257,44 @@ public class DefaultDispatcherTest {
         final int queryCount = 5;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
-        Thread.sleep(1000);
-        assertEquals(threadCount * queryCount, createdEvents.size());
-        assertEquals(0, dryRunData.size());
-        Thread.sleep(1000);
 
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        assertEquals(0, dryRunData.size());
+
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
+    }
+
+    @Test
+    public void testDispatchRetryWithBackoff() throws Exception {
+        AtomicInteger cnt = new AtomicInteger(0);
+        when(mPacketSender.send(any())).then(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                return cnt.incrementAndGet() > 5;
+            }
+        });
+
+        mDispatcher.setDispatchInterval(100);
+        mDispatcher.submit(getTestEvent());
+
+        await().atLeast(100, TimeUnit.MILLISECONDS).until(() -> cnt.get() == 1);
+        await().atLeast(100, TimeUnit.MILLISECONDS).until(() -> cnt.get() == 2);
+
+        await().atMost(1900, TimeUnit.MILLISECONDS).until(() -> cnt.get() == 5);
+
+        mDispatcher.submit(getTestEvent());
+        await().atMost(150, TimeUnit.MILLISECONDS).until(() -> cnt.get() == 5);
+    }
+
+    @Test
+    public void testDispatchInterval() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(500);
+        assertThat(dryRunData.isEmpty(), is(true));
+        mDispatcher.submit(getTestEvent());
+        await().atLeast(500, TimeUnit.MILLISECONDS).until(() -> dryRunData.size() == 1);
     }
 
     @Test
@@ -239,7 +329,7 @@ public class DefaultDispatcherTest {
         long lastChange = System.currentTimeMillis();
         int nothingHappenedCounter = 0;
         while (true) {
-            Thread.sleep(100);
+            TestHelper.sleep(100);
             flattenedQueries = getFlattenedQueries(new ArrayList<>(dryRunOutput));
             if (flattenedQueries.size() == expectedEvents) {
                 break;
@@ -278,7 +368,7 @@ public class DefaultDispatcherTest {
                 public void run() {
                     try {
                         for (int j = 0; j < queryCount; j++) {
-                            Thread.sleep(new Random().nextInt(20 - 0) + 0);
+                            TestHelper.sleep(new Random().nextInt(20 - 0) + 0);
                             TrackMe trackMe = new TrackMe()
                                     .set(QueryParams.EVENT_ACTION, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
@@ -312,7 +402,7 @@ public class DefaultDispatcherTest {
         return flattenedQueries;
     }
 
-    public static TrackMe getGuestEvent() {
+    public static TrackMe getTestEvent() {
         TrackMe trackMe = new TrackMe();
         trackMe.set(QueryParams.SESSION_START, 1);
         return trackMe;

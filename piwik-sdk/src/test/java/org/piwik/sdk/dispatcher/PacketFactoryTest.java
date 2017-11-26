@@ -1,6 +1,8 @@
 package org.piwik.sdk.dispatcher;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -8,12 +10,15 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import testhelpers.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class PacketFactoryTest {
+@RunWith(MockitoJUnitRunner.class)
+public class PacketFactoryTest extends BaseTest {
 
     @Test
     public void testPOST_apiUrl() throws Exception {
@@ -51,7 +56,7 @@ public class PacketFactoryTest {
     @Test
     public void testEmptyEvents() throws Exception {
         PacketFactory factory = new PacketFactory(new URL("http://example.com/"));
-        assertTrue(factory.buildPackets(Collections.<Event>emptyList()).isEmpty());
+        assertTrue(factory.buildPackets(Collections.emptyList()).isEmpty());
     }
 
     @Test

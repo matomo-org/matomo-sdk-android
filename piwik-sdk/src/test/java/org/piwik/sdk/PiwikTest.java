@@ -22,11 +22,13 @@ import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.dispatcher.PacketFactory;
 import org.piwik.sdk.dispatcher.PacketSender;
 import org.piwik.sdk.extra.TrackHelper;
-import org.piwik.sdk.testhelper.FullEnvTestRunner;
-import org.piwik.sdk.testhelper.PiwikTestApplication;
 import org.piwik.sdk.tools.Connectivity;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+
+import testhelpers.BaseTest;
+import testhelpers.FullEnvTestRunner;
+import testhelpers.PiwikTestApplication;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -44,7 +46,7 @@ import static org.mockito.Mockito.when;
 
 @Config(emulateSdk = 18, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
-public class PiwikTest {
+public class PiwikTest extends BaseTest {
 
     @Test
     public void testNewTracker() throws Exception {

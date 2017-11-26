@@ -69,7 +69,7 @@ public class EventDiskCache {
                     final String[] split = head.getName().split("_");
                     timestamp = Long.valueOf(split[1]);
                 } catch (Exception e) {
-                    Timber.tag(TAG).e(e, null);
+                    Timber.tag(TAG).e(e);
                     timestamp = 0;
                 }
                 if (timestamp < (System.currentTimeMillis() - mMaxAge)) {
@@ -170,13 +170,13 @@ public class EventDiskCache {
 
                     String query = line.substring(split + 1);
                     events.add(new Event(timestamp, query));
-                } catch (Exception e) { Timber.tag(TAG).e(e, null); }
+                } catch (Exception e) { Timber.tag(TAG).e(e); }
             }
         } catch (IOException e) {
-            Timber.tag(TAG).e(e, null);
+            Timber.tag(TAG).e(e);
         } finally {
             if (in != null) {
-                try { in.close(); } catch (IOException e) { Timber.tag(TAG).e(e, null); }
+                try { in.close(); } catch (IOException e) { Timber.tag(TAG).e(e); }
             }
         }
 
@@ -202,12 +202,12 @@ public class EventDiskCache {
                 dataWritten = true;
             }
         } catch (IOException e) {
-            Timber.tag(TAG).e(e, null);
+            Timber.tag(TAG).e(e);
             newFile.deleteOnExit();
             return null;
         } finally {
             if (out != null) {
-                try { out.close(); } catch (IOException e) { Timber.tag(TAG).e(e, null); }
+                try { out.close(); } catch (IOException e) { Timber.tag(TAG).e(e); }
             }
         }
 

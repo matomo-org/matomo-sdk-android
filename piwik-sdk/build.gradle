@@ -16,12 +16,18 @@ android {
         versionCode myVersionCode
         versionName myVersionName
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
 }
 
 dependencies {
     implementation "com.android.support:support-annotations:${supportLibVersion}"
     implementation "com.jakewharton.timber:timber:${timberVersion}"
 
+    testImplementation 'org.awaitility:awaitility:3.0.0'
     // Robolectric
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.hamcrest:hamcrest-core:1.3'

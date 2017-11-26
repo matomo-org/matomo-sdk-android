@@ -59,7 +59,7 @@ public class DefaultPacketSender implements PacketSender {
 
             return checkResponseCode(statusCode);
         } catch (Exception e) {
-            Timber.tag(LOGGER_TAG).e("Sending failed: %s", e);
+            Timber.tag(LOGGER_TAG).e(e, "Sending failed");
             return false;
         } finally {
             if (urlConnection != null) urlConnection.disconnect();

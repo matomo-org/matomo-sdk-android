@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EcommerceItems {
-    private Map<String, JSONArray> mItems = new HashMap<>();
+    private final Map<String, JSONArray> mItems = new HashMap<>();
 
     /**
      * Adds a product into the ecommerce order. Must be called for each product in the order.
