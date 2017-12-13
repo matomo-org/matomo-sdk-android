@@ -5,7 +5,7 @@ Piwik SDK for Android
 
 Welcome to the [Piwik](http://piwik.org) Tracking SDK for Android. This library helps you send analytics data from Android apps to Piwik instances.
 
-Features:
+__Features__:
 * Caching and offline support
 * Graceful reconnection handling
 * WIFI-only mode
