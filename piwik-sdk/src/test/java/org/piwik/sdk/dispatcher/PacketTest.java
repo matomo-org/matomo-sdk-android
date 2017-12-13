@@ -1,23 +1,20 @@
 package org.piwik.sdk.dispatcher;
 
 
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.io.IOException;
 import java.net.URL;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class PacketTest {
+@RunWith(MockitoJUnitRunner.class)
+public class PacketTest extends BaseTest {
     URL mUrl;
-
-    @Before
-    public void setup() throws IOException {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testEventCount() {

@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.piwik.sdk.Piwik;
@@ -55,16 +54,39 @@ public class TrackHelper {
             return mBaseBuilder.mBaseTrackMe;
         }
 
-        @Nullable
+        /**
+         * May throw an {@link IllegalArgumentException} if the TrackMe was build with incorrect arguments.
+         */
         public abstract TrackMe build();
 
-        public void with(@NonNull PiwikApplication piwikApplication) {
+        public void with(PiwikApplication piwikApplication) {
             with(piwikApplication.getTracker());
         }
 
-        public void with(@NonNull Tracker tracker) {
+        public void with(Tracker tracker) {
             TrackMe trackMe = build();
-            if (trackMe != null) tracker.track(trackMe);
+            tracker.track(trackMe);
+        }
+
+        public boolean safelyWith(PiwikApplication piwikApplication) {
+            return safelyWith(piwikApplication.getTracker());
+        }
+
+        /**
+         * {@link #build()} can throw an exception on illegal arguments.
+         * This can be used to avoid crashes when using dynamic {@link TrackMe} arguments.
+         *
+         * @return false if an error occured, true if the TrackMe has been submitted to be dispatched.
+         */
+        public boolean safelyWith(Tracker tracker) {
+            try {
+                TrackMe trackMe = build();
+                tracker.track(trackMe);
+            } catch (IllegalArgumentException e) {
+                Timber.e(e);
+                return false;
+            }
+            return true;
         }
     }
 
@@ -135,10 +157,12 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
-            if (mPath == null) return null;
+            if (mPath == null) {
+                throw new IllegalArgumentException("Screen tracking requires a non-empty path");
+            }
+
             final TrackMe trackMe = new TrackMe(getBaseTrackMe())
                     .set(QueryParams.URL_PATH, mPath)
                     .set(QueryParams.ACTION_NAME, mTitle);
@@ -166,18 +190,18 @@ public class TrackHelper {
      *                 and the action is a button click.
      * @return an object that allows addition of further details.
      */
-    public EventBuilder event(@NonNull String category, @NonNull String action) {
+    public EventBuilder event(String category, String action) {
         return new EventBuilder(this, category, action);
     }
 
     public static class EventBuilder extends BaseEvent {
-        @NonNull private final String mCategory;
-        @NonNull private final String mAction;
+        private final String mCategory;
+        private final String mAction;
         private String mPath;
         private String mName;
         private Float mValue;
 
-        EventBuilder(TrackHelper builder, @NonNull String category, @NonNull String action) {
+        EventBuilder(TrackHelper builder, String category, String action) {
             super(builder);
             mCategory = category;
             mAction = action;
@@ -210,7 +234,6 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
             TrackMe trackMe = new TrackMe(getBaseTrackMe())
@@ -256,10 +279,12 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
-            if (mIdGoal < 0) return null;
+            if (mIdGoal < 0) {
+                throw new IllegalArgumentException("Goal id needs to be >=0");
+            }
+
             TrackMe trackMe = new TrackMe(getBaseTrackMe()).set(QueryParams.GOAL_ID, mIdGoal);
             if (mRevenue != null) trackMe.set(QueryParams.REVENUE, mRevenue);
             return trackMe;
@@ -284,12 +309,15 @@ public class TrackHelper {
             mURL = url;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
-            if (!mURL.getProtocol().equals("http") && !mURL.getProtocol().equals("https") && !mURL.getProtocol().equals("ftp")) {
-                return null;
+            if (mURL == null || mURL.toExternalForm().length() == 0) {
+                throw new IllegalArgumentException("Outlink tracking requires a non-empty URL");
             }
+            if (!mURL.getProtocol().equals("http") && !mURL.getProtocol().equals("https") && !mURL.getProtocol().equals("ftp")) {
+                throw new IllegalArgumentException("Only http|https|ftp is supported for outlinks");
+            }
+
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.LINK, mURL.toExternalForm())
                     .set(QueryParams.URL_PATH, mURL.toExternalForm());
@@ -337,7 +365,6 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
             TrackMe trackMe = new TrackMe(getBaseTrackMe())
@@ -429,7 +456,7 @@ public class TrackHelper {
      *
      * @param contentName The name of the content. For instance 'Ad Foo Bar'
      */
-    public ContentImpression impression(@NonNull String contentName) {
+    public ContentImpression impression(String contentName) {
         return new ContentImpression(this, contentName);
     }
 
@@ -459,10 +486,11 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
-            if (mContentName == null || mContentName.length() == 0) return null;
+            if (mContentName == null || mContentName.length() == 0) {
+                throw new IllegalArgumentException("Tracking content impressions requires a non-empty content-name");
+            }
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -478,7 +506,7 @@ public class TrackHelper {
      * @param contentInteraction The name of the interaction with the content. For instance a 'click'
      * @param contentName        The name of the content. For instance 'Ad Foo Bar'
      */
-    public ContentInteraction interaction(@NonNull String contentName, @NonNull String contentInteraction) {
+    public ContentInteraction interaction(String contentName, String contentInteraction) {
         return new ContentInteraction(this, contentName, contentInteraction);
     }
 
@@ -510,11 +538,15 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
-            if (mContentName == null || mContentName.length() == 0) return null;
-            if (mInteraction == null || mInteraction.length() == 0) return null;
+            if (mContentName == null || mContentName.length() == 0) {
+                throw new IllegalArgumentException("Content name needs to be non-empty");
+            }
+            if (mInteraction == null || mInteraction.length() == 0) {
+                throw new IllegalArgumentException("Interaction name needs to be non-empty");
+            }
+
             return new TrackMe(getBaseTrackMe())
                     .set(QueryParams.CONTENT_NAME, mContentName)
                     .set(QueryParams.CONTENT_PIECE, mContentPiece)
@@ -551,7 +583,6 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
             if (mEcommerceItems == null) mEcommerceItems = new EcommerceItems();
@@ -629,7 +660,6 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
             if (mEcommerceItems == null) mEcommerceItems = new EcommerceItems();
@@ -688,7 +718,6 @@ public class TrackHelper {
             return this;
         }
 
-        @Nullable
         @Override
         public TrackMe build() {
             String className;

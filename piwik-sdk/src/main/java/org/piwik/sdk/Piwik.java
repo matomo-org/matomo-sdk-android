@@ -7,10 +7,12 @@
 
 package org.piwik.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 
+import org.piwik.sdk.dispatcher.DefaultDispatcherFactory;
 import org.piwik.sdk.dispatcher.DispatcherFactory;
 import org.piwik.sdk.tools.BuildInfo;
 import org.piwik.sdk.tools.Checksum;
@@ -27,11 +29,13 @@ public class Piwik {
     public static final String LOGGER_PREFIX = "PIWIK:";
     private static final String LOGGER_TAG = "PIWIK";
     private static final String BASE_PREFERENCE_FILE = "org.piwik.sdk";
+
+    @SuppressLint("StaticFieldLeak") private static Piwik sInstance;
+
     private final Map<Tracker, SharedPreferences> mPreferenceMap = new HashMap<>();
     private final Context mContext;
-
-    private static Piwik sInstance;
-    private SharedPreferences mBasePreferences;
+    private final SharedPreferences mBasePreferences;
+    private DispatcherFactory mDispatcherFactory = new DefaultDispatcherFactory();
 
     public static synchronized Piwik getInstance(Context context) {
         if (sInstance == null) {
@@ -82,7 +86,7 @@ public class Piwik {
                 try {
                     prefName = "org.piwik.sdk_" + Checksum.getMD5Checksum(tracker.getName());
                 } catch (Exception e) {
-                    Timber.tag(LOGGER_TAG).e(e, null);
+                    Timber.tag(LOGGER_TAG).e(e);
                     prefName = "org.piwik.sdk_" + tracker.getName();
                 }
                 newPrefs = getContext().getSharedPreferences(prefName, Context.MODE_PRIVATE);
@@ -92,8 +96,15 @@ public class Piwik {
         }
     }
 
-    protected DispatcherFactory getDispatcherFactory() {
-        return new DispatcherFactory();
+    /**
+     * If you want to use your own {@link org.piwik.sdk.dispatcher.Dispatcher}
+     */
+    public void setDispatcherFactory(DispatcherFactory dispatcherFactory) {
+        this.mDispatcherFactory = dispatcherFactory;
+    }
+
+    public DispatcherFactory getDispatcherFactory() {
+        return mDispatcherFactory;
     }
 
     DeviceHelper getDeviceHelper() {

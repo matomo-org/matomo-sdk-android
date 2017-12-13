@@ -32,12 +32,11 @@ public class PacketFactory {
     public static final int PAGE_SIZE = 20;
     private final URL mApiUrl;
 
-    public PacketFactory(@NonNull final URL apiUrl) {
+    public PacketFactory(final URL apiUrl) {
         mApiUrl = apiUrl;
     }
 
-    @NonNull
-    public List<Packet> buildPackets(@NonNull final List<Event> events) {
+    public List<Packet> buildPackets(final List<Event> events) {
         if (events.isEmpty()) return Collections.emptyList();
 
         if (events.size() == 1) {
@@ -85,7 +84,7 @@ public class PacketFactory {
         try {
             return new Packet(new URL(mApiUrl.toString() + event));
         } catch (MalformedURLException e) {
-            Timber.tag(LOGGER_TAG).w(e, null);
+            Timber.tag(LOGGER_TAG).w(e);
         }
         return null;
     }

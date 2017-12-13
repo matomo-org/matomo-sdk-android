@@ -5,22 +5,26 @@ import android.content.Context;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DeviceHelperTest {
+@RunWith(MockitoJUnitRunner.class)
+public class DeviceHelperTest extends BaseTest {
     @Mock PropertySource mPropertySource;
     @Mock BuildInfo mBuildInfo;
     @Mock Context mContext;
     private DeviceHelper mDeviceHelper;
 
     @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
+    public void setup() throws Exception {
+        super.setup();
         when(mBuildInfo.getBuildId()).thenReturn("ABCDEF");
         when(mBuildInfo.getModel()).thenReturn("UnitTest");
         when(mBuildInfo.getRelease()).thenReturn("8.0.0");

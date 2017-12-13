@@ -4,16 +4,21 @@ import android.os.Build;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 
-
-public class BuildInfoTest {
+@RunWith(MockitoJUnitRunner.class)
+public class BuildInfoTest extends BaseTest {
 
     private BuildInfo mBuildInfo;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        super.setup();
         mBuildInfo = new BuildInfo();
     }
 

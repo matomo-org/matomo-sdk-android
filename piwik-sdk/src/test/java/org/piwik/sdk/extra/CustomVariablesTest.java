@@ -4,16 +4,21 @@ import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 
 import java.util.Arrays;
 
+import testhelpers.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("deprecation")
-public class CustomVariablesTest {
+@RunWith(MockitoJUnitRunner.class)
+public class CustomVariablesTest extends BaseTest {
 
     @Test
     public void testPutAll() throws Exception {

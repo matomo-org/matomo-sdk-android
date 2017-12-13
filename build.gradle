@@ -1,30 +1,36 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
     repositories {
         jcenter()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.1'
-        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+        classpath 'com.android.tools.build:gradle:3.0.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
     }
 }
 
 allprojects {
     repositories {
         jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
     ext {
-        globalMinSdkVersion = 10
-        globalTargetSdkVersion = 25
-        globalCompileSdkVersion = 25
-        globalBuildToolsVersion = '25.0.2'
-        supportLibVersion = '25.3.1'
-        timberVersion = '4.5.1'
+        globalMinSdkVersion = 14
+        globalTargetSdkVersion = 27
+        globalCompileSdkVersion = 27
+        globalBuildToolsVersion = '27.0.1'
+        supportLibVersion = '27.0.1'
+        timberVersion = '4.6.0'
     }
 }

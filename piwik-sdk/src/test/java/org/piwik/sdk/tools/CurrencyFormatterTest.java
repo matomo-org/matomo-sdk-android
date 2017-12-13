@@ -1,10 +1,15 @@
 package org.piwik.sdk.tools;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 
-public class CurrencyFormatterTest {
+@RunWith(MockitoJUnitRunner.class)
+public class CurrencyFormatterTest extends BaseTest {
 
     @Test
     public void testCurrencyFormat() throws Exception {

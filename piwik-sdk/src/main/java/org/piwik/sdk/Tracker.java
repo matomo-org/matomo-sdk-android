@@ -469,8 +469,8 @@ public class Tracker {
         } else {
             try {
                 // Another thread might be creating a sessions first transmission.
-                mSessionStartLatch.await(getDispatchTimeout(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) { Timber.tag(TAG).e(e, null); }
+                mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) { Timber.tag(TAG).e(e); }
         }
 
         injectBaseParams(trackMe);
@@ -552,4 +552,3 @@ public class Tracker {
         return mDispatcher.getDryRunTarget();
     }
 }
-

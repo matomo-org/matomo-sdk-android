@@ -9,6 +9,8 @@ package org.piwik.sdk.dispatcher;
 import android.util.Pair;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.UrlHelper;
@@ -19,9 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import testhelpers.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 
-public class EventTest {
+@RunWith(MockitoJUnitRunner.class)
+public class EventTest extends BaseTest {
     @Test
     public void testhashCode() {
         Event event = new Event(0, "");

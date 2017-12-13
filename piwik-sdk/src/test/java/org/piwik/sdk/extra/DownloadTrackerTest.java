@@ -8,20 +8,24 @@ import android.content.pm.PackageManager;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
-import org.piwik.sdk.testhelper.TestPreferences;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import testhelpers.BaseTest;
+import testhelpers.TestHelper;
+import testhelpers.TestPreferences;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -31,18 +35,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class DownloadTrackerTest {
-    ArgumentCaptor<TrackMe> mCaptor = ArgumentCaptor.forClass(TrackMe.class);
+@RunWith(MockitoJUnitRunner.class)
+public class DownloadTrackerTest extends BaseTest {
     @Mock Tracker mTracker;
     @Mock Piwik mPiwik;
     @Mock Context mContext;
     @Mock PackageManager mPackageManager;
+    ArgumentCaptor<TrackMe> mCaptor = ArgumentCaptor.forClass(TrackMe.class);
     SharedPreferences mSharedPreferences = new TestPreferences();
     private PackageInfo mPackageInfo;
 
     @Before
     public void setup() throws PackageManager.NameNotFoundException {
-        MockitoAnnotations.initMocks(this);
         when(mTracker.getPreferences()).thenReturn(mSharedPreferences);
         when(mTracker.getPiwik()).thenReturn(mPiwik);
         when(mPiwik.getContext()).thenReturn(mContext);
@@ -87,7 +91,7 @@ public class DownloadTrackerTest {
 
         DownloadTracker downloadTracker = new DownloadTracker(mTracker);
         downloadTracker.trackNewAppDownload(new TrackMe(), new DownloadTracker.Extra.ApkChecksum(mContext));
-        Thread.sleep(100); // APK checksum happens off thread
+        TestHelper.sleep(100); // APK checksum happens off thread
         verify(mTracker).track(mCaptor.capture());
         checkNewAppDownload(mCaptor.getValue());
         Matcher m = REGEX_DOWNLOADTRACK.matcher(mCaptor.getValue().get(QueryParams.DOWNLOAD));

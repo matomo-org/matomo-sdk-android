@@ -1,4 +1,4 @@
-package org.piwik.sdk.testhelper;
+package testhelpers;
 
 import android.content.SharedPreferences;
 import android.support.annotation.Nullable;

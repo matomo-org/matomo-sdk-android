@@ -162,12 +162,9 @@ public class DownloadTracker {
             // Delay tracking incase we were called from within Application.onCreate
             Timber.tag(LOGGER_TAG).d("Google Play is install source, deferring tracking.");
         }
-        final Thread trackTask = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (delay) try {Thread.sleep(3000);} catch (Exception e) { Timber.tag(TAG).e(e, null);}
-                trackNewAppDownloadInternal(baseTrackme, extra);
-            }
+        final Thread trackTask = new Thread(() -> {
+            if (delay) try {Thread.sleep(3000);} catch (Exception e) { Timber.tag(TAG).e(e);}
+            trackNewAppDownloadInternal(baseTrackme, extra);
         });
         if (!delay && !extra.isIntensiveWork()) trackTask.run();
         else trackTask.start();

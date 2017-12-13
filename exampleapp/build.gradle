@@ -1,7 +1,11 @@
 apply plugin: 'com.android.application'
-apply plugin: 'android-apt'
 
 android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     compileSdkVersion project.ext.globalCompileSdkVersion
     buildToolsVersion project.ext.globalBuildToolsVersion
 
@@ -19,12 +23,10 @@ android {
 }
 
 dependencies {
-    repositories {
-        jcenter()
-    }
-    compile project(":piwik-sdk")
-    compile "com.android.support:appcompat-v7:${supportLibVersion}"
-    compile "com.android.support:support-v4:${supportLibVersion}"
-    compile 'com.jakewharton:butterknife:8.4.0'
-    apt 'com.jakewharton:butterknife-compiler:8.4.0'
+    implementation project(":piwik-sdk")
+    implementation "com.android.support:appcompat-v7:${supportLibVersion}"
+    implementation "com.android.support:support-v4:${supportLibVersion}"
+    implementation "com.jakewharton.timber:timber:${timberVersion}"
+    implementation 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
 }

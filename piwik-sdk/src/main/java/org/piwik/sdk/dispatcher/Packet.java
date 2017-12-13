@@ -6,19 +6,15 @@
  */
 package org.piwik.sdk.dispatcher;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.URL;
-import java.net.URLConnection;
 
 /**
  * Data that can be send to the backend API via the Dispatcher
  */
-
 public class Packet {
     private final URL mTargetURL;
     private final JSONObject mPostData;
@@ -28,28 +24,26 @@ public class Packet {
     /**
      * Constructor for GET requests
      */
-    public Packet(@NonNull URL targetURL) {
+    public Packet(URL targetURL) {
         this(targetURL, null, 1);
     }
 
     /**
      * Constructor for POST requests
+     *
+     * @param targetURL  server
+     * @param JSONObject non null if HTTP POST packet
+     * @param eventCount number of events in this packet
      */
-    public Packet(@NonNull URL targetURL, @Nullable JSONObject JSONObject, int eventCount) {
+    public Packet(URL targetURL, @Nullable JSONObject JSONObject, int eventCount) {
         mTargetURL = targetURL;
         mPostData = JSONObject;
         mEventCount = eventCount;
         mTimeStamp = System.currentTimeMillis();
     }
 
-    @NonNull
-    protected URL getTargetURL() {
+    public URL getTargetURL() {
         return mTargetURL;
-    }
-
-    @NonNull
-    URLConnection openConnection() throws IOException {
-        return mTargetURL.openConnection();
     }
 
     /**
@@ -67,6 +61,11 @@ public class Packet {
         return mTimeStamp;
     }
 
+    /**
+     * Used to determine the event cache queue positions.
+     *
+     * @return how many events this packet contains
+     */
     public int getEventCount() {
         return mEventCount;
     }

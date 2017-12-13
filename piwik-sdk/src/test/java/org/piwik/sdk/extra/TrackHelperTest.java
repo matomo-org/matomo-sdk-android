@@ -15,10 +15,13 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.Tracker;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.UUID;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -67,10 +70,31 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testOutlink() throws Exception {
-        track().outlink(new URL("file://mount/sdcard/something")).with(mTracker);
-        verify(mTracker, never()).track(mCaptor.capture());
+    public void testBaseEvent_track_safely() {
+        final TrackHelper.BaseEvent badTrackMe = new TrackHelper.BaseEvent(null) {
+            @Override
+            public TrackMe build() {
+                throw new IllegalArgumentException();
+            }
+        };
+        assertThat(badTrackMe.safelyWith(mTracker), is(false));
+        assertThat(badTrackMe.safelyWith(mPiwikApplication), is(false));
+        verify(mTracker, never()).track(any(TrackMe.class));
 
+        final TrackHelper.BaseEvent goodTrackMe = new TrackHelper.BaseEvent(null) {
+            @Override
+            public TrackMe build() {
+                return new TrackMe();
+            }
+        };
+        assertThat(goodTrackMe.safelyWith(mTracker), is(true));
+        verify(mTracker, times(1)).track(any(TrackMe.class));
+        assertThat(goodTrackMe.safelyWith(mPiwikApplication), is(true));
+        verify(mTracker, times(2)).track(any(TrackMe.class));
+    }
+
+    @Test
+    public void testOutlink() throws Exception {
         URL valid = new URL("https://foo.bar");
         track().outlink(valid).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
@@ -88,6 +112,11 @@ public class TrackHelperTest {
         verify(mTracker, times(3)).track(mCaptor.capture());
         assertEquals(valid.toExternalForm(), mCaptor.getValue().get(QueryParams.LINK));
         assertEquals(valid.toExternalForm(), mCaptor.getValue().get(QueryParams.URL_PATH));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testOutlink_invalid_url() throws MalformedURLException {
+        track().outlink(new URL("file://mount/sdcard/something")).build();
     }
 
     @Test
@@ -193,6 +222,11 @@ public class TrackHelperTest {
         assertNull(CustomDimension.getDimension(mCaptor.getValue(), 4));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetScreem_empty_path() throws Exception {
+        TrackHelper.track().screen((String) null).build();
+    }
+
     @Test
     public void testCustomDimension_trackHelperAny() {
         TrackHelper.track()
@@ -291,6 +325,11 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.GOAL_ID), "1");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrackGoal_invalid_id() throws Exception {
+        track().goal(-1).revenue(100f).build();
+    }
+
     @Test
     public void testTrackSiteSearch() throws Exception {
         track().search("keyword").category("category").count(1337).with(mTracker);
@@ -318,12 +357,6 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackGoalInvalidId() throws Exception {
-        track().goal(-1).revenue(100f).with(mTracker);
-        verify(mTracker, never()).track(mCaptor.capture());
-    }
-
-    @Test
     public void testTrackContentImpression() throws Exception {
         String name = "test name2";
         track().impression(name).piece("test").target("test2").with(mTracker);
@@ -334,17 +367,44 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.CONTENT_TARGET), "test2");
     }
 
-    @Test
-    public void testTrackContentInteraction() throws Exception {
-        String interaction = "interaction";
-        String name = "test name2";
-        track().interaction(name, interaction).piece("test").target("test2").with(mTracker);
-        verify(mTracker).track(mCaptor.capture());
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrackContentImpression_invalid_name_empty() throws Exception {
+        track().impression("").build();
+    }
 
-        assertEquals(mCaptor.getValue().get(QueryParams.CONTENT_INTERACTION), interaction);
-        assertEquals(mCaptor.getValue().get(QueryParams.CONTENT_NAME), name);
-        assertEquals(mCaptor.getValue().get(QueryParams.CONTENT_PIECE), "test");
-        assertEquals(mCaptor.getValue().get(QueryParams.CONTENT_TARGET), "test2");
+    @Test(expected = IllegalArgumentException.class)
+    public void testTrackContentImpression_invalid_name_null() throws Exception {
+        track().impression(null).build();
+    }
+
+    @Test
+    public void testTrackContentInteraction_invalid_name_empty() throws Exception {
+        int errorCount = 0;
+        try {
+            track().interaction("", "test").piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        try {
+            track().interaction("test", "").piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        try {
+            track().interaction("", "").piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        assertThat(errorCount, is(3));
+    }
+
+    @Test
+    public void testTrackContentInteraction_invalid_name_null() throws Exception {
+        int errorCount = 0;
+        try {
+            track().interaction(null, "test").piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        try {
+            track().interaction("test", null).piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        try {
+            track().interaction(null, null).piece("test").target("test2").build();
+        } catch (IllegalArgumentException e) { errorCount++; }
+        assertThat(errorCount, is(3));
     }
 
     @Test

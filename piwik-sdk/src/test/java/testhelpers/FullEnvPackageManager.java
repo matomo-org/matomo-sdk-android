@@ -5,7 +5,7 @@
  * @license https://github.com/piwik/piwik-sdk-android/blob/master/LICENSE BSD-3 Clause
  */
 
-package org.piwik.sdk.testhelper;
+package testhelpers;
 
 import android.content.ComponentName;
 import android.content.Intent;
@@ -33,7 +33,7 @@ public class FullEnvPackageManager extends RobolectricPackageManager {
     private final HashMap<String, String> mInstallerPackageNames = new HashMap<>();
 
     @Override
-    public Intent getLeanbackLaunchIntentForPackage(String packageName) {
+    public Intent getLeanbackLaunchIntentForPackage(@NonNull String packageName) {
         return null;
     }
 
