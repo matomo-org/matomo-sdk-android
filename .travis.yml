@@ -13,6 +13,9 @@ android:
       - 'android-sdk-license-.+'
       - 'google-gdk-license-.+'
 
+before_install:
+  - yes | sdkmanager "platforms;android-27"
+
 script: ./gradlew :piwik-sdk:assemble :piwik-sdk:testDebugUnitTest
 
 after_success: ./gradlew :piwik-sdk:jacocoTestReport :piwik-sdk:coveralls
