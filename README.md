@@ -3,8 +3,20 @@ Piwik SDK for Android
 
 [![Build Status](https://travis-ci.org/piwik/piwik-sdk-android.svg?branch=master)](https://travis-ci.org/piwik/piwik-sdk-android) [ ![Download](https://api.bintray.com/packages/darken/maven/piwik-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/piwik-sdk-android/_latestVersion) [![Coverage Status](https://coveralls.io/repos/piwik/piwik-sdk-android/badge.svg?branch=master&service=github)](https://coveralls.io/github/piwik/piwik-sdk-android?branch=master)
 
-Welcome to the Piwik Tracking SDK for Android. [Piwik](http://piwik.org) is the leading open source web analytics platform
-that gives you valuable insights into your website's visitors, your marketing campaigns and much more, so you can optimize your strategy and experience of your visitors.
+Welcome to the [Piwik](http://piwik.org) Tracking SDK for Android. This library helps you send analytics data from Android apps to Piwik instances.
+
+Features:
+* Caching and offline support
+* Graceful reconnection handling
+* WIFI-only mode
+* Thread-safe support for multiple trackers
+* Support for custom connection implementations
+* Complete [Piwik HTTP API](https://developer.piwik.org/api-reference/tracking-api) support
+    * [Custom dimensions](https://piwik.org/docs/custom-dimensions/)
+    * [Event Tracking](https://piwik.org/docs/event-tracking/)
+    * [Content Tracking](https://piwik.org/docs/content-tracking/)
+    * [Ecommerce](https://piwik.org/docs/ecommerce-analytics/)
+* Checksum based app install/upgrade tracking
 
 ## Quickstart
 For the not so quick start, [see here](https://github.com/piwik/piwik-sdk-android/wiki/Getting-started) or look at our [demo app](https://github.com/piwik/piwik-sdk-android/tree/master/exampleapp)
