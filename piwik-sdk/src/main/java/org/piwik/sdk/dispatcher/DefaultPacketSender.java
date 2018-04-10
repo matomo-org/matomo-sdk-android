@@ -2,9 +2,11 @@ package org.piwik.sdk.dispatcher;
 
 import org.piwik.sdk.Piwik;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -23,6 +25,7 @@ public class DefaultPacketSender implements PacketSender {
         HttpURLConnection urlConnection = null;
         try {
             urlConnection = (HttpURLConnection) packet.getTargetURL().openConnection();
+            Timber.tag(LOGGER_TAG).v("Connection open to %s", urlConnection.getURL().toExternalForm());
             urlConnection.setConnectTimeout((int) mTimeout);
             urlConnection.setReadTimeout((int) mTimeout);
 
@@ -44,9 +47,10 @@ public class DefaultPacketSender implements PacketSender {
                         gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
                     } finally {
                         // If closing fails we assume the written data to be invalid.
-                        // Don't catch the exception and let it abort the `send` call.
+                        // Don't catch the exception and let it abort the `send(Packet)` call.
                         if (gzipStream != null) gzipStream.close();
                     }
+
                     OutputStream outputStream = null;
                     try {
                         outputStream = urlConnection.getOutputStream();
@@ -86,11 +90,33 @@ public class DefaultPacketSender implements PacketSender {
             }
 
             int statusCode = urlConnection.getResponseCode();
-            Timber.tag(LOGGER_TAG).d("status code %s", statusCode);
+            final boolean successful = checkResponseCode(statusCode);
 
-            return checkResponseCode(statusCode);
+            if (successful) {
+                Timber.tag(LOGGER_TAG).v("Transmission succesful (code=%d).", statusCode);
+            } else {
+                // Consume the error stream (or at least close it) if the statuscode was non-OK (not 2XX)
+                final StringBuilder errorReason = new StringBuilder();
+                BufferedReader errorReader = null;
+                try {
+                    errorReader = new BufferedReader(new InputStreamReader(urlConnection.getErrorStream()));
+                    String line;
+                    while ((line = errorReader.readLine()) != null) errorReason.append(line);
+                } finally {
+                    if (errorReader != null) {
+                        try {
+                            errorReader.close();
+                        } catch (IOException e) {
+                            Timber.tag(LOGGER_TAG).d(e, "Failed to close the error stream.");
+                        }
+                    }
+                }
+                Timber.tag(LOGGER_TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString());
+            }
+
+            return successful;
         } catch (Exception e) {
-            Timber.tag(LOGGER_TAG).e(e, "Sending failed");
+            Timber.tag(LOGGER_TAG).e(e, "Transmission failed unexpectedly.");
             return false;
         } finally {
             if (urlConnection != null) urlConnection.disconnect();
