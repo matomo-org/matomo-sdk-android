@@ -4,6 +4,8 @@ import org.piwik.sdk.Piwik;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
@@ -32,6 +34,7 @@ public class DefaultPacketSender implements PacketSender {
 
                 final String toPost = packet.getPostData().toString();
                 if (mGzip) {
+
                     urlConnection.addRequestProperty("Content-Encoding", "gzip");
                     ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
 
@@ -39,15 +42,43 @@ public class DefaultPacketSender implements PacketSender {
                     try {
                         gzipStream = new GZIPOutputStream(byteArrayOS);
                         gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                    } finally { if (gzipStream != null) gzipStream.close();}
+                    } finally {
+                        // If closing fails we assume the written data to be invalid.
+                        // Don't catch the exception and let it abort the `send` call.
+                        if (gzipStream != null) gzipStream.close();
+                    }
+                    OutputStream outputStream = null;
+                    try {
+                        outputStream = urlConnection.getOutputStream();
+                        outputStream.write(byteArrayOS.toByteArray());
+                    } finally {
+                        if (outputStream != null) {
+                            try {
+                                outputStream.close();
+                            } catch (IOException e) {
+                                // Failing to close the stream is not enough to consider the transmission faulty.
+                                Timber.tag(LOGGER_TAG).d(e, "Failed to close output stream after writing gzipped POST data.");
+                            }
+                        }
+                    }
 
-                    urlConnection.getOutputStream().write(byteArrayOS.toByteArray());
                 } else {
+
                     BufferedWriter writer = null;
                     try {
                         writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
                         writer.write(toPost);
-                    } finally { if (writer != null) writer.close(); }
+                    } finally {
+                        if (writer != null) {
+                            try {
+                                writer.close();
+                            } catch (IOException e) {
+                                // Failing to close the stream is not enough to consider the transmission faulty.
+                                Timber.tag(LOGGER_TAG).d(e, "Failed to close output stream after writing POST data.");
+                            }
+                        }
+                    }
+
                 }
 
             } else { // GET
