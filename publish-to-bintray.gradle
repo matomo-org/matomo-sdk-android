@@ -1,5 +1,8 @@
 apply plugin: 'com.github.dcendents.android-maven'
+
 group = publishedGroupId
+version = libraryVersion
+
 install {
     repositories.mavenInstaller {
         pom.project {
@@ -65,7 +68,7 @@ artifacts {
     archives javadocJar
     archives sourcesJar
 }
-version = libraryVersion
+
 bintray {
     user = bintrayUser
     key = bintrayApiKey
@@ -77,6 +80,7 @@ bintray {
 
         dryRun = false
         publish = true
+        // override = true
 
         userOrg = user
         licenses = allLicenses

@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 def versionMajor = 3
 def versionMinor = 0
-def versionPatch = 1
+def versionPatch = 2
 def myVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
@@ -20,12 +20,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
 }
 
 dependencies {
     implementation "com.android.support:support-annotations:${supportLibVersion}"
-    implementation "com.jakewharton.timber:timber:${timberVersion}"
+    implementation "com.jakewharton.timber:timber:4.7.0"
 
     testImplementation 'org.awaitility:awaitility:3.0.0'
     // Robolectric
