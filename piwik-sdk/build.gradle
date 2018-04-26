@@ -116,10 +116,11 @@ android.libraryVariants.all { variant ->
     task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
         title = "Documentation for Android $android.defaultConfig.versionName b$android.defaultConfig.versionCode"
         destinationDir = new File("${project.getProjectDir()}/build/docs/javadoc/")
-        source = variant.javaCompile.source
-
         ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
-        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+        source = variant.javaCompiler.source
+        doFirst {
+            classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+        }
 
         description "Generates Javadoc for $variant.name."
 
