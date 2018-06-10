@@ -2,7 +2,6 @@ package org.piwik.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +14,6 @@ import org.piwik.sdk.dispatcher.DispatcherFactory;
 import org.piwik.sdk.extra.TrackHelper;
 import org.piwik.sdk.tools.DeviceHelper;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +24,9 @@ import java.util.concurrent.CountDownLatch;
 import testhelpers.TestHelper;
 import testhelpers.TestPreferences;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -60,7 +61,7 @@ public class TrackerTest {
     private final TrackerConfig mTrackerConfig = new TrackerConfig(mApiUrl, mSiteId, mName);
 
     @Before
-    public void setup() throws PackageManager.NameNotFoundException, MalformedURLException {
+    public void setup() {
         MockitoAnnotations.initMocks(this);
         when(mPiwik.getContext()).thenReturn(mContext);
         when(mContext.getPackageName()).thenReturn("package");
@@ -86,7 +87,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testLastScreenUrl() throws Exception {
+    public void testLastScreenUrl() {
         mTracker.track(new TrackMe());
         verify(mDispatcher).submit(mCaptor.capture());
         assertEquals(mTracker.getApplicationBaseURL() + "/", mCaptor.getValue().get(QueryParams.URL_PATH));
@@ -105,7 +106,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetDispatchInterval() throws Exception {
+    public void testSetDispatchInterval() {
         mTracker.setDispatchInterval(1);
         verify(mDispatcher).setDispatchInterval(1);
         mTracker.getDispatchInterval();
@@ -113,7 +114,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetDispatchTimeout() throws Exception {
+    public void testSetDispatchTimeout() {
         int timeout = 1337;
         mTracker.setDispatchTimeout(timeout);
         verify(mDispatcher).setConnectionTimeOut(timeout);
@@ -122,29 +123,29 @@ public class TrackerTest {
     }
 
     @Test
-    public void testGetOfflineCacheAge_defaultValue() throws Exception {
+    public void testGetOfflineCacheAge_defaultValue() {
         assertEquals(24 * 60 * 60 * 1000, mTracker.getOfflineCacheAge());
     }
 
     @Test
-    public void testSetOfflineCacheAge() throws Exception {
+    public void testSetOfflineCacheAge() {
         mTracker.setOfflineCacheAge(80085);
         assertEquals(80085, mTracker.getOfflineCacheAge());
     }
 
     @Test
-    public void testGetOfflineCacheSize_defaultValue() throws Exception {
+    public void testGetOfflineCacheSize_defaultValue() {
         assertEquals(4 * 1024 * 1024, mTracker.getOfflineCacheSize());
     }
 
     @Test
-    public void testSetOfflineCacheSize() throws Exception {
+    public void testSetOfflineCacheSize() {
         mTracker.setOfflineCacheSize(16 * 1000 * 1000);
         assertEquals(16 * 1000 * 1000, mTracker.getOfflineCacheSize());
     }
 
     @Test
-    public void testSetDispatchMode() throws MalformedURLException {
+    public void testSetDispatchMode() {
         assertEquals(DispatchMode.ALWAYS, mTracker.getDispatchMode());
         verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.ALWAYS);
 
@@ -168,7 +169,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testOptOut_set() throws Exception {
+    public void testOptOut_set() {
         mTracker.setOptOut(true);
         verify(mDispatcher).clear();
         assertTrue(mTracker.isOptOut());
@@ -177,7 +178,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testOptOut_init() throws Exception {
+    public void testOptOut_init() {
         mTrackerPreferences.edit().putBoolean(Tracker.PREF_KEY_TRACKER_OPTOUT, false).apply();
         Tracker tracker = new Tracker(mPiwik, mTrackerConfig);
         assertFalse(tracker.isOptOut());
@@ -205,17 +206,17 @@ public class TrackerTest {
     }
 
     @Test
-    public void testGetSiteId() throws Exception {
+    public void testGetSiteId() {
         assertEquals(mTracker.getSiteId(), 11);
     }
 
     @Test
-    public void testGetPiwik() throws Exception {
+    public void testGetPiwik() {
         assertEquals(mPiwik, mTracker.getPiwik());
     }
 
     @Test
-    public void testSetURL() throws Exception {
+    public void testSetURL() {
         mTracker.setApplicationDomain("test.com");
         assertEquals(mTracker.getApplicationDomain(), "test.com");
         assertEquals(mTracker.getApplicationBaseURL(), "http://test.com");
@@ -234,7 +235,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetApplicationDomain() throws Exception {
+    public void testSetApplicationDomain() {
         mTracker.setApplicationDomain("my-domain.com");
         TrackHelper.track().screen("test/test").title("Test title").with(mTracker);
         verify(mDispatcher).submit(mCaptor.capture());
@@ -243,28 +244,28 @@ public class TrackerTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetTooShortVistorId() throws MalformedURLException {
+    public void testSetTooShortVistorId() {
         String tooShortVisitorId = "0123456789ab";
         mTracker.setVisitorId(tooShortVisitorId);
         assertNotEquals(tooShortVisitorId, mTracker.getVisitorId());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetTooLongVistorId() throws MalformedURLException {
+    public void testSetTooLongVistorId() {
         String tooLongVisitorId = "0123456789abcdefghi";
         mTracker.setVisitorId(tooLongVisitorId);
         assertNotEquals(tooLongVisitorId, mTracker.getVisitorId());
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetVistorIdWithInvalidCharacters() throws MalformedURLException {
+    public void testSetVistorIdWithInvalidCharacters() {
         String invalidCharacterVisitorId = "01234-6789-ghief";
         mTracker.setVisitorId(invalidCharacterVisitorId);
         assertNotEquals(invalidCharacterVisitorId, mTracker.getVisitorId());
     }
 
     @Test
-    public void testSetVistorId() throws Exception {
+    public void testSetVistorId() {
         String visitorId = "0123456789abcdef";
         mTracker.setVisitorId(visitorId);
         assertEquals(visitorId, mTracker.getVisitorId());
@@ -275,7 +276,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetUserId() throws Exception {
+    public void testSetUserId() {
         assertNotNull(mTracker.getDefaultTrackMe().get(QueryParams.USER_ID));
 
         mTracker.setUserId("test");
@@ -294,7 +295,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testGetResolution() throws Exception {
+    public void testGetResolution() {
         TrackMe trackMe = new TrackMe();
         mTracker.track(trackMe);
         verify(mDispatcher).submit(mCaptor.capture());
@@ -302,7 +303,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetNewSession() throws Exception {
+    public void testSetNewSession() {
         TrackMe trackMe = new TrackMe();
         mTracker.track(trackMe);
         verify(mDispatcher).submit(mCaptor.capture());
@@ -315,7 +316,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetNewSessionRaceCondition() throws Exception {
+    public void testSetNewSessionRaceCondition() {
         for (int retry = 0; retry < 5; retry++) {
             final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<TrackMe>());
             doAnswer(invocation -> {
@@ -342,23 +343,28 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetSessionTimeout() throws Exception {
+    public void testSetSessionTimeout() {
         mTracker.setSessionTimeout(10000);
 
-        TrackHelper.track().screen("test").with(mTracker);
-        assertFalse(mTracker.tryNewSession());
+        TrackHelper.track().screen("test1").with(mTracker);
+        assertThat(mTracker.getLastEventX().get(QueryParams.SESSION_START), notNullValue());
+
+        TrackHelper.track().screen("test2").with(mTracker);
+        assertThat(mTracker.getLastEventX().get(QueryParams.SESSION_START), nullValue());
 
         mTracker.setSessionTimeout(0);
         TestHelper.sleep(1);
-        assertTrue(mTracker.tryNewSession());
+        TrackHelper.track().screen("test3").with(mTracker);
+        assertThat(mTracker.getLastEventX().get(QueryParams.SESSION_START), notNullValue());
 
         mTracker.setSessionTimeout(10000);
-        assertFalse(mTracker.tryNewSession());
         assertEquals(mTracker.getSessionTimeout(), 10000);
+        TrackHelper.track().screen("test3").with(mTracker);
+        assertThat(mTracker.getLastEventX().get(QueryParams.SESSION_START), nullValue());
     }
 
     @Test
-    public void testCheckSessionTimeout() throws Exception {
+    public void testCheckSessionTimeout() {
         mTracker.setSessionTimeout(0);
         TrackHelper.track().screen("test").with(mTracker);
         verify(mDispatcher).submit(mCaptor.capture());
@@ -374,7 +380,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testTrackerEquals() throws Exception {
+    public void testTrackerEquals() {
         Tracker tracker2 = new Tracker(mPiwik, new TrackerConfig("http://localhost", 100, "Default Tracker"));
         Tracker tracker3 = new Tracker(mPiwik, new TrackerConfig("http://example.com", 11, "Default Tracker"));
         assertNotNull(mTracker);
@@ -383,12 +389,12 @@ public class TrackerTest {
     }
 
     @Test
-    public void testTrackerHashCode() throws Exception {
+    public void testTrackerHashCode() {
         assertEquals(mTrackerConfig.hashCode(), mTracker.hashCode());
     }
 
     @Test
-    public void testUrlPathCorrection() throws Exception {
+    public void testUrlPathCorrection() {
         String[] paths = new String[]{null, "", "/",};
         for (String path : paths) {
             TrackMe trackMe = new TrackMe();
@@ -399,7 +405,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetUserAgent() throws MalformedURLException {
+    public void testSetUserAgent() {
         TrackMe trackMe = new TrackMe();
         mTracker.track(trackMe);
         assertEquals("aUserAgent", trackMe.get(QueryParams.USER_AGENT));
@@ -419,7 +425,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testFirstVisitTimeStamp() throws Exception {
+    public void testFirstVisitTimeStamp() {
         assertEquals(-1, mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
 
         TrackHelper.track().event("TestCategory", "TestAction").with(mTracker);
@@ -438,7 +444,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testTotalVisitCount() throws Exception {
+    public void testTotalVisitCount() {
         assertEquals(-1, mTracker.getPreferences().getInt(Tracker.PREF_KEY_TRACKER_VISITCOUNT, -1));
         assertNull(mTracker.getDefaultTrackMe().get(QueryParams.TOTAL_NUMBER_OF_VISITS));
 
@@ -533,7 +539,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testPreviousVisits() throws Exception {
+    public void testPreviousVisits() {
         final List<Long> previousVisitTimes = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
 
@@ -554,7 +560,7 @@ public class TrackerTest {
     }
 
     @Test
-    public void testPreviousVisit() throws Exception {
+    public void testPreviousVisit() {
         // No timestamp yet
         assertEquals(-1, mTracker.getPreferences().getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
         mTracker = new Tracker(mPiwik, mTrackerConfig);
