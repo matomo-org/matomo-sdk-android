@@ -20,7 +20,7 @@ public class DemoApp extends PiwikApplication {
 
     @Override
     public TrackerConfig onCreateTrackerConfig() {
-        return TrackerConfig.createDefault("http://demo.piwik.org/", 53);
+        return TrackerConfig.createDefault("https://demo.matomo.org/", 53);
     }
 
     @Override
