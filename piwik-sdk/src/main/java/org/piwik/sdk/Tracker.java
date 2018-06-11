@@ -14,6 +14,7 @@ import android.support.annotation.VisibleForTesting;
 import org.piwik.sdk.dispatcher.DispatchMode;
 import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Packet;
+import org.piwik.sdk.tools.Objects;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -22,13 +23,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import timber.log.Timber;
-
-import static android.content.ContentValues.TAG;
 
 
 /**
@@ -65,7 +62,7 @@ public class Tracker {
      * The ID of the website we're tracking a visit/action for.
      */
     private final int mSiteId;
-    private final Object mSessionLock = new Object();
+    private final Object mTrackingLock = new Object();
     private final Dispatcher mDispatcher;
     private final String mName;
     private final Random mRandomAntiCachingValue = new Random(new Date().getTime());
@@ -74,7 +71,7 @@ public class Tracker {
     private TrackMe mLastEvent;
     private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
-    private long mSessionStartTime;
+    private long mSessionStartTime = 0;
     private boolean mOptOut = false;
     private SharedPreferences mPreferences;
 
@@ -162,23 +159,14 @@ public class Tracker {
     }
 
     public void startNewSession() {
-        synchronized (mSessionLock) {
+        synchronized (mTrackingLock) {
             mSessionStartTime = 0;
         }
     }
 
     public void setSessionTimeout(int milliseconds) {
-        synchronized (mSessionLock) {
+        synchronized (mTrackingLock) {
             mSessionTimeout = milliseconds;
-        }
-    }
-
-    protected boolean tryNewSession() {
-        synchronized (mSessionLock) {
-            boolean expired = System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
-            // Update the session timer
-            mSessionStartTime = System.currentTimeMillis();
-            return expired;
         }
     }
 
@@ -415,9 +403,6 @@ public class Tracker {
         if (previousVisit != -1) mDefaultTrackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, previousVisit);
 
         trackMe.trySet(QueryParams.SESSION_START, mDefaultTrackMe.get(QueryParams.SESSION_START));
-        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
-        trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
-        trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
         trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
@@ -445,6 +430,13 @@ public class Tracker {
             mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
         }
         trackMe.set(QueryParams.URL_PATH, urlPath);
+
+        if (mLastEvent == null || !Objects.equals(trackMe.get(QueryParams.USER_ID), mLastEvent.get(QueryParams.USER_ID))) {
+            // https://github.com/matomo-org/piwik-sdk-android/issues/209
+            trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
+            trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
+            trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
+        }
     }
 
     private static String fixUrl(String url, String baseUrl) {
@@ -456,35 +448,28 @@ public class Tracker {
         return url;
     }
 
-    private CountDownLatch mSessionStartLatch = new CountDownLatch(0);
 
     public Tracker track(TrackMe trackMe) {
-        boolean newSession;
-        synchronized (mSessionLock) {
-            newSession = tryNewSession();
-            if (newSession) mSessionStartLatch = new CountDownLatch(1);
+        synchronized (mTrackingLock) {
+            final boolean newSession = System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+
+            if (newSession) {
+                mSessionStartTime = System.currentTimeMillis();
+                injectInitialParams(trackMe);
+            }
+
+            injectBaseParams(trackMe);
+
+            mLastEvent = trackMe;
+            if (!mOptOut) {
+                mDispatcher.submit(trackMe);
+                Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
+            } else {
+                Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
+            }
+
+            return this;
         }
-        if (newSession) {
-            injectInitialParams(trackMe);
-        } else {
-            try {
-                // Another thread might be creating a sessions first transmission.
-                mSessionStartLatch.await(mDispatcher.getConnectionTimeOut(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) { Timber.tag(TAG).e(e); }
-        }
-
-        injectBaseParams(trackMe);
-
-        mLastEvent = trackMe;
-        if (!mOptOut) {
-            mDispatcher.submit(trackMe);
-            Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
-        } else Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
-
-        // we did a first transmission, let the other through.
-        if (newSession) mSessionStartLatch.countDown();
-
-        return this;
     }
 
     public static String makeRandomVisitorId() {
