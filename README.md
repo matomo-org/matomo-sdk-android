@@ -24,7 +24,7 @@ For the not so quick start, [see here](https://github.com/piwik/piwik-sdk-androi
 * [Setup Piwik](https://piwik.org/docs/installation/) on your server.
 * Include the library in your app modules `build.gradle` file
 ```groovy
-    implementation 'org.piwik.sdk:piwik-sdk:3.0.2'
+    implementation 'org.piwik.sdk:piwik-sdk:<latest-version>'
 ```
 
 * Initialize your `Tracker` either by extending our `PiwikApplication` class or storing an instance yourself:
