@@ -27,6 +27,21 @@ For the not so quick start, [see here](https://github.com/piwik/piwik-sdk-androi
     implementation 'org.piwik.sdk:piwik-sdk:<latest-version>'
 ```
 
+* for kotlin project use java7, you may add those line in your modules `build.gradle` file
+```groovy
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+```
+and if you got an error like  `:app:transformClassesWithDesugarForDebug`,enable desugaring in your 'gradle.properties' file
+```groovy
+android.enableD8.desugaring = true
+```
+
 * Initialize your `Tracker` either by extending our `PiwikApplication` class or storing an instance yourself:
 ```java
 public class YourApplication extends Application {
