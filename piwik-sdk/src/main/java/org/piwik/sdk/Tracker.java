@@ -343,6 +343,22 @@ public class Tracker {
         return mDefaultTrackMe.get(QueryParams.VISITOR_ID);
     }
 
+    /**
+     * Sets the marketing campaign for this visit if a user opens your app for example because of an
+     * ad or a newsletter. This is used to populate the <i>Referrers > Campaigns</i> report.
+     * @param campaignName the name of the campaign
+     * @param keyword      the keyword of the campaign
+     */
+    public Tracker setCampaign(String campaignName, String keyword) {
+        mDefaultTrackMe.set(QueryParams.CAMPAIGN_NAME, campaignName);
+        mDefaultTrackMe.set(QueryParams.CAMPAIGN_KEYWORD, keyword);
+        return this;
+    }
+
+    public String getCampaign() {
+        return mDefaultTrackMe.get(QueryParams.CAMPAIGN_NAME) + " - " + mDefaultTrackMe.get(QueryParams.CAMPAIGN_KEYWORD);
+    }
+
     private static final Pattern PATTERN_VISITOR_ID = Pattern.compile("^[0-9a-f]{16}$");
 
     private boolean confirmVisitorIdFormat(String visitorId) throws IllegalArgumentException {
