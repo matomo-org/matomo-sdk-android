@@ -438,6 +438,9 @@ public class Tracker {
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
         trackMe.trySet(QueryParams.USER_ID, mDefaultTrackMe.get(QueryParams.USER_ID));
 
+        trackMe.trySet(QueryParams.CAMPAIGN_NAME, mDefaultTrackMe.get(QueryParams.CAMPAIGN_NAME));
+        trackMe.trySet(QueryParams.CAMPAIGN_KEYWORD, mDefaultTrackMe.get(QueryParams.CAMPAIGN_KEYWORD));
+
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
             urlPath = mDefaultTrackMe.get(QueryParams.URL_PATH);
