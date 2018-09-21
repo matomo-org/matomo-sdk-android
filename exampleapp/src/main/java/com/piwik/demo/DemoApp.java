@@ -9,7 +9,7 @@ package com.piwik.demo;
 
 import android.os.StrictMode;
 
-import org.piwik.sdk.TrackerConfig;
+import org.piwik.sdk.TrackerBuilder;
 import org.piwik.sdk.extra.DownloadTracker;
 import org.piwik.sdk.extra.PiwikApplication;
 import org.piwik.sdk.extra.TrackHelper;
@@ -19,8 +19,8 @@ import timber.log.Timber;
 public class DemoApp extends PiwikApplication {
 
     @Override
-    public TrackerConfig onCreateTrackerConfig() {
-        return TrackerConfig.createDefault("https://demo.matomo.org/", 53);
+    public TrackerBuilder onCreateTrackerConfig() {
+        return TrackerBuilder.createDefault("https://demo.matomo.org/", 53);
     }
 
     @Override

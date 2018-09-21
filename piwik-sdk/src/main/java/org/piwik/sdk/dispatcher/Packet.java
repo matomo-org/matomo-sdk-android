@@ -10,13 +10,11 @@ import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
 
-import java.net.URL;
-
 /**
  * Data that can be send to the backend API via the Dispatcher
  */
 public class Packet {
-    private final URL mTargetURL;
+    private final String mTargetURL;
     private final JSONObject mPostData;
     private final long mTimeStamp;
     private final int mEventCount;
@@ -24,7 +22,7 @@ public class Packet {
     /**
      * Constructor for GET requests
      */
-    public Packet(URL targetURL) {
+    public Packet(String targetURL) {
         this(targetURL, null, 1);
     }
 
@@ -35,14 +33,14 @@ public class Packet {
      * @param JSONObject non null if HTTP POST packet
      * @param eventCount number of events in this packet
      */
-    public Packet(URL targetURL, @Nullable JSONObject JSONObject, int eventCount) {
+    public Packet(String targetURL, @Nullable JSONObject JSONObject, int eventCount) {
         mTargetURL = targetURL;
         mPostData = JSONObject;
         mEventCount = eventCount;
         mTimeStamp = System.currentTimeMillis();
     }
 
-    public URL getTargetURL() {
+    public String getTargetURL() {
         return mTargetURL;
     }
 

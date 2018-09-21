@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class PiwikApplicationTest extends DefaultTestCase {
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     @Test
-    public void testPiwikAutoBindActivities() throws Exception {
+    public void testPiwikAutoBindActivities() {
         Application app = Robolectric.application;
         Tracker tracker = createTracker();
         tracker.setDryRunTarget(Collections.synchronizedList(new ArrayList<>()));
@@ -42,13 +42,13 @@ public class PiwikApplicationTest extends DefaultTestCase {
     }
 
     @Test
-    public void testPiwikApplicationGetTracker() throws Exception {
+    public void testPiwikApplicationGetTracker() {
         PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
         assertEquals(piwikApplication.getTracker(), piwikApplication.getTracker());
     }
 
     @Test
-    public void testPiwikApplicationgetPiwik() throws Exception {
+    public void testPiwikApplicationgetPiwik() {
         PiwikApplication piwikApplication = (PiwikApplication) Robolectric.application;
         Assert.assertEquals(piwikApplication.getPiwik(), Piwik.getInstance(piwikApplication));
     }

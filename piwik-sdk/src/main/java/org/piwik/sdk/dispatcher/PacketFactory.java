@@ -17,8 +17,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.piwik.sdk.Piwik;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,9 +28,9 @@ public class PacketFactory {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "PacketFactory";
     @VisibleForTesting
     public static final int PAGE_SIZE = 20;
-    private final URL mApiUrl;
+    private final String mApiUrl;
 
-    public PacketFactory(final URL apiUrl) {
+    public PacketFactory(final String apiUrl) {
         mApiUrl = apiUrl;
     }
 
@@ -81,12 +79,7 @@ public class PacketFactory {
     @Nullable
     private Packet buildPacketForGet(@NonNull Event event) {
         if (event.getEncodedQuery().isEmpty()) return null;
-        try {
-            return new Packet(new URL(mApiUrl.toString() + event));
-        } catch (MalformedURLException e) {
-            Timber.tag(LOGGER_TAG).w(e);
-        }
-        return null;
+        return new Packet(mApiUrl + event);
     }
 
 }

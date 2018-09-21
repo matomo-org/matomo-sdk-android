@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.zip.GZIPOutputStream;
 
@@ -24,7 +25,7 @@ public class DefaultPacketSender implements PacketSender {
     public boolean send(Packet packet) {
         HttpURLConnection urlConnection = null;
         try {
-            urlConnection = (HttpURLConnection) packet.getTargetURL().openConnection();
+            urlConnection = (HttpURLConnection) new URL(packet.getTargetURL()).openConnection();
             Timber.tag(LOGGER_TAG).v("Connection open to %s", urlConnection.getURL().toExternalForm());
             urlConnection.setConnectTimeout((int) mTimeout);
             urlConnection.setReadTimeout((int) mTimeout);

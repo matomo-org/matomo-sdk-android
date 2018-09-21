@@ -56,19 +56,6 @@ public class Piwik {
     }
 
     /**
-     * @param trackerConfig the Tracker configuration
-     * @return Tracker object
-     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
-     */
-    public synchronized Tracker newTracker(@NonNull TrackerConfig trackerConfig) {
-        return new Tracker(this, trackerConfig);
-    }
-
-    public String getApplicationDomain() {
-        return getContext().getPackageName();
-    }
-
-    /**
      * Base preferences, tracker idenpendent.
      */
     public SharedPreferences getPiwikPreferences() {

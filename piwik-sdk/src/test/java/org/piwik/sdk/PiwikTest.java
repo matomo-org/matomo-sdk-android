@@ -49,19 +49,19 @@ import static org.mockito.Mockito.when;
 public class PiwikTest extends BaseTest {
 
     @Test
-    public void testNewTracker() throws Exception {
+    public void testNewTracker() {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
-        Tracker tracker = Piwik.getInstance(Robolectric.application).newTracker(app.onCreateTrackerConfig());
+        Tracker tracker = app.onCreateTrackerConfig().build(Piwik.getInstance(Robolectric.application));
         assertNotNull(tracker);
         assertEquals(app.onCreateTrackerConfig().getApiUrl(), tracker.getAPIUrl());
         assertEquals(app.onCreateTrackerConfig().getSiteId(), tracker.getSiteId());
     }
 
     @Test
-    public void testNormalTracker() throws Exception {
+    public void testNormalTracker() {
         Piwik piwik = Piwik.getInstance(Robolectric.application);
-        Tracker tracker = piwik.newTracker(new TrackerConfig("http://test", 1, "Default Tracker"));
-        assertEquals("http://test/piwik.php", tracker.getAPIUrl().toString());
+        Tracker tracker = new TrackerBuilder("http://test/matomo.php", 1, "Default Tracker").build(piwik);
+        assertEquals("http://test/matomo.php", tracker.getAPIUrl());
         assertEquals(1, tracker.getSiteId());
     }
 
@@ -73,7 +73,7 @@ public class PiwikTest extends BaseTest {
 
     @SuppressLint("InlinedApi")
     @Test
-    public void testLowMemoryDispatch() throws Exception {
+    public void testLowMemoryDispatch() {
         PiwikTestApplication app = (PiwikTestApplication) Robolectric.application;
         final PacketSender packetSender = mock(PacketSender.class);
         app.getPiwik().setDispatcherFactory(new DefaultDispatcherFactory() {
