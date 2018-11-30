@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -94,7 +95,18 @@ public class DefaultPacketSender implements PacketSender {
             final boolean successful = checkResponseCode(statusCode);
 
             if (successful) {
-                Timber.tag(LOGGER_TAG).v("Transmission succesful (code=%d).", statusCode);
+                Timber.tag(LOGGER_TAG).v("Transmission successful (code=%d).", statusCode);
+
+                // https://github.com/matomo-org/piwik-sdk-android/issues/226
+                InputStream is = urlConnection.getInputStream();
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (IOException e) {
+                        Timber.tag(LOGGER_TAG).d(e, "Failed to close the error stream.");
+                    }
+                }
+
             } else {
                 // Consume the error stream (or at least close it) if the statuscode was non-OK (not 2XX)
                 final StringBuilder errorReason = new StringBuilder();

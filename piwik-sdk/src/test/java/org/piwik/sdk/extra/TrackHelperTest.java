@@ -273,6 +273,15 @@ public class TrackHelperTest {
     }
 
     @Test
+    public void testTrackScreenWithCampaignView() {
+        track().screen("/test/test").campaign("campaign_name", "campaign_keyword").with(mTracker);
+        verify(mTracker).track(mCaptor.capture());
+        assertTrue(mCaptor.getValue().get(QueryParams.URL_PATH).endsWith("/test/test"));
+        assertEquals(mCaptor.getValue().get(QueryParams.CAMPAIGN_NAME), "campaign_name");
+        assertEquals(mCaptor.getValue().get(QueryParams.CAMPAIGN_KEYWORD), "campaign_keyword");
+    }
+
+    @Test
     public void testTrackEvent() throws Exception {
         track().event("category", "test action").with(mTracker);
         verify(mTracker).track(mCaptor.capture());

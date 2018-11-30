@@ -116,6 +116,8 @@ public class TrackHelper {
         private final CustomVariables mCustomVariables = new CustomVariables();
         private final Map<Integer, String> mCustomDimensions = new HashMap<>();
         private String mTitle;
+        private String mCampaignName;
+        private String mCampaignKeyword;
 
         Screen(TrackHelper baseBuilder, String path) {
             super(baseBuilder);
@@ -157,6 +159,20 @@ public class TrackHelper {
             return this;
         }
 
+        /**
+         * The marketing campaign for this visit if the user opens the app for example because of an
+         * ad or a newsletter. Used to populate the <i>Referrers > Campaigns</i> report.
+         *
+         * @param name    the name of the campaign
+         * @param keyword the keyword of the campaign
+         * @return this object to allow chaining calls
+         */
+        public Screen campaign(String name, String keyword) {
+            mCampaignName = name;
+            mCampaignKeyword = keyword;
+            return this;
+        }
+
         @Override
         public TrackMe build() {
             if (mPath == null) {
@@ -165,7 +181,9 @@ public class TrackHelper {
 
             final TrackMe trackMe = new TrackMe(getBaseTrackMe())
                     .set(QueryParams.URL_PATH, mPath)
-                    .set(QueryParams.ACTION_NAME, mTitle);
+                    .set(QueryParams.ACTION_NAME, mTitle)
+                    .set(QueryParams.CAMPAIGN_NAME, mCampaignName)
+                    .set(QueryParams.CAMPAIGN_KEYWORD, mCampaignKeyword);
             if (mCustomVariables.size() > 0) {
                 //noinspection deprecation
                 trackMe.set(QueryParams.SCREEN_SCOPE_CUSTOM_VARIABLES, mCustomVariables.toString());
