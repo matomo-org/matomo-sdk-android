@@ -27,7 +27,10 @@ public class DefaultPacketSender implements PacketSender {
         HttpURLConnection urlConnection = null;
         try {
             urlConnection = (HttpURLConnection) new URL(packet.getTargetURL()).openConnection();
-            Timber.tag(LOGGER_TAG).v("Connection open to %s", urlConnection.getURL().toExternalForm());
+
+            Timber.tag(LOGGER_TAG).v("Connection is open to %s", urlConnection.getURL().toExternalForm());
+            Timber.tag(LOGGER_TAG).v("Sending: %s", packet);
+
             urlConnection.setConnectTimeout((int) mTimeout);
             urlConnection.setReadTimeout((int) mTimeout);
 
@@ -92,10 +95,10 @@ public class DefaultPacketSender implements PacketSender {
             }
 
             int statusCode = urlConnection.getResponseCode();
+            Timber.tag(LOGGER_TAG).v("Transmission finished (code=%d).", statusCode);
             final boolean successful = checkResponseCode(statusCode);
 
             if (successful) {
-                Timber.tag(LOGGER_TAG).v("Transmission successful (code=%d).", statusCode);
 
                 // https://github.com/matomo-org/piwik-sdk-android/issues/226
                 InputStream is = urlConnection.getInputStream();
@@ -146,7 +149,7 @@ public class DefaultPacketSender implements PacketSender {
         mGzip = gzip;
     }
 
-    public static boolean checkResponseCode(int code) {
+    private static boolean checkResponseCode(int code) {
         return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK;
     }
 }

@@ -6,6 +6,7 @@
  */
 package org.piwik.sdk.dispatcher;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import org.json.JSONObject;
@@ -66,5 +67,14 @@ public class Packet {
      */
     public int getEventCount() {
         return mEventCount;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Packet(");
+        if (mPostData != null) sb.append("type=POST, data=").append(mPostData);
+        else sb.append("type=GET, data=").append(mTargetURL);
+        return sb.append(")").toString();
     }
 }
