@@ -37,6 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -653,6 +654,63 @@ public class TrackerTest {
         tracker.track(custom);
         verify(mDispatcher, times(5)).submit(mCaptor.capture());
         assertEquals(1000L, Long.parseLong(mCaptor.getValue().get(QueryParams.PREVIOUS_VISIT_TIMESTAMP)));
+    }
+
+    @Test
+    public void testTrackingCallback() {
+        Tracker tracker = new Tracker(mPiwik, mTrackerBuilder);
+        Tracker.Callback callback = mock(Tracker.Callback.class);
+
+        TrackMe pre = new TrackMe();
+        tracker.track(pre);
+        verify(mDispatcher).submit(pre);
+        verify(callback, never()).onTrack(mCaptor.capture());
+
+        reset(mDispatcher, callback);
+        tracker.addTrackingCallback(callback);
+        tracker.track(new TrackMe());
+        verify(callback).onTrack(mCaptor.capture());
+        verify(mDispatcher, never()).submit(any());
+
+        reset(mDispatcher, callback);
+        TrackMe orig = new TrackMe();
+        TrackMe replaced = new TrackMe().set("some", "thing");
+        when(callback.onTrack(orig)).thenReturn(replaced);
+        tracker.track(orig);
+        verify(callback).onTrack(orig);
+        verify(mDispatcher).submit(replaced);
+
+        reset(mDispatcher, callback);
+        TrackMe post = new TrackMe();
+        tracker.removeTrackingCallback(callback);
+        tracker.track(post);
+        verify(callback, never()).onTrack(any());
+        verify(mDispatcher).submit(post);
+    }
+
+    @Test
+    public void testTrackingCallbacks() {
+        Tracker tracker = new Tracker(mPiwik, mTrackerBuilder);
+        Tracker.Callback callback1 = mock(Tracker.Callback.class);
+        Tracker.Callback callback2 = mock(Tracker.Callback.class);
+
+        TrackMe orig = new TrackMe();
+        TrackMe replaced = new TrackMe();
+        when(callback1.onTrack(orig)).thenReturn(replaced);
+        when(callback2.onTrack(replaced)).thenReturn(replaced);
+
+        tracker.addTrackingCallback(callback1);
+        tracker.addTrackingCallback(callback1);
+        tracker.addTrackingCallback(callback2);
+        tracker.track(orig);
+        verify(callback1).onTrack(orig);
+        verify(callback2).onTrack(replaced);
+        verify(mDispatcher).submit(replaced);
+
+        tracker.removeTrackingCallback(callback1);
+        tracker.track(orig);
+
+        verify(callback2).onTrack(orig);
     }
 
     private static void validateDefaultQuery(TrackMe params) {

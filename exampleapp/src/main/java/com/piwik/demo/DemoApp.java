@@ -52,5 +52,10 @@ public class DemoApp extends PiwikApplication {
         // Alternative:
         // i.e. "http://com.piwik.demo:1/com.android.vending"
         // getTracker().download();
+
+        getTracker().addTrackingCallback(trackMe -> {
+            Timber.i("Tracker.Callback.onTrack(%s)", trackMe);
+            return trackMe;
+        });
     }
 }

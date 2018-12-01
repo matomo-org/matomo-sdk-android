@@ -8,6 +8,7 @@
 package org.piwik.sdk;
 
 import android.content.SharedPreferences;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.DispatchMode;
@@ -17,6 +18,7 @@ import org.piwik.sdk.tools.Objects;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -67,6 +69,8 @@ public class Tracker {
     private boolean mOptOut;
     private SharedPreferences mPreferences;
 
+    private final LinkedHashSet<Callback> mTrackingCallbacks = new LinkedHashSet<>();
+
     protected Tracker(Piwik piwik, TrackerBuilder config) {
         mPiwik = piwik;
         mApiUrl = config.getApiUrl();
@@ -97,6 +101,14 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.LANGUAGE, mPiwik.getDeviceHelper().getUserLanguage());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, config.getApplicationBaseUrl());
+    }
+
+    public void addTrackingCallback(Callback callback) {
+        this.mTrackingCallbacks.add(callback);
+    }
+
+    public void removeTrackingCallback(Callback callback) {
+        this.mTrackingCallbacks.remove(callback);
     }
 
     /**
@@ -428,6 +440,14 @@ public class Tracker {
 
             injectBaseParams(trackMe);
 
+            for (Callback callback : mTrackingCallbacks) {
+                trackMe = callback.onTrack(trackMe);
+                if (trackMe == null) {
+                    Timber.tag(LOGGER_TAG).d("Tracking aborted by %s", callback);
+                    return this;
+                }
+            }
+
             mLastEvent = trackMe;
             if (!mOptOut) {
                 mDispatcher.submit(trackMe);
@@ -499,5 +519,17 @@ public class Tracker {
      */
     public List<Packet> getDryRunTarget() {
         return mDispatcher.getDryRunTarget();
+    }
+
+    public interface Callback {
+        /**
+         * This method will be called after parameter injection and before transmission within {@link Tracker#track(TrackMe)}.
+         * Blocking within this method will block tracking.
+         *
+         * @param trackMe The `TrackMe` that was passed to {@link Tracker#track(TrackMe)} after all data has been injected.
+         * @return The `TrackMe` that will be send, returning NULL here will abort transmission.
+         */
+        @Nullable
+        TrackMe onTrack(TrackMe trackMe);
     }
 }
