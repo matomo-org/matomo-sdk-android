@@ -32,6 +32,7 @@ import timber.log.Timber;
  * Main tracking class
  * This class is threadsafe.
  */
+@SuppressWarnings("WeakerAccess")
 public class Tracker {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
 
