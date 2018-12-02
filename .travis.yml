@@ -19,6 +19,6 @@ android:
 before_install:
   - yes | sdkmanager "platforms;android-28"
 
-script: ./gradlew :matomo-sdk:assemble :matomo-sdk:testDebugUnitTest
+script: ./gradlew :tracker:assemble :tracker:testDebugUnitTest
 
-after_success: ./gradlew :matomo-sdk:jacocoTestReport :matomo-sdk:coveralls
+after_success: ./gradlew :tracker:jacocoTestReport :tracker:coveralls
