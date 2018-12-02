@@ -1,1 +1,1 @@
-include ':exampleapp', ':matomo-sdk'
+include ':exampleapp', ':tracker'

@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-    implementation project(":matomo-sdk")
+    implementation project(':tracker')
     implementation "com.android.support:appcompat-v7:${supportLibVersion}"
     implementation "com.android.support:support-v4:${supportLibVersion}"
     implementation "com.jakewharton.timber:timber:${timberVersion}"

@@ -24,7 +24,7 @@ For the not so quick start, [see here](https://github.com/matomo-org/matomo-sdk-
 * [Setup Matomo](https://matomo.org/docs/installation/) on your server.
 * Include the library in your app modules `build.gradle` file
 ```groovy
-    implementation 'matomo.sdk:matomo-sdk:<latest-version>'
+    implementation 'org.matomo.sdk:tracker:<latest-version>'
 ```
 
 * Initialize your `Tracker` either by extending our `MatomoApplication` class or storing an instance yourself:
