@@ -8,7 +8,7 @@
 package org.piwik.sdk;
 
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import org.piwik.sdk.dispatcher.DispatchMode;
@@ -16,9 +16,9 @@ import org.piwik.sdk.dispatcher.Dispatcher;
 import org.piwik.sdk.dispatcher.Packet;
 import org.piwik.sdk.tools.Objects;
 
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -32,6 +32,7 @@ import timber.log.Timber;
  * Main tracking class
  * This class is threadsafe.
  */
+@SuppressWarnings("WeakerAccess")
 public class Tracker {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "Tracker";
 
@@ -51,17 +52,12 @@ public class Tracker {
     protected static final String PREF_KEY_OFFLINE_CACHE_SIZE = "tracker.cache.size";
     protected static final String PREF_KEY_DISPATCHER_MODE = "tracker.dispatcher.mode";
 
+    private static final Pattern VALID_URLS = Pattern.compile("^(\\w+)(?:://)(.+?)$");
+
     private final Piwik mPiwik;
-
-    /**
-     * Tracking HTTP API endpoint, for example, http://your-piwik-domain.tld/piwik.php
-     */
-    private final URL mApiUrl;
-
-    /**
-     * The ID of the website we're tracking a visit/action for.
-     */
+    private final String mApiUrl;
     private final int mSiteId;
+    private final String mDefaultApplicationBaseUrl;
     private final Object mTrackingLock = new Object();
     private final Dispatcher mDispatcher;
     private final String mName;
@@ -69,30 +65,25 @@ public class Tracker {
     private final TrackMe mDefaultTrackMe = new TrackMe();
 
     private TrackMe mLastEvent;
-    private String mApplicationDomain;
     private long mSessionTimeout = 30 * 60 * 1000;
     private long mSessionStartTime = 0;
-    private boolean mOptOut = false;
+    private boolean mOptOut;
     private SharedPreferences mPreferences;
 
-    /**
-     * Use Piwik.newTracker() method to create new trackers
-     *
-     * @param piwik         piwik object used to gain access to application params such as name, resolution or lang
-     * @param trackerConfig configuration for this Tracker.
-     * @throws RuntimeException if the supplied Piwik-Tracker URL is incompatible
-     */
-    public Tracker(@NonNull Piwik piwik, @NonNull TrackerConfig trackerConfig) {
-        mPiwik = piwik;
-        mApiUrl = trackerConfig.getApiUrl();
-        mSiteId = trackerConfig.getSiteId();
-        mName = trackerConfig.getTrackerName();
+    private final LinkedHashSet<Callback> mTrackingCallbacks = new LinkedHashSet<>();
 
-        new LegacySettingsPorter(piwik).port(this);
+    protected Tracker(Piwik piwik, TrackerBuilder config) {
+        mPiwik = piwik;
+        mApiUrl = config.getApiUrl();
+        mSiteId = config.getSiteId();
+        mName = config.getTrackerName();
+        mDefaultApplicationBaseUrl = config.getApplicationBaseUrl();
+
+        new LegacySettingsPorter(mPiwik).port(this);
 
         mOptOut = getPreferences().getBoolean(PREF_KEY_TRACKER_OPTOUT, false);
 
-        mDispatcher = piwik.getDispatcherFactory().build(this);
+        mDispatcher = mPiwik.getDispatcherFactory().build(this);
         String userId = getPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         if (userId == null) {
             userId = UUID.randomUUID().toString();
@@ -110,7 +101,15 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.USER_AGENT, mPiwik.getDeviceHelper().getUserAgent());
         mDefaultTrackMe.set(QueryParams.LANGUAGE, mPiwik.getDeviceHelper().getUserLanguage());
         mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
-        mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
+        mDefaultTrackMe.set(QueryParams.URL_PATH, config.getApplicationBaseUrl());
+    }
+
+    public void addTrackingCallback(Callback callback) {
+        this.mTrackingCallbacks.add(callback);
+    }
+
+    public void removeTrackingCallback(Callback callback) {
+        this.mTrackingCallbacks.remove(callback);
     }
 
     /**
@@ -140,7 +139,7 @@ public class Tracker {
         return mPiwik;
     }
 
-    public URL getAPIUrl() {
+    public String getAPIUrl() {
         return mApiUrl;
     }
 
@@ -353,22 +352,6 @@ public class Tracker {
     }
 
     /**
-     * Domain used to build required parameter url (http://developer.piwik.org/api-reference/tracking-api)
-     * If domain wasn't set `Application.getPackageName()` method will be used
-     *
-     * @param domain your-domain.com
-     */
-    public Tracker setApplicationDomain(String domain) {
-        mApplicationDomain = domain;
-        mDefaultTrackMe.set(QueryParams.URL_PATH, fixUrl(null, getApplicationBaseURL()));
-        return this;
-    }
-
-    protected String getApplicationDomain() {
-        return mApplicationDomain != null ? mApplicationDomain : mPiwik.getApplicationDomain();
-    }
-
-    /**
      * There parameters are only interesting for the very first query.
      */
     private void injectInitialParams(TrackMe trackMe) {
@@ -425,10 +408,18 @@ public class Tracker {
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
             urlPath = mDefaultTrackMe.get(QueryParams.URL_PATH);
-        } else {
-            urlPath = fixUrl(urlPath, getApplicationBaseURL());
-            mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
+        } else if (!VALID_URLS.matcher(urlPath).matches()) {
+            StringBuilder urlBuilder = new StringBuilder(mDefaultApplicationBaseUrl);
+            if (!mDefaultApplicationBaseUrl.endsWith("/") && !urlPath.startsWith("/")) {
+                urlBuilder.append("/");
+            } else if (mDefaultApplicationBaseUrl.endsWith("/") && urlPath.startsWith("/")) {
+                urlPath = urlPath.substring(1);
+            }
+            urlPath = urlBuilder.append(urlPath).toString();
         }
+
+        // https://github.com/matomo-org/piwik-sdk-android/issues/92
+        mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
         trackMe.set(QueryParams.URL_PATH, urlPath);
 
         if (mLastEvent == null || !Objects.equals(trackMe.get(QueryParams.USER_ID), mLastEvent.get(QueryParams.USER_ID))) {
@@ -438,16 +429,6 @@ public class Tracker {
             trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
         }
     }
-
-    private static String fixUrl(String url, String baseUrl) {
-        if (url == null) url = baseUrl + "/";
-
-        if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("ftp://")) {
-            url = baseUrl + (url.startsWith("/") ? "" : "/") + url;
-        }
-        return url;
-    }
-
 
     public Tracker track(TrackMe trackMe) {
         synchronized (mTrackingLock) {
@@ -459,6 +440,14 @@ public class Tracker {
             }
 
             injectBaseParams(trackMe);
+
+            for (Callback callback : mTrackingCallbacks) {
+                trackMe = callback.onTrack(trackMe);
+                if (trackMe == null) {
+                    Timber.tag(LOGGER_TAG).d("Tracking aborted by %s", callback);
+                    return this;
+                }
+            }
 
             mLastEvent = trackMe;
             if (!mOptOut) {
@@ -503,10 +492,6 @@ public class Tracker {
         return result;
     }
 
-    protected String getApplicationBaseURL() {
-        return String.format("http://%s", getApplicationDomain());
-    }
-
     /**
      * For testing purposes
      *
@@ -535,5 +520,17 @@ public class Tracker {
      */
     public List<Packet> getDryRunTarget() {
         return mDispatcher.getDryRunTarget();
+    }
+
+    public interface Callback {
+        /**
+         * This method will be called after parameter injection and before transmission within {@link Tracker#track(TrackMe)}.
+         * Blocking within this method will block tracking.
+         *
+         * @param trackMe The `TrackMe` that was passed to {@link Tracker#track(TrackMe)} after all data has been injected.
+         * @return The `TrackMe` that will be send, returning NULL here will abort transmission.
+         */
+        @Nullable
+        TrackMe onTrack(TrackMe trackMe);
     }
 }

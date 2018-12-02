@@ -14,6 +14,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,7 +39,11 @@ public class EventDiskCache {
         mMaxAge = tracker.getOfflineCacheAge();
         mMaxSize = tracker.getOfflineCacheSize();
         File baseDir = new File(tracker.getPiwik().getContext().getCacheDir(), CACHE_DIR_NAME);
-        mCacheDir = new File(baseDir, tracker.getAPIUrl().getHost());
+        try {
+            mCacheDir = new File(baseDir, new URL(tracker.getAPIUrl()).getHost());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
         File[] storedContainers = mCacheDir.listFiles();
         if (storedContainers != null) {
             Arrays.sort(storedContainers);

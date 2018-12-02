@@ -45,7 +45,7 @@ public class DefaultPacketSenderTest extends BaseTest {
         mMockWebServer.start();
 
         Packet packet = mock(Packet.class);
-        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").url());
+        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("key", "value");
         when(packet.getPostData()).thenReturn(jsonObject);
@@ -66,7 +66,7 @@ public class DefaultPacketSenderTest extends BaseTest {
         mMockWebServer.start();
 
         Packet packet = mock(Packet.class);
-        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").url());
+        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("key", "value");
         when(packet.getPostData()).thenReturn(jsonObject);
@@ -87,12 +87,12 @@ public class DefaultPacketSenderTest extends BaseTest {
         mMockWebServer.start();
 
         Packet packet = mock(Packet.class);
-        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").url());
+        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").toString());
 
         mDefaultPacketSender.setTimeout(50);
         mMockWebServer.setDispatcher(new Dispatcher() {
             @Override
-            public MockResponse dispatch(RecordedRequest recordedRequest) throws InterruptedException {
+            public MockResponse dispatch(RecordedRequest recordedRequest) {
                 TestHelper.sleep(100);
                 return new MockResponse();
             }
@@ -101,7 +101,7 @@ public class DefaultPacketSenderTest extends BaseTest {
 
         mMockWebServer.setDispatcher(new Dispatcher() {
             @Override
-            public MockResponse dispatch(RecordedRequest recordedRequest) throws InterruptedException {
+            public MockResponse dispatch(RecordedRequest recordedRequest) {
                 return new MockResponse();
             }
         });

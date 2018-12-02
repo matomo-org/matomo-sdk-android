@@ -1,7 +1,7 @@
 package testhelpers;
 
 
-import org.piwik.sdk.TrackerConfig;
+import org.piwik.sdk.TrackerBuilder;
 import org.piwik.sdk.extra.PiwikApplication;
 import org.robolectric.TestLifecycleApplication;
 import org.robolectric.shadows.ShadowLog;
@@ -37,7 +37,7 @@ public class PiwikTestApplication extends PiwikApplication implements TestLifecy
 
 
     @Override
-    public TrackerConfig onCreateTrackerConfig() {
-        return TrackerConfig.createDefault("http://example.com", 1);
+    public TrackerBuilder onCreateTrackerConfig() {
+        return TrackerBuilder.createDefault("http://example.com", 1);
     }
 }

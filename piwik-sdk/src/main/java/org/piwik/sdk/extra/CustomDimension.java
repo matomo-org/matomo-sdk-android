@@ -16,6 +16,21 @@ import timber.log.Timber;
  */
 public class CustomDimension {
     private static final String LOGGER_TAG = Piwik.LOGGER_PREFIX + "CustomDimension";
+    private final int mId;
+    private final String mValue;
+
+    public CustomDimension(int id, String value) {
+        mId = id;
+        mValue = value;
+    }
+
+    public int getId() {
+        return mId;
+    }
+
+    public String getValue() {
+        return mValue;
+    }
 
     /**
      * This method sets a tracking API parameter dimension%dimensionId%=%dimensionValue%.
@@ -43,6 +58,10 @@ public class CustomDimension {
         }
         trackMe.set(formatDimensionId(dimensionId), dimensionValue);
         return true;
+    }
+
+    public static boolean setDimension(TrackMe trackMe, CustomDimension dimension) {
+        return setDimension(trackMe, dimension.getId(), dimension.getValue());
     }
 
     @Nullable

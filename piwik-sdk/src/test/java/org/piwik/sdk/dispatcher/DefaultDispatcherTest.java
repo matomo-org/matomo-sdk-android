@@ -20,7 +20,6 @@ import org.piwik.sdk.QueryParams;
 import org.piwik.sdk.TrackMe;
 import org.piwik.sdk.tools.Connectivity;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,14 +55,13 @@ public class DefaultDispatcherTest extends BaseTest {
     @Mock PacketSender mPacketSender;
     @Mock Connectivity mConnectivity;
     @Mock Context mContext;
-    URL mApiUrl;
+    final String mApiUrl = "http://example.com";
 
     final LinkedBlockingQueue<Event> mEventCacheData = new LinkedBlockingQueue<>();
 
     @Before
     public void setup() throws Exception {
         super.setup();
-        mApiUrl = new URL("http://example.com");
         MockitoAnnotations.initMocks(this);
         when(mConnectivity.isConnected()).thenReturn(true);
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
@@ -361,7 +359,7 @@ public class DefaultDispatcherTest extends BaseTest {
         assertTrue(flattenedQueries.isEmpty());
     }
 
-    public static void launchTestThreads(final URL apiUrl, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
+    public static void launchTestThreads(final String apiUrl, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
         for (int i = 0; i < threadCount; i++) {
             new Thread(new Runnable() {
                 @Override
@@ -375,7 +373,7 @@ public class DefaultDispatcherTest extends BaseTest {
                                     .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
                                     .set(QueryParams.EVENT_VALUE, j);
                             dispatcher.submit(trackMe);
-                            createdQueries.add(apiUrl.toString() + new Event(trackMe.toMap()).getEncodedQuery());
+                            createdQueries.add(apiUrl + new Event(trackMe.toMap()).getEncodedQuery());
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -392,11 +390,11 @@ public class DefaultDispatcherTest extends BaseTest {
             if (request.getPostData() != null) {
                 JSONArray batchedRequests = request.getPostData().getJSONArray("requests");
                 for (int json = 0; json < batchedRequests.length(); json++) {
-                    String unbatchedRequest = request.getTargetURL().toExternalForm() + batchedRequests.get(json).toString();
+                    String unbatchedRequest = request.getTargetURL() + batchedRequests.get(json).toString();
                     flattenedQueries.add(unbatchedRequest);
                 }
             } else {
-                flattenedQueries.add(request.getTargetURL().toExternalForm());
+                flattenedQueries.add(request.getTargetURL());
             }
         }
         return flattenedQueries;

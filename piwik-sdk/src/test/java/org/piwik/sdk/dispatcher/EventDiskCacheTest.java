@@ -12,8 +12,6 @@ import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,14 +37,13 @@ public class EventDiskCacheTest extends BaseTest {
     private File mCacheFolder;
 
     @Before
-    public void setup() throws MalformedURLException {
+    public void setup() {
         when(mTracker.getPiwik()).thenReturn(mPiwik);
         when(mPiwik.getContext()).thenReturn(mContext);
         mBaseCacheDir = new File("baseCacheDir");
         when(mContext.getCacheDir()).thenReturn(mBaseCacheDir);
 
-        URL apiUrl = new URL("http://testhost/piwik.php");
-        when(mTracker.getAPIUrl()).thenReturn(apiUrl);
+        when(mTracker.getAPIUrl()).thenReturn("http://testhost/piwik.php");
 
         when(mTracker.getOfflineCacheAge()).thenReturn(0L);
 
@@ -68,14 +65,14 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testIsEmpty() throws Exception {
+    public void testIsEmpty() {
         assertTrue(mDiskCache.isEmpty());
         mDiskCache.cache(Collections.singletonList(new Event("test")));
         assertFalse(mDiskCache.isEmpty());
     }
 
     @Test
-    public void testCachePath() throws Exception {
+    public void testCachePath() {
         mDiskCache.cache(Collections.singletonList(new Event(1000, "test")));
         File cacheFolder = new File(mBaseCacheDir, "piwik_cache");
         File hostFolder = new File(cacheFolder, "testhost");
@@ -84,7 +81,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testCacheFileName() throws Exception {
+    public void testCacheFileName() {
         mDiskCache.cache(Arrays.asList(new Event(1234567890, "test"), new Event(987654321, "test2")));
         File cacheFile = new File(mHostFolder, "events_987654321");
         assertTrue(cacheFile.exists());
@@ -93,7 +90,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testCaching() throws Exception {
+    public void testCaching() {
         Event event1 = new Event(1, "test");
         Event event2 = new Event(2, "test");
         mDiskCache.cache(Arrays.asList(event1, event2));
@@ -104,12 +101,12 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testCaching_empty() throws Exception {
+    public void testCaching_empty() {
         mDiskCache.cache(Collections.emptyList());
     }
 
     @Test
-    public void testOrder() throws Exception {
+    public void testOrder() {
         Event event1 = new Event(1, "test");
         Event event2 = new Event(2, "test");
         mDiskCache.cache(Arrays.asList(event1, event2));
@@ -125,7 +122,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxAge_positive_allStale() throws Exception {
+    public void testMaxAge_positive_allStale() {
         when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event1 = new Event(1, "test");
@@ -137,7 +134,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxAge_positive_singleContainer() throws Exception {
+    public void testMaxAge_positive_singleContainer() {
         when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event1 = new Event(System.currentTimeMillis() - 60 * 1000, "test");
@@ -151,7 +148,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxAge_positive_multipleContainer() throws Exception {
+    public void testMaxAge_positive_multipleContainer() {
         when(mTracker.getOfflineCacheAge()).thenReturn(10 * 1000L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event1 = new Event(System.currentTimeMillis() - 20 * 1000, "test");
@@ -167,7 +164,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxAge_unlimited() throws Exception {
+    public void testMaxAge_unlimited() {
         when(mTracker.getOfflineCacheAge()).thenReturn(0L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event1 = new Event(-System.currentTimeMillis(), "test1");
@@ -184,7 +181,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxAge_negative_cachingDisabled() throws Exception {
+    public void testMaxAge_negative_cachingDisabled() {
         when(mTracker.getOfflineCacheAge()).thenReturn(-1L);
         mDiskCache = new EventDiskCache(mTracker);
         Event event0 = new Event(-System.currentTimeMillis(), "test");
@@ -197,7 +194,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testClearDataOnceEvenIfDisabled() throws Exception {
+    public void testClearDataOnceEvenIfDisabled() {
         Event event1 = new Event(0, "test");
         Event event2 = new Event(System.currentTimeMillis(), "test");
         mDiskCache.cache(Arrays.asList(event1, event2));
@@ -210,7 +207,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxSize_limited() throws Exception {
+    public void testMaxSize_limited() {
         when(mTracker.getOfflineCacheSize()).thenReturn(500 * 1024L);
         mDiskCache = new EventDiskCache(mTracker);
         for (int j = 0; j < 4; j++) {
@@ -228,7 +225,7 @@ public class EventDiskCacheTest extends BaseTest {
     }
 
     @Test
-    public void testMaxSize_disabled() throws Exception {
+    public void testMaxSize_disabled() {
         when(mTracker.getOfflineCacheSize()).thenReturn(0L);
         mDiskCache = new EventDiskCache(mTracker);
         for (int j = 0; j < 10; j++) {

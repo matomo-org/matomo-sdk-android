@@ -11,7 +11,7 @@ import android.app.Application;
 
 import org.piwik.sdk.Piwik;
 import org.piwik.sdk.Tracker;
-import org.piwik.sdk.TrackerConfig;
+import org.piwik.sdk.TrackerBuilder;
 
 public abstract class PiwikApplication extends Application {
     private Tracker mPiwikTracker;
@@ -21,22 +21,22 @@ public abstract class PiwikApplication extends Application {
     }
 
     /**
-     * Gives you an all purpose thread-safe persisted Tracker object.
+     * Gives you an all purpose thread-safe persisted Tracker.
      *
      * @return a shared Tracker
      */
     public synchronized Tracker getTracker() {
-        if (mPiwikTracker == null) mPiwikTracker = getPiwik().newTracker(onCreateTrackerConfig());
+        if (mPiwikTracker == null) mPiwikTracker = onCreateTrackerConfig().build(getPiwik());
         return mPiwikTracker;
     }
 
     /**
-     * See {@link TrackerConfig}.
-     * You may be interested in {@link TrackerConfig#createDefault(String, int)} (String, int)}
+     * See {@link TrackerBuilder}.
+     * You may be interested in {@link TrackerBuilder#createDefault(String, int)}
      *
      * @return the tracker configuration you want to use.
      */
-    public abstract TrackerConfig onCreateTrackerConfig();
+    public abstract TrackerBuilder onCreateTrackerConfig();
 
     @Override
     public void onLowMemory() {
