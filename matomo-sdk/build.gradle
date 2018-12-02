@@ -145,9 +145,9 @@ ext {
 
     publishedGroupId = 'org.matomo.sdk'
     libraryName = 'Matomo SDK for Android'
-    artifact = 'matomo-sdk'
+    artifact = 'tracker'
 
-    libraryDescription = 'SDK for Android to measure your apps with Matomo '
+    libraryDescription = 'SDK for Android to measure your apps with Matomo'
 
     siteUrl = 'https://github.com/matomo/matomo-sdk-android'
     gitUrl = 'https://github.com/matomo/matomo-sdk-android.git'
