@@ -8,7 +8,7 @@ android:
   components:
     - tools
     - build-tools-28.0.3
-    - android-27
+    - android-28
     - extra-android-support
     - extra-android-m2repository
   licenses:
@@ -17,8 +17,10 @@ android:
       - 'google-gdk-license-.+'
 
 before_install:
-  - yes | sdkmanager "platforms;android-27"
+  - yes | sdkmanager "platforms;android-28"
 
-script: ./gradlew :piwik-sdk:assemble :piwik-sdk:testDebugUnitTest
+script: ./gradlew :tracker:assemble :tracker:testDebugUnitTest
 
-after_success: ./gradlew :piwik-sdk:jacocoTestReport :piwik-sdk:coveralls
+after_success:
+  - ./gradlew :tracker:jacocoTestReportDebug
+  - bash <(curl -s https://codecov.io/bash)

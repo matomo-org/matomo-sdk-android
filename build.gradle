@@ -10,7 +10,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:3.2.1'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
+        classpath "com.vanniktech:gradle-android-junit-jacoco-plugin:0.13.0"
     }
 }
 
@@ -24,10 +24,10 @@ allprojects {
     }
     ext {
         globalMinSdkVersion = 14
-        globalTargetSdkVersion = 27
-        globalCompileSdkVersion = 27
+        globalTargetSdkVersion = 28
+        globalCompileSdkVersion = 28
         globalBuildToolsVersion = '28.0.3'
-        supportLibVersion = '27.1.1'
-        timberVersion = '4.6.1'
+        supportLibVersion = '28.0.0'
+        timberVersion = '4.7.1'
     }
 }

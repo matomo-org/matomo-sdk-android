@@ -10,7 +10,7 @@ android {
     buildToolsVersion project.ext.globalBuildToolsVersion
 
     defaultConfig {
-        applicationId "com.piwik.demo"
+        applicationId "org.matomo.demo"
         minSdkVersion project.ext.globalMinSdkVersion
         targetSdkVersion project.ext.globalTargetSdkVersion
         versionCode 2
@@ -23,10 +23,10 @@ android {
 }
 
 dependencies {
-    implementation project(":piwik-sdk")
+    implementation project(':tracker')
     implementation "com.android.support:appcompat-v7:${supportLibVersion}"
     implementation "com.android.support:support-v4:${supportLibVersion}"
-    implementation "com.jakewharton.timber:timber:4.7.0"
+    implementation "com.jakewharton.timber:timber:${timberVersion}"
     implementation 'com.jakewharton:butterknife:8.8.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
 }
