@@ -19,6 +19,6 @@ android:
 before_install:
   - yes | sdkmanager "platforms;android-28"
 
-script: ./gradlew :piwik-sdk:assemble :piwik-sdk:testDebugUnitTest
+script: ./gradlew :tracker:assemble :tracker:testDebugUnitTest
 
-after_success: ./gradlew :piwik-sdk:jacocoTestReport :piwik-sdk:coveralls
+after_success: ./gradlew :tracker:jacocoTestReport :tracker:coveralls

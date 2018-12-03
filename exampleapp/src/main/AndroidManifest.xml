@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
-    package="com.piwik.demo"
+    package="org.matomo.demo"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -8,13 +8,13 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
     <application
-        android:name=".DemoApp"
+        android:name="org.matomo.demo.DemoApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".DemoActivity"
+            android:name="org.matomo.demo.DemoActivity"
             android:alwaysRetainTaskState="true"
             android:label="@string/app_name"
             android:launchMode="singleInstance">
@@ -25,14 +25,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SettingsActivity"
+            android:name="org.matomo.demo.SettingsActivity"
             android:alwaysRetainTaskState="true"
             android:label="@string/title_activity_settings"
             android:launchMode="singleInstance"
-            android:parentActivityName=".DemoActivity">
+            android:parentActivityName="org.matomo.demo.DemoActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.piwik.demo.DemoActivity"/>
+                android:value="org.matomo.demo.DemoActivity"/>
         </activity>
     </application>
 

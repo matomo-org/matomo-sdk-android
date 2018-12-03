@@ -1,1 +1,1 @@
-include ':exampleapp', ':piwik-sdk'
+include ':exampleapp', ':tracker'
