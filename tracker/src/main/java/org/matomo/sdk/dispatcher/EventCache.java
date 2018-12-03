@@ -11,7 +11,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import timber.log.Timber;
 
 public class EventCache {
-    private static final String TAG = Matomo.LOGGER_PREFIX + "EventCache";
+    private static final String TAG = Matomo.tag(EventCache.class);
     private final LinkedBlockingDeque<Event> mQueue = new LinkedBlockingDeque<>();
     private final EventDiskCache mDiskCache;
 

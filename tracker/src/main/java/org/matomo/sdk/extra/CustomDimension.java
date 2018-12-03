@@ -15,7 +15,7 @@ import timber.log.Timber;
  * https://plugins.matomo.org/CustomDimensions plugin.
  */
 public class CustomDimension {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "CustomDimension";
+    private static final String TAG = Matomo.tag(CustomDimension.class);
     private final int mId;
     private final String mValue;
 
@@ -46,12 +46,12 @@ public class CustomDimension {
      */
     public static boolean setDimension(@NonNull TrackMe trackMe, int dimensionId, @Nullable String dimensionValue) {
         if (dimensionId < 1) {
-            Timber.tag(LOGGER_TAG).e("dimensionId should be great than 0 (arg: %d)", dimensionId);
+            Timber.tag(TAG).e("dimensionId should be great than 0 (arg: %d)", dimensionId);
             return false;
         }
         if (dimensionValue != null && dimensionValue.length() > 255) {
             dimensionValue = dimensionValue.substring(0, 255);
-            Timber.tag(LOGGER_TAG).w("dimensionValue was truncated to 255 chars.");
+            Timber.tag(TAG).w("dimensionValue was truncated to 255 chars.");
         }
         if (dimensionValue != null && dimensionValue.length() == 0) {
             dimensionValue = null;

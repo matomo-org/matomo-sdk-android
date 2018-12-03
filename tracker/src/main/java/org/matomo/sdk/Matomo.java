@@ -27,7 +27,7 @@ import timber.log.Timber;
 
 public class Matomo {
     public static final String LOGGER_PREFIX = "MATOMO:";
-    private static final String LOGGER_TAG = "MATOMO";
+    private static final String TAG = Matomo.tag(Matomo.class);
     private static final String BASE_PREFERENCE_FILE = "org.matomo.sdk";
 
     @SuppressLint("StaticFieldLeak") private static Matomo sInstance;
@@ -73,7 +73,7 @@ public class Matomo {
                 try {
                     prefName = "org.matomo.sdk_" + Checksum.getMD5Checksum(tracker.getName());
                 } catch (Exception e) {
-                    Timber.tag(LOGGER_TAG).e(e);
+                    Timber.tag(TAG).e(e);
                     prefName = "org.matomo.sdk_" + tracker.getName();
                 }
                 newPrefs = getContext().getSharedPreferences(prefName, Context.MODE_PRIVATE);
@@ -96,5 +96,22 @@ public class Matomo {
 
     DeviceHelper getDeviceHelper() {
         return new DeviceHelper(mContext, new PropertySource(), new BuildInfo());
+    }
+
+    public static String tag(Class... classes) {
+        String[] tags = new String[classes.length];
+        for (int i = 0; i < classes.length; i++) {
+            tags[i] = classes[i].getSimpleName();
+        }
+        return tag(tags);
+    }
+
+    public static String tag(String... tags) {
+        StringBuilder sb = new StringBuilder(LOGGER_PREFIX);
+        for (int i = 0; i < tags.length; i++) {
+            sb.append(tags[i]);
+            if (i < tags.length - 1) sb.append(":");
+        }
+        return sb.toString();
     }
 }

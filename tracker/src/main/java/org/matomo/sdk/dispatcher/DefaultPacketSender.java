@@ -19,7 +19,7 @@ import timber.log.Timber;
 
 
 public class DefaultPacketSender implements PacketSender {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "DefaultPacketSender";
+    private static final String TAG = Matomo.tag(DefaultPacketSender.class);
     private long mTimeout = Dispatcher.DEFAULT_CONNECTION_TIMEOUT;
     private boolean mGzip = false;
 
@@ -28,8 +28,8 @@ public class DefaultPacketSender implements PacketSender {
         try {
             urlConnection = (HttpURLConnection) new URL(packet.getTargetURL()).openConnection();
 
-            Timber.tag(LOGGER_TAG).v("Connection is open to %s", urlConnection.getURL().toExternalForm());
-            Timber.tag(LOGGER_TAG).v("Sending: %s", packet);
+            Timber.tag(TAG).v("Connection is open to %s", urlConnection.getURL().toExternalForm());
+            Timber.tag(TAG).v("Sending: %s", packet);
 
             urlConnection.setConnectTimeout((int) mTimeout);
             urlConnection.setReadTimeout((int) mTimeout);
@@ -66,7 +66,7 @@ public class DefaultPacketSender implements PacketSender {
                                 outputStream.close();
                             } catch (IOException e) {
                                 // Failing to close the stream is not enough to consider the transmission faulty.
-                                Timber.tag(LOGGER_TAG).d(e, "Failed to close output stream after writing gzipped POST data.");
+                                Timber.tag(TAG).d(e, "Failed to close output stream after writing gzipped POST data.");
                             }
                         }
                     }
@@ -83,7 +83,7 @@ public class DefaultPacketSender implements PacketSender {
                                 writer.close();
                             } catch (IOException e) {
                                 // Failing to close the stream is not enough to consider the transmission faulty.
-                                Timber.tag(LOGGER_TAG).d(e, "Failed to close output stream after writing POST data.");
+                                Timber.tag(TAG).d(e, "Failed to close output stream after writing POST data.");
                             }
                         }
                     }
@@ -95,7 +95,7 @@ public class DefaultPacketSender implements PacketSender {
             }
 
             int statusCode = urlConnection.getResponseCode();
-            Timber.tag(LOGGER_TAG).v("Transmission finished (code=%d).", statusCode);
+            Timber.tag(TAG).v("Transmission finished (code=%d).", statusCode);
             final boolean successful = checkResponseCode(statusCode);
 
             if (successful) {
@@ -106,7 +106,7 @@ public class DefaultPacketSender implements PacketSender {
                     try {
                         is.close();
                     } catch (IOException e) {
-                        Timber.tag(LOGGER_TAG).d(e, "Failed to close the error stream.");
+                        Timber.tag(TAG).d(e, "Failed to close the error stream.");
                     }
                 }
 
@@ -123,16 +123,16 @@ public class DefaultPacketSender implements PacketSender {
                         try {
                             errorReader.close();
                         } catch (IOException e) {
-                            Timber.tag(LOGGER_TAG).d(e, "Failed to close the error stream.");
+                            Timber.tag(TAG).d(e, "Failed to close the error stream.");
                         }
                     }
                 }
-                Timber.tag(LOGGER_TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString());
+                Timber.tag(TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString());
             }
 
             return successful;
         } catch (Exception e) {
-            Timber.tag(LOGGER_TAG).e(e, "Transmission failed unexpectedly.");
+            Timber.tag(TAG).e(e, "Transmission failed unexpectedly.");
             return false;
         } finally {
             if (urlConnection != null) urlConnection.disconnect();

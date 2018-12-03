@@ -24,7 +24,7 @@ import timber.log.Timber;
  * Helper class to gain information about the device we are running on
  */
 public class DeviceHelper {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "DeviceHelper";
+    private static final String TAG = Matomo.tag(DeviceHelper.class);
     private final Context mContext;
     private final PropertySource mPropertySource;
     private final BuildInfo mBuildInfo;
@@ -80,7 +80,7 @@ public class DeviceHelper {
             WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
             display = wm.getDefaultDisplay();
         } catch (NullPointerException e) {
-            Timber.tag(LOGGER_TAG).e(e, "Window service was not available from this context");
+            Timber.tag(TAG).e(e, "Window service was not available from this context");
             return null;
         }
 
@@ -98,7 +98,7 @@ public class DeviceHelper {
                 width = (int) getRawWidth.invoke(display);
                 height = (int) getRawHeight.invoke(display);
             } catch (Exception e) {
-                Timber.tag(LOGGER_TAG).w(e, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
+                Timber.tag(TAG).w(e, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
             }
         }
 

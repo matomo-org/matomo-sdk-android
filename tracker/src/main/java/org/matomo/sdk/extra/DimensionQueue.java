@@ -15,7 +15,7 @@ import timber.log.Timber;
  * On each tracking call it will insert as many saved dimensions as it is possible without overwriting existing information.
  */
 public class DimensionQueue {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "DimensionQueue";
+    private static final String TAG = Matomo.tag(DimensionQueue.class);
     private final List<CustomDimension> mOneTimeDimensions = new ArrayList<>();
 
     public DimensionQueue(Tracker tracker) {
@@ -36,7 +36,7 @@ public class DimensionQueue {
             CustomDimension dim = it.next();
             String existing = CustomDimension.getDimension(trackMe, dim.getId());
             if (existing != null) {
-                Timber.tag(LOGGER_TAG).d("Setting dimension %s to slot %d would overwrite %s, skipping!", dim.getValue(), dim.getId(), existing);
+                Timber.tag(TAG).d("Setting dimension %s to slot %d would overwrite %s, skipping!", dim.getValue(), dim.getId(), existing);
             } else {
                 CustomDimension.setDimension(trackMe, dim);
                 it.remove();

@@ -14,7 +14,7 @@ import timber.log.Timber;
 
 
 public class InstallReferrerReceiver extends BroadcastReceiver {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "InstallReferrerReceiver";
+    private static final String TAG = Matomo.tag(InstallReferrerReceiver.class);
 
     // Google Play
     static final String REFERRER_SOURCE_GPLAY = "com.android.vending.INSTALL_REFERRER";
@@ -25,13 +25,13 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Timber.tag(LOGGER_TAG).d(intent.toString());
+        Timber.tag(TAG).d(intent.toString());
         if (intent.getAction() == null || !RESPONSIBILITIES.contains(intent.getAction())) {
-            Timber.tag(LOGGER_TAG).w("Got called outside our responsibilities: %s", intent.getAction());
+            Timber.tag(TAG).w("Got called outside our responsibilities: %s", intent.getAction());
             return;
         }
         if (intent.getBooleanExtra("forwarded", false)) {
-            Timber.tag(LOGGER_TAG).d("Dropping forwarded intent");
+            Timber.tag(TAG).d("Dropping forwarded intent");
             return;
         }
         SharedPreferences preferences = Matomo.getInstance(context.getApplicationContext()).getPreferences();
@@ -39,7 +39,7 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
             String referrer = intent.getStringExtra(ARG_KEY_GPLAY_REFERRER);
             if (referrer != null) {
                 preferences.edit().putString(PREF_KEY_INSTALL_REFERRER_EXTRAS, referrer).apply();
-                Timber.tag(LOGGER_TAG).d("Stored Google Play referrer extras: %s", referrer);
+                Timber.tag(TAG).d("Stored Google Play referrer extras: %s", referrer);
             }
         }
         // Forward to other possible recipients

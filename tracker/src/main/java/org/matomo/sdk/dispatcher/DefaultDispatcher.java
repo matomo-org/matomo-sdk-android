@@ -22,7 +22,7 @@ import timber.log.Timber;
  * Responsible for transmitting packets to a server
  */
 public class DefaultDispatcher implements Dispatcher {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "Dispatcher";
+    private static final String TAG = Matomo.tag(DefaultDispatcher.class);
     private final Object mThreadControl = new Object();
     private final EventCache mEventCache;
     private final Semaphore mSleepToken = new Semaphore(0);
@@ -163,17 +163,17 @@ public class DefaultDispatcher implements Dispatcher {
 
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(sleepTime, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {Timber.tag(LOGGER_TAG).e(e); }
+                } catch (InterruptedException e) {Timber.tag(TAG).e(e); }
                 if (mEventCache.updateState(isConnected())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
-                    Timber.tag(LOGGER_TAG).d("Drained %s events.", drainedEvents.size());
+                    Timber.tag(TAG).d("Drained %s events.", drainedEvents.size());
                     for (Packet packet : mPacketFactory.buildPackets(drainedEvents)) {
                         boolean success;
 
                         if (mDryRunTarget != null) {
-                            Timber.tag(LOGGER_TAG).d("DryRun, stored HttpRequest, now %d.", mDryRunTarget.size());
+                            Timber.tag(TAG).d("DryRun, stored HttpRequest, now %d.", mDryRunTarget.size());
                             success = mDryRunTarget.add(packet);
                         } else {
                             success = mPacketSender.send(packet);
@@ -183,14 +183,14 @@ public class DefaultDispatcher implements Dispatcher {
                             count += packet.getEventCount();
                             mRetryCounter = 0;
                         } else {
-                            Timber.tag(LOGGER_TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
+                            Timber.tag(TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
                             mEventCache.updateState(false);
                             mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
                             mRetryCounter++;
                             break;
                         }
                     }
-                    Timber.tag(LOGGER_TAG).d("Dispatched %d events.", count);
+                    Timber.tag(TAG).d("Dispatched %d events.", count);
                 }
                 synchronized (mThreadControl) {
                     // We may be done or this was a forced dispatch
