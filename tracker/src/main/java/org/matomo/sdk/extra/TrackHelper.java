@@ -22,7 +22,7 @@ import java.util.Map;
 import timber.log.Timber;
 
 public class TrackHelper {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "TrackHelper";
+    private static final String TAG = Matomo.tag(TrackHelper.class);
     protected final TrackMe mBaseTrackMe;
 
     private TrackHelper() {
@@ -743,7 +743,7 @@ public class TrackHelper {
                 StackTraceElement trace = mThrowable.getStackTrace()[0];
                 className = trace.getClassName() + "/" + trace.getMethodName() + ":" + trace.getLineNumber();
             } catch (java.lang.Exception e) {
-                Timber.tag(LOGGER_TAG).w(e, "Couldn't get stack info");
+                Timber.tag(TAG).w(e, "Couldn't get stack info");
                 className = mThrowable.getClass().getName();
             }
             String actionName = "exception/" + (mIsFatal ? "fatal/" : "") + (className + "/") + mDescription;

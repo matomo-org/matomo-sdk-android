@@ -25,7 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import timber.log.Timber;
 
 public class EventDiskCache {
-    private static final String TAG = Matomo.LOGGER_PREFIX + "EventDiskCache";
+    private static final String TAG = Matomo.tag(EventDiskCache.class);
     private static final String CACHE_DIR_NAME = "piwik_cache";
     private static final String VERSION = "1";
     private final LinkedBlockingQueue<File> mEventContainer = new LinkedBlockingQueue<>();

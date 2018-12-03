@@ -1,6 +1,7 @@
 package org.matomo.sdk.extra;
 
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
@@ -18,10 +19,8 @@ import java.io.File;
 
 import timber.log.Timber;
 
-import static android.content.ContentValues.TAG;
-
 public class DownloadTracker {
-    protected static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "DownloadTrackingHelper";
+    protected static final String TAG = Matomo.tag(DownloadTracker.class);
     private static final String INSTALL_SOURCE_GOOGLE_PLAY = "com.android.vending";
     private final Tracker mTracker;
     private final Object mTrackOnceLock = new Object();
@@ -65,7 +64,7 @@ public class DownloadTracker {
                 try {
                     mPackageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 } catch (Exception e) {
-                    Timber.tag(LOGGER_TAG).e(e);
+                    Timber.tag(TAG).e(e);
                     mPackageInfo = null;
                 }
             }
@@ -83,7 +82,7 @@ public class DownloadTracker {
                 if (mPackageInfo != null && mPackageInfo.applicationInfo != null && mPackageInfo.applicationInfo.sourceDir != null) {
                     try {
                         return Checksum.getMD5Checksum(new File(mPackageInfo.applicationInfo.sourceDir));
-                    } catch (Exception e) { Timber.tag(LOGGER_TAG).e(e); }
+                    } catch (Exception e) { Timber.tag(TAG).e(e); }
                 }
                 return null;
             }
@@ -122,7 +121,7 @@ public class DownloadTracker {
         try {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
-            Timber.tag(LOGGER_TAG).e(e);
+            Timber.tag(TAG).e(e);
             throw new RuntimeException(e);
         }
     }
@@ -160,10 +159,10 @@ public class DownloadTracker {
         final boolean delay = mInternalTracking && INSTALL_SOURCE_GOOGLE_PLAY.equals(mPackMan.getInstallerPackageName(mPkgInfo.packageName));
         if (delay) {
             // Delay tracking incase we were called from within Application.onCreate
-            Timber.tag(LOGGER_TAG).d("Google Play is install source, deferring tracking.");
+            Timber.tag(TAG).d("Google Play is install source, deferring tracking.");
         }
         final Thread trackTask = new Thread(() -> {
-            if (delay) try {Thread.sleep(3000);} catch (Exception e) { Timber.tag(TAG).e(e);}
+            if (delay) try {Thread.sleep(3000);} catch (Exception e) { Timber.tag(ContentValues.TAG).e(e);}
             trackNewAppDownloadInternal(baseTrackme, extra);
         });
         if (!delay && !extra.isIntensiveWork()) trackTask.run();
@@ -171,7 +170,7 @@ public class DownloadTracker {
     }
 
     private void trackNewAppDownloadInternal(TrackMe baseTrackMe, @NonNull Extra extra) {
-        Timber.tag(LOGGER_TAG).d("Tracking app download...");
+        Timber.tag(TAG).d("Tracking app download...");
 
         StringBuilder installIdentifier = new StringBuilder();
         installIdentifier.append("http://").append(mPkgInfo.packageName).append(":").append(getVersion());
@@ -200,6 +199,6 @@ public class DownloadTracker {
                 .set(QueryParams.DOWNLOAD, installIdentifier.toString())
                 .set(QueryParams.REFERRER, referringApp)); // Can be null in which case the TrackMe removes the REFERRER parameter.
 
-        Timber.tag(LOGGER_TAG).d("... app download tracked.");
+        Timber.tag(TAG).d("... app download tracked.");
     }
 }

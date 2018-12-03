@@ -22,7 +22,7 @@ import timber.log.Timber;
  * Also see documentation for {@link TrackHelper#uncaughtExceptions()}
  */
 public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "MatomoExceptionHandler";
+    private static final String TAG = Matomo.tag(MatomoExceptionHandler.class);
     private final Tracker mTracker;
     private final TrackMe mTrackMe;
     private final Thread.UncaughtExceptionHandler mDefaultExceptionHandler;
@@ -52,7 +52,7 @@ public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
             // Immediately dispatch as the app might be dying after rethrowing the exception
             getTracker().dispatch();
         } catch (Exception e) {
-            Timber.tag(LOGGER_TAG).e(e, "Couldn't track uncaught exception");
+            Timber.tag(TAG).e(e, "Couldn't track uncaught exception");
         } finally {
             // re-throw critical exception further to the os (important)
             if (getDefaultExceptionHandler() != null && getDefaultExceptionHandler() != this) {

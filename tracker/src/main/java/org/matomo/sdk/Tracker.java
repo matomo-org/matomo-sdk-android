@@ -34,7 +34,7 @@ import timber.log.Timber;
  */
 @SuppressWarnings("WeakerAccess")
 public class Tracker {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "Tracker";
+    private static final String TAG = Matomo.tag(Tracker.class);
 
     // Matomo default parameter values
     private static final String DEFAULT_UNKNOWN_VALUE = "unknown";
@@ -444,7 +444,7 @@ public class Tracker {
             for (Callback callback : mTrackingCallbacks) {
                 trackMe = callback.onTrack(trackMe);
                 if (trackMe == null) {
-                    Timber.tag(LOGGER_TAG).d("Tracking aborted by %s", callback);
+                    Timber.tag(TAG).d("Tracking aborted by %s", callback);
                     return this;
                 }
             }
@@ -452,9 +452,9 @@ public class Tracker {
             mLastEvent = trackMe;
             if (!mOptOut) {
                 mDispatcher.submit(trackMe);
-                Timber.tag(LOGGER_TAG).d("Event added to the queue: %s", trackMe);
+                Timber.tag(TAG).d("Event added to the queue: %s", trackMe);
             } else {
-                Timber.tag(LOGGER_TAG).d("Event omitted due to opt out: %s", trackMe);
+                Timber.tag(TAG).d("Event omitted due to opt out: %s", trackMe);
             }
 
             return this;

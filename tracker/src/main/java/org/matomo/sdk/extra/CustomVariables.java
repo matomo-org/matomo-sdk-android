@@ -24,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import timber.log.Timber;
 
-import static android.content.ContentValues.TAG;
-
 /**
  * A custom variable is a custom name-value pair that you can assign to your users or screen views,
  * and then visualize the reports of how many visits, conversions, etc. for each custom variable.
@@ -48,7 +46,7 @@ import static android.content.ContentValues.TAG;
 public class CustomVariables {
     private final Map<String, JSONArray> mVars = new ConcurrentHashMap<>();
 
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "CustomVariables";
+    private static final String TAG = Matomo.tag(CustomVariables.class);
     protected static final int MAX_LENGTH = 200;
 
     public CustomVariables() {
@@ -95,17 +93,17 @@ public class CustomVariables {
         if (index > 0 && name != null & value != null) {
 
             if (name.length() > MAX_LENGTH) {
-                Timber.tag(LOGGER_TAG).w("Name is too long %s", name);
+                Timber.tag(TAG).w("Name is too long %s", name);
                 name = name.substring(0, MAX_LENGTH);
             }
 
             if (value.length() > MAX_LENGTH) {
-                Timber.tag(LOGGER_TAG).w("Value is too long %s", value);
+                Timber.tag(TAG).w("Value is too long %s", value);
                 value = value.substring(0, MAX_LENGTH);
             }
 
             put(Integer.toString(index), new JSONArray(Arrays.asList(name, value)));
-        } else Timber.tag(LOGGER_TAG).w("Index is out of range or name/value is null");
+        } else Timber.tag(TAG).w("Index is out of range or name/value is null");
         return this;
     }
 
@@ -117,7 +115,7 @@ public class CustomVariables {
     public CustomVariables put(String index, JSONArray values) {
         if (values.length() == 2 && index != null) {
             mVars.put(index, values);
-        } else Timber.tag(LOGGER_TAG).w("values.length() should be equal 2");
+        } else Timber.tag(TAG).w("values.length() should be equal 2");
         return this;
     }
 

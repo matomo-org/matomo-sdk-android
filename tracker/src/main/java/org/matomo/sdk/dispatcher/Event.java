@@ -9,7 +9,7 @@ import java.util.Map;
 import timber.log.Timber;
 
 public class Event {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "Event";
+    private static final String TAG = Matomo.tag(Event.class);
     private final long mTimestamp;
     private final String mQuery;
 
@@ -67,7 +67,7 @@ public class Event {
         try {
             return URLEncoder.encode(param, "UTF-8").replaceAll("\\+", "%20");
         } catch (Exception e) {
-            Timber.tag(LOGGER_TAG).e(e, "Cannot encode %s", param);
+            Timber.tag(TAG).e(e, "Cannot encode %s", param);
             return "";
         }
     }

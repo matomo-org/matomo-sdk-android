@@ -25,7 +25,7 @@ import timber.log.Timber;
 
 
 public class PacketFactory {
-    private static final String LOGGER_TAG = Matomo.LOGGER_PREFIX + "PacketFactory";
+    private static final String TAG = Matomo.tag(PacketFactory.class);
     @VisibleForTesting
     public static final int PAGE_SIZE = 20;
     private final String mApiUrl;
@@ -70,7 +70,7 @@ public class PacketFactory {
             params.put("requests", jsonArray);
             return new Packet(mApiUrl, params, events.size());
         } catch (JSONException e) {
-            Timber.tag(LOGGER_TAG).w(e, "Cannot create json object:\n%s", TextUtils.join(", ", events));
+            Timber.tag(TAG).w(e, "Cannot create json object:\n%s", TextUtils.join(", ", events));
         }
         return null;
     }
