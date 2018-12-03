@@ -77,7 +77,6 @@ makeJar.dependsOn(clearJar, build)
 /**
  * Coverage
  */
-apply plugin: 'com.github.kt3k.coveralls'
 apply plugin: "com.vanniktech.android.junit.jacoco"
 
 junitJacoco {
@@ -86,11 +85,6 @@ junitJacoco {
     excludes = []
     includeNoLocationClasses = false
     includeInstrumentationCoverageInMergedReport = false
-}
-
-coveralls {
-    jacocoReportPath = 'build/reports/jacoco/debug/jacoco.xml'
-    sourceDirs = ['src/main/java']
 }
 
 /**

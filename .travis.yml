@@ -22,5 +22,5 @@ before_install:
 script: ./gradlew :tracker:assemble :tracker:testDebugUnitTest
 
 after_success:
-  - ./gradlew :tracker:jacocoTestReportDebug :tracker:coveralls
+  - ./gradlew :tracker:jacocoTestReportDebug
   - bash <(curl -s https://codecov.io/bash)
