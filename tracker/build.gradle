@@ -77,34 +77,19 @@ makeJar.dependsOn(clearJar, build)
 /**
  * Coverage
  */
-apply plugin: 'jacoco'
 apply plugin: 'com.github.kt3k.coveralls'
+apply plugin: "com.vanniktech.android.junit.jacoco"
 
-jacoco {
-    toolVersion = "0.7.1.201405082137"
-}
-
-task jacocoTestReport(type: JacocoReport, dependsOn: "testDebugUnitTest") {
-    reports {
-        xml.enabled = true
-        html.enabled = true
-    }
-    classDirectories = fileTree(
-            dir: './build/intermediates/classes/debug',
-            excludes: ['org/matomo/R*.class',
-                       '**/BuildConfig.class',
-                       '**/*$InjectAdapter.class',
-                       '**/*$ModuleAdapter.class',
-                       '**/*$ViewInjector*.class'
-            ])
-    sourceDirectories = files([
-            'src/main/java',
-    ])
-    executionData = files('build/jacoco/testDebugUnitTest.exec')
+junitJacoco {
+    jacocoVersion = '0.8.2'
+    ignoreProjects = []
+    excludes = []
+    includeNoLocationClasses = false
+    includeInstrumentationCoverageInMergedReport = false
 }
 
 coveralls {
-    jacocoReportPath = 'build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml'
+    jacocoReportPath = 'build/reports/jacoco/debug/jacoco.xml'
     sourceDirs = ['src/main/java']
 }
 
