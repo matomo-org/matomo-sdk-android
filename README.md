@@ -2,7 +2,6 @@ Matomo SDK for Android
 ========================
 
 [![Download](https://api.bintray.com/packages/darken/maven/matomo-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/matomo-sdk-android/_latestVersion)
-
 [![Build](https://travis-ci.org/matomo-org/matomo-sdk-android.svg?branch=master)](https://travis-ci.org/matomo-org/matomo-sdk-android)
 [![Codecov](https://codecov.io/gh/matomo-org/matomo-sdk-android/branch/master/graph/badge.svg)](https://codecov.io/gh/matomo-org/matomo-sdk-android?branch=master)
 
