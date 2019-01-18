@@ -31,10 +31,12 @@ For the not so quick start, [see here](https://github.com/matomo-org/matomo-sdk-
 
 * Initialize your `Tracker` either by extending our `MatomoApplication` class or storing an instance yourself:
 ```java
+import org.matomo.sdk.TrackerBuilder;
+
 public class YourApplication extends Application {
     private Tracker tracker;
     public synchronized Tracker getTracker() {
-        if (tracker == null) tracker = Matomo.getInstance(this).newTracker(new TrackerConfig("http://domain.tld/matomo.php", 1));
+        if (tracker == null) tracker = TrackerBuilder.createDefault("http://domain.tld/matomo.php", 1);
         return tracker;
     }
 }
