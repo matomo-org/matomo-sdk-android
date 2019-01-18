@@ -12,17 +12,17 @@ import static org.junit.Assert.assertEquals;
 public class CurrencyFormatterTest extends BaseTest {
 
     @Test
-    public void testCurrencyFormat() throws Exception {
-        String currency = CurrencyFormatter.priceString(1000);
-        assertEquals("10.00", currency);
+    public void testCurrencyFormat() {
+        assertEquals("10.00", CurrencyFormatter.priceString(1000));
 
-        currency = CurrencyFormatter.priceString(3950);
-        assertEquals("39.50", currency);
+        assertEquals("39.50", CurrencyFormatter.priceString(3950));
 
-        currency = CurrencyFormatter.priceString(1);
-        assertEquals("0.01", currency);
+        assertEquals("0.01", CurrencyFormatter.priceString(1));
 
-        currency = CurrencyFormatter.priceString(25034);
-        assertEquals("250.34", currency);
+        assertEquals("250.34", CurrencyFormatter.priceString(25034));
+
+        assertEquals("1747.20", CurrencyFormatter.priceString(174720));
+
+        assertEquals("1234567.89", CurrencyFormatter.priceString(123456789));
     }
 }
