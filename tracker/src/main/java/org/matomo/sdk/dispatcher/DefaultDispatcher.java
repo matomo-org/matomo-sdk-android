@@ -7,6 +7,9 @@
 
 package org.matomo.sdk.dispatcher;
 
+
+import android.support.annotation.Nullable;
+
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.tools.Connectivity;
@@ -36,6 +39,7 @@ public class DefaultDispatcher implements Dispatcher {
     private boolean mDispatchGzipped = false;
     private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
     private volatile boolean mRunning = false;
+    @Nullable private volatile Thread mDispatchThread = null;
     private List<Packet> mDryRunTarget = null;
 
     public DefaultDispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory, PacketSender packetSender) {
@@ -118,6 +122,7 @@ public class DefaultDispatcher implements Dispatcher {
                 mRunning = true;
                 Thread thread = new Thread(mLoop);
                 thread.setPriority(Thread.MIN_PRIORITY);
+                mDispatchThread = thread;
                 thread.start();
                 return true;
             }
@@ -137,6 +142,36 @@ public class DefaultDispatcher implements Dispatcher {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void forceDispatchBlocking() {
+        Thread dispatchThread = null;
+
+        synchronized (mThreadControl) {
+            if (mRunning) {
+                dispatchThread = mDispatchThread;
+                mRetryCounter = 0;
+                mSleepToken.release();
+            }
+        }
+
+        if (dispatchThread != null) {
+            try {
+                dispatchThread.join();
+            } catch (InterruptedException e) {
+                Timber.tag(TAG).i("Interrupted while waiting for dispatch thread to complete");
+            }
+        }
+
+        if (!mEventCache.isEmpty()) {
+            synchronized (mThreadControl) {
+                mRunning = true;
+                mSleepToken.release();
+            }
+
+            mLoop.run();
+        }
     }
 
     @Override

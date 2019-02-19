@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,9 +38,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -261,6 +265,81 @@ public class DefaultDispatcherTest extends BaseTest {
 
         await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
+    }
+
+    @Test
+    public void testBlockingDispatch() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(-1);
+
+        final int threadCount = 5;
+        final int queryCount = 5;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+
+        assertEquals(dryRunData.size(), 0);
+        assertEquals(createdEvents.size(), threadCount * queryCount);
+
+        mDispatcher.forceDispatchBlocking();
+
+        List<String> flattenedQueries = getFlattenedQueries(dryRunData);
+        assertEquals(flattenedQueries.size(), threadCount * queryCount);
+    }
+
+    @Test
+    public void testBlockingDispatchInFlight() throws Exception {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        mDispatcher.setDryRunTarget(dryRunData);
+        mDispatcher.setDispatchInterval(20);
+
+        final int threadCount = 5;
+        final int queryCount = 5;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+
+        assertEquals(createdEvents.size(), threadCount * queryCount);
+        assertNotEquals(new ArrayList(dryRunData).size(), 0);
+
+        mDispatcher.forceDispatchBlocking();
+
+        List<String> flattenedQueries = getFlattenedQueries(dryRunData);
+        assertEquals(flattenedQueries.size(), threadCount * queryCount);
+    }
+
+    @Test
+    public void testBlockingDispatchCollision() throws Exception {
+        final Semaphore lock = new Semaphore(0);
+        final AtomicInteger eventCount = new AtomicInteger(0);
+
+        mDispatcher.setDispatchInterval(20);
+
+        when(mPacketSender.send(any())).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                Packet packet = invocation.getArgument(0);
+
+                eventCount.addAndGet(packet.getEventCount());
+
+                lock.release();
+                Thread.sleep(100);
+
+                return true;
+            }
+        });
+
+        final int threadCount = 5;
+        final int queryCount = 5;
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
+
+        lock.acquire();
+
+        mDispatcher.forceDispatchBlocking();
+
+        assertEquals(eventCount.get(), threadCount * queryCount);
     }
 
     @Test

@@ -201,6 +201,14 @@ public class Tracker {
     }
 
     /**
+     * Process all queued events and block until processing is complete
+     */
+    public void dispatchBlocking() {
+        if (mOptOut) return;
+        mDispatcher.forceDispatchBlocking();
+    }
+
+    /**
      * Set the interval to 0 to dispatch events as soon as they are queued.
      * If a negative value is used the dispatch timer will never run, a manual dispatch must be used.
      *
