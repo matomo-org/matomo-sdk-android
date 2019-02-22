@@ -29,7 +29,7 @@ For the not so quick start, [see here](https://github.com/matomo-org/matomo-sdk-
     implementation 'org.matomo.sdk:tracker:<latest-version>'
 ```
 
-* Initialize your `Tracker` either by extending our `MatomoApplication` class or storing an instance yourself:
+* Now you need to initialize your `Tracker`. It's recommended to store it as singleton. You can extend `MatomoApplication` or create and store a `Tracker` instance yourself:
 ```java
 import org.matomo.sdk.TrackerBuilder;
 
@@ -44,13 +44,15 @@ public class YourApplication extends Application {
 
 * The `TrackHelper` class is the easiest way to submit events to your tracker:
 ```java
-// Get the `Tracker` you want to use
+// The `Tracker` instance from the previous step
 Tracker tracker = ((MatomoApplication) getApplication()).getTracker();
 // Track a screen view
 TrackHelper.track().screen("/activity_main/activity_settings").title("Settings").with(tracker);
 // Monitor your app installs
 TrackHelper.track().download().with(tracker);
 ```
+
+* Something not working? Check [here](https://github.com/matomo-org/matomo-sdk-android/wiki/Troubleshooting).
 
 ## License
 Android SDK for Matomo is released under the BSD-3 Clause license, see [LICENSE](https://github.com/matomo-org/matomo-sdk-android/blob/master/LICENSE).
