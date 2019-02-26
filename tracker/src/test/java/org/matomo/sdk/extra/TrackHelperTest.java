@@ -498,6 +498,9 @@ public class TrackHelperTest {
         assertEquals(tracked.get(QueryParams.EVENT_NAME), "/ by zero");
         assertEquals(tracked.get(QueryParams.EVENT_VALUE), "1");
 
+        verify(mTracker).setOffline();
+        verify(mTracker).dispatchBlocking();
+
         boolean exception = false;
         try {
             track().uncaughtExceptions().with(mTracker);
