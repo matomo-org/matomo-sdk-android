@@ -57,6 +57,11 @@ public interface Dispatcher {
     DispatchMode getDispatchMode();
 
     /**
+     * Override the connectivity of the Dispatcher and handle all events as if the device is offline.
+     */
+    void setOffline();
+
+    /**
      * Starts the dispatcher for one cycle if it is currently not working.
      * If the dispatcher is working it will skip the dispatch interval once.
      */

@@ -42,8 +42,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -335,11 +333,46 @@ public class DefaultDispatcherTest extends BaseTest {
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
+
         lock.acquire();
 
         mDispatcher.forceDispatchBlocking();
 
         assertEquals(eventCount.get(), threadCount * queryCount);
+    }
+
+    @Test
+    public void testBlockingDispatchOffline() {
+        mDispatcher.setDispatchInterval(200);
+
+        final int threadCount = 5;
+        final int queryCount = 10;
+
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
+        launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
+
+        final AtomicInteger sentEvents = new AtomicInteger(0);
+
+        when(mPacketSender.send(any())).thenAnswer(new Answer<Boolean>() {
+            @Override
+            public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                Packet packet = invocation.getArgument(0);
+                sentEvents.addAndGet(packet.getEventCount());
+
+                mDispatcher.setOffline();
+
+                return true;
+            }
+        });
+
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+
+        mDispatcher.forceDispatchBlocking();
+
+        int sentEventCount = sentEvents.get();
+
+        assertEquals(sentEventCount, PacketFactory.PAGE_SIZE);
+        assertEquals(mEventCacheData.size() + sentEventCount, threadCount * queryCount);
     }
 
     @Test

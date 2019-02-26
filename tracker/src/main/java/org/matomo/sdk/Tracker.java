@@ -193,6 +193,15 @@ public class Tracker {
     }
 
     /**
+     * For the Dispatcher to run in offline mode.  This will send all tracked events to disk until the next time the tracker is constructed.
+     *
+     * @see Dispatcher#setOffline()
+     */
+    public void setOffline() {
+        mDispatcher.setOffline();
+    }
+
+    /**
      * Processes all queued events in background thread
      */
     public void dispatch() {

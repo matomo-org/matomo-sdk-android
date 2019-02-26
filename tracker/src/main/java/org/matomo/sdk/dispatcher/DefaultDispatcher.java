@@ -35,9 +35,11 @@ public class DefaultDispatcher implements Dispatcher {
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private volatile int mRetryCounter = 0;
+    private volatile boolean mForcedBlocking = false;
 
     private boolean mDispatchGzipped = false;
-    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile boolean mForceOffline = false;
     private volatile boolean mRunning = false;
     @Nullable private volatile Thread mDispatchThread = null;
     private List<Packet> mDryRunTarget = null;
@@ -116,6 +118,11 @@ public class DefaultDispatcher implements Dispatcher {
         return mDispatchMode;
     }
 
+    @Override
+    public void setOffline() {
+        mForceOffline = true;
+    }
+
     private boolean launch() {
         synchronized (mThreadControl) {
             if (!mRunning) {
@@ -149,6 +156,9 @@ public class DefaultDispatcher implements Dispatcher {
         Thread dispatchThread = null;
 
         synchronized (mThreadControl) {
+            // ensure the dispatch loop always exits after a single loop
+            mForcedBlocking = true;
+
             if (mRunning) {
                 dispatchThread = mDispatchThread;
                 mRetryCounter = 0;
@@ -171,6 +181,11 @@ public class DefaultDispatcher implements Dispatcher {
             }
 
             mLoop.run();
+        }
+
+        synchronized (mThreadControl) {
+            // re-enable default behavior
+            mForcedBlocking = false;
         }
     }
 
@@ -218,18 +233,36 @@ public class DefaultDispatcher implements Dispatcher {
                             count += packet.getEventCount();
                             mRetryCounter = 0;
                         } else {
-                            Timber.tag(TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
-                            mEventCache.updateState(false);
-                            mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                            // On network failure, requeue all un-sent events, but use isConnected to determine if events should be cached in
+                            // memory or disk
+                            Timber.tag(TAG).d("Failure while trying to send packet");
                             mRetryCounter++;
                             break;
                         }
+
+                        // Re-check network connectivity to early exit if we drop offline.  This speeds up how quickly the setOffline method will
+                        // take effect
+                        if (!isConnected()) {
+                            Timber.tag(TAG).d("Disconnected during dispatch loop");
+                            break;
+                        }
                     }
+
                     Timber.tag(TAG).d("Dispatched %d events.", count);
+                    if (count < drainedEvents.size()) {
+                        Timber.tag(TAG).d("Unable to send all events, requeueing %d events", drainedEvents.size() - count);
+                        // Requeue events to the event cache that weren't processed (either PacketSender failure or we are now offline).  Once the
+                        // events are requeued we update the event cache state to write the requeued events to disk or to leave them in memory
+                        // depending on the connectivity state of the device.
+                        mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                        mEventCache.updateState(isConnected());
+                    }
                 }
+
                 synchronized (mThreadControl) {
-                    // We may be done or this was a forced dispatch
-                    if (mEventCache.isEmpty() || mDispatchInterval < 0) {
+                    // We may be done or this was a forced dispatch.  If we are in a blocking force dispatch we need to exit immediately to ensure
+                    // the blocking doesn't take too long.
+                    if (mForcedBlocking || mEventCache.isEmpty() || mDispatchInterval < 0) {
                         mRunning = false;
                         break;
                     }
@@ -239,7 +272,7 @@ public class DefaultDispatcher implements Dispatcher {
     };
 
     private boolean isConnected() {
-        if (!mConnectivity.isConnected()) return false;
+        if (mForceOffline || !mConnectivity.isConnected()) return false;
 
         switch (mDispatchMode) {
             case ALWAYS:
