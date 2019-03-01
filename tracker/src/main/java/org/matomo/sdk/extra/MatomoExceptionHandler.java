@@ -51,10 +51,10 @@ public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
 
             Tracker tracker = getTracker();
 
-            TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(tracker);
-
             // Force the tracker into offline mode to ensure events are written to disk
             tracker.setOffline();
+
+            TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(tracker);
 
             // Immediately dispatch as the app might be dying after rethrowing the exception and block until the dispatch is completed
             tracker.dispatchBlocking();
