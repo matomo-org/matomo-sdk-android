@@ -153,18 +153,16 @@ public class DefaultDispatcher implements Dispatcher {
 
     @Override
     public void forceDispatchBlocking() {
-        Thread dispatchThread = null;
-
         synchronized (mThreadControl) {
-            // ensure the dispatch loop always exits after a single loop
+            // force thread to exit after it completes its dispatch loop
             mForcedBlocking = true;
-
-            if (mRunning) {
-                dispatchThread = mDispatchThread;
-                mRetryCounter = 0;
-                mSleepToken.release();
-            }
         }
+
+        if (forceDispatch()) {
+            mSleepToken.release();
+        }
+
+        Thread dispatchThread = mDispatchThread;
 
         if (dispatchThread != null) {
             try {
@@ -172,15 +170,6 @@ public class DefaultDispatcher implements Dispatcher {
             } catch (InterruptedException e) {
                 Timber.tag(TAG).i("Interrupted while waiting for dispatch thread to complete");
             }
-        }
-
-        if (!mEventCache.isEmpty()) {
-            synchronized (mThreadControl) {
-                mRunning = true;
-                mSleepToken.release();
-            }
-
-            mLoop.run();
         }
 
         synchronized (mThreadControl) {

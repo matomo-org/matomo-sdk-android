@@ -312,7 +312,7 @@ public class DefaultDispatcherTest extends BaseTest {
         final Semaphore lock = new Semaphore(0);
         final AtomicInteger eventCount = new AtomicInteger(0);
 
-        mDispatcher.setDispatchInterval(20);
+        mDispatcher.setDispatchInterval(-1);
 
         when(mPacketSender.send(any())).thenAnswer(new Answer<Boolean>() {
             @Override
@@ -328,11 +328,14 @@ public class DefaultDispatcherTest extends BaseTest {
             }
         });
 
-        final int threadCount = 5;
-        final int queryCount = 5;
+        final int threadCount = 7;
+        final int queryCount = 13;
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
+        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+
+        mDispatcher.forceDispatch();
 
         lock.acquire();
 
