@@ -168,7 +168,7 @@ public class DefaultDispatcher implements Dispatcher {
             try {
                 dispatchThread.join();
             } catch (InterruptedException e) {
-                Timber.tag(TAG).i("Interrupted while waiting for dispatch thread to complete");
+                Timber.tag(TAG).d("Interrupted while waiting for dispatch thread to complete");
             }
         }
 
