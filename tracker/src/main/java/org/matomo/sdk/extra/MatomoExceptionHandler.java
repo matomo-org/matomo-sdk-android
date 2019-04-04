@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.Tracker;
+import org.matomo.sdk.dispatcher.DispatchMode;
 
 import timber.log.Timber;
 
@@ -52,7 +53,7 @@ public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
             Tracker tracker = getTracker();
 
             // Force the tracker into offline mode to ensure events are written to disk
-            tracker.setOffline();
+            tracker.setDispatchMode(DispatchMode.EXCEPTION);
 
             TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(tracker);
 

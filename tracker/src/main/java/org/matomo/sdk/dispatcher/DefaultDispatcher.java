@@ -39,7 +39,6 @@ public class DefaultDispatcher implements Dispatcher {
 
     private boolean mDispatchGzipped = false;
     private volatile DispatchMode mDispatchMode = DispatchMode.ALWAYS;
-    private volatile boolean mForceOffline = false;
     private volatile boolean mRunning = false;
     @Nullable private volatile Thread mDispatchThread = null;
     private List<Packet> mDryRunTarget = null;
@@ -116,11 +115,6 @@ public class DefaultDispatcher implements Dispatcher {
     @Override
     public DispatchMode getDispatchMode() {
         return mDispatchMode;
-    }
-
-    @Override
-    public void setOffline() {
-        mForceOffline = true;
     }
 
     private boolean launch() {
@@ -261,9 +255,11 @@ public class DefaultDispatcher implements Dispatcher {
     };
 
     private boolean isOnline() {
-        if (mForceOffline || !mConnectivity.isConnected()) return false;
+        if (!mConnectivity.isConnected()) return false;
 
         switch (mDispatchMode) {
+            case EXCEPTION:
+                return false;
             case ALWAYS:
                 return true;
             case WIFI_ONLY:

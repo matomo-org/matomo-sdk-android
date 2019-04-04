@@ -345,7 +345,7 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testBlockingDispatchOffline() {
+    public void testBlockingDispatchExceptionMode() {
         mDispatcher.setDispatchInterval(200);
 
         final int threadCount = 5;
@@ -362,7 +362,7 @@ public class DefaultDispatcherTest extends BaseTest {
                 Packet packet = invocation.getArgument(0);
                 sentEvents.addAndGet(packet.getEventCount());
 
-                mDispatcher.setOffline();
+                mDispatcher.setDispatchMode(DispatchMode.EXCEPTION);
 
                 return true;
             }
