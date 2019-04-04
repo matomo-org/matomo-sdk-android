@@ -203,7 +203,7 @@ public class DefaultDispatcher implements Dispatcher {
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(sleepTime, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {Timber.tag(TAG).e(e); }
-                if (mEventCache.updateState(isConnected())) {
+                if (mEventCache.updateState(isOnline())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
@@ -222,7 +222,7 @@ public class DefaultDispatcher implements Dispatcher {
                             count += packet.getEventCount();
                             mRetryCounter = 0;
                         } else {
-                            // On network failure, requeue all un-sent events, but use isConnected to determine if events should be cached in
+                            // On network failure, requeue all un-sent events, but use isOnline to determine if events should be cached in
                             // memory or disk
                             Timber.tag(TAG).d("Failure while trying to send packet");
                             mRetryCounter++;
@@ -231,7 +231,7 @@ public class DefaultDispatcher implements Dispatcher {
 
                         // Re-check network connectivity to early exit if we drop offline.  This speeds up how quickly the setOffline method will
                         // take effect
-                        if (!isConnected()) {
+                        if (!isOnline()) {
                             Timber.tag(TAG).d("Disconnected during dispatch loop");
                             break;
                         }
@@ -244,7 +244,7 @@ public class DefaultDispatcher implements Dispatcher {
                         // events are requeued we update the event cache state to write the requeued events to disk or to leave them in memory
                         // depending on the connectivity state of the device.
                         mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
-                        mEventCache.updateState(isConnected());
+                        mEventCache.updateState(isOnline());
                     }
                 }
 
@@ -260,7 +260,7 @@ public class DefaultDispatcher implements Dispatcher {
         }
     };
 
-    private boolean isConnected() {
+    private boolean isOnline() {
         if (mForceOffline || !mConnectivity.isConnected()) return false;
 
         switch (mDispatchMode) {
