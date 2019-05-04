@@ -27,6 +27,7 @@ import testhelpers.TestPreferences;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -77,6 +78,9 @@ public class TrackerTest {
         when(mTrackerBuilder.getSiteId()).thenReturn(mSiteId);
         when(mTrackerBuilder.getTrackerName()).thenReturn(mTrackerName);
         when(mTrackerBuilder.getApplicationBaseUrl()).thenReturn("http://this.is.our.package/");
+
+        mTrackerPreferences.edit().clear();
+        mPreferences.edit().clear();
     }
 
     @Test
@@ -267,7 +271,7 @@ public class TrackerTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetTooShortVistorId() {
+    public void testVisitorId_invalid_short() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         String tooShortVisitorId = "0123456789ab";
         tracker.setVisitorId(tooShortVisitorId);
@@ -275,7 +279,7 @@ public class TrackerTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetTooLongVistorId() {
+    public void testVisitorId_invalid_long() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         String tooLongVisitorId = "0123456789abcdefghi";
         tracker.setVisitorId(tooLongVisitorId);
@@ -283,7 +287,7 @@ public class TrackerTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetVistorIdWithInvalidCharacters() {
+    public void testVisitorId_invalid_charset() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         String invalidCharacterVisitorId = "01234-6789-ghief";
         tracker.setVisitorId(invalidCharacterVisitorId);
@@ -291,21 +295,60 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetVistorId() {
+    public void testVisitorId_init() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertThat(tracker.getVisitorId(), is(notNullValue()));
+    }
+
+    @Test
+    public void testVisitorId_restore() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertThat(tracker.getVisitorId(), is(notNullValue()));
+        String visitorId = tracker.getVisitorId();
+
+        tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertThat(tracker.getVisitorId(), is(visitorId));
+    }
+
+    @Test
+    public void testVisitorId_dispatch() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         String visitorId = "0123456789abcdef";
         tracker.setVisitorId(visitorId);
         assertEquals(visitorId, tracker.getVisitorId());
-        TrackMe trackMe = new TrackMe();
-        tracker.track(trackMe);
+
+        tracker.track(new TrackMe());
         verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals(visitorId, mCaptor.getValue().get(QueryParams.VISITOR_ID));
+
+        tracker.track(new TrackMe());
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
         assertEquals(visitorId, mCaptor.getValue().get(QueryParams.VISITOR_ID));
     }
 
     @Test
-    public void testSetUserId() {
+    public void testUserID_init() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
-        assertNotNull(tracker.getDefaultTrackMe().get(QueryParams.USER_ID));
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.USER_ID));
+        assertNull(tracker.getUserId());
+    }
+
+    @Test
+    public void testUserID_restore() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertNull(tracker.getUserId());
+        tracker.setUserId("cake");
+        assertThat(tracker.getUserId(), is("cake"));
+
+        tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertThat(tracker.getUserId(), is("cake"));
+        assertThat(tracker.getDefaultTrackMe().get(QueryParams.USER_ID), is("cake"));
+    }
+
+    @Test
+    public void testUserID_invalid() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertNull(tracker.getUserId());
 
         tracker.setUserId("test");
         assertEquals(tracker.getUserId(), "test");
@@ -320,6 +363,21 @@ public class TrackerTest {
         tracker.setUserId(uuid);
         assertEquals(uuid, tracker.getUserId());
         assertEquals(uuid, tracker.getUserId());
+    }
+
+    @Test
+    public void testUserID_dispatch() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        String uuid = UUID.randomUUID().toString();
+        tracker.setUserId(uuid);
+
+        tracker.track(new TrackMe());
+        verify(mDispatcher).submit(mCaptor.capture());
+        assertEquals(uuid, mCaptor.getValue().get(QueryParams.USER_ID));
+
+        tracker.track(new TrackMe());
+        verify(mDispatcher, times(2)).submit(mCaptor.capture());
+        assertEquals(uuid, mCaptor.getValue().get(QueryParams.USER_ID));
     }
 
     @Test

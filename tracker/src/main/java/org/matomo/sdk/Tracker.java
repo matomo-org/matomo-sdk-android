@@ -45,6 +45,7 @@ public class Tracker {
     // Sharedpreference keys for persisted values
     protected static final String PREF_KEY_TRACKER_OPTOUT = "tracker.optout";
     protected static final String PREF_KEY_TRACKER_USERID = "tracker.userid";
+    protected static final String PREF_KEY_TRACKER_VISITORID = "tracker.visitorid";
     protected static final String PREF_KEY_TRACKER_FIRSTVISIT = "tracker.firstvisit";
     protected static final String PREF_KEY_TRACKER_VISITCOUNT = "tracker.visitcount";
     protected static final String PREF_KEY_TRACKER_PREVIOUSVISIT = "tracker.previousvisit";
@@ -84,12 +85,16 @@ public class Tracker {
         mOptOut = getPreferences().getBoolean(PREF_KEY_TRACKER_OPTOUT, false);
 
         mDispatcher = mMatomo.getDispatcherFactory().build(this);
+
         String userId = getPreferences().getString(PREF_KEY_TRACKER_USERID, null);
-        if (userId == null) {
-            userId = UUID.randomUUID().toString();
-            getPreferences().edit().putString(PREF_KEY_TRACKER_USERID, userId).apply();
-        }
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
+
+        String visitorId = getPreferences().getString(PREF_KEY_TRACKER_VISITORID, null);
+        if (visitorId == null) {
+            visitorId = makeRandomVisitorId();
+            getPreferences().edit().putString(PREF_KEY_TRACKER_VISITORID, visitorId).apply();
+        }
+        mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
 
         mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
@@ -100,7 +105,6 @@ public class Tracker {
 
         mDefaultTrackMe.set(QueryParams.USER_AGENT, mMatomo.getDeviceHelper().getUserAgent());
         mDefaultTrackMe.set(QueryParams.LANGUAGE, mMatomo.getDeviceHelper().getUserLanguage());
-        mDefaultTrackMe.set(QueryParams.VISITOR_ID, makeRandomVisitorId());
         mDefaultTrackMe.set(QueryParams.URL_PATH, config.getApplicationBaseUrl());
     }
 
