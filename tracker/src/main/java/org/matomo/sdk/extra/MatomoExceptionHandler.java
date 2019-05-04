@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.Tracker;
+import org.matomo.sdk.dispatcher.DispatchMode;
 
 import timber.log.Timber;
 
@@ -48,9 +49,16 @@ public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
     public void uncaughtException(Thread thread, Throwable ex) {
         try {
             String excInfo = ex.getMessage();
-            TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(getTracker());
-            // Immediately dispatch as the app might be dying after rethrowing the exception
-            getTracker().dispatch();
+
+            Tracker tracker = getTracker();
+
+            // Force the tracker into offline mode to ensure events are written to disk
+            tracker.setDispatchMode(DispatchMode.EXCEPTION);
+
+            TrackHelper.track(mTrackMe).exception(ex).description(excInfo).fatal(true).with(tracker);
+
+            // Immediately dispatch as the app might be dying after rethrowing the exception and block until the dispatch is completed
+            tracker.dispatchBlocking();
         } catch (Exception e) {
             Timber.tag(TAG).e(e, "Couldn't track uncaught exception");
         } finally {

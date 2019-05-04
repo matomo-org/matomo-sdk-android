@@ -11,6 +11,7 @@ import org.matomo.sdk.Matomo;
 import org.matomo.sdk.QueryParams;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.Tracker;
+import org.matomo.sdk.dispatcher.DispatchMode;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -497,6 +498,9 @@ public class TrackHelperTest {
         assertTrue(tracked.get(QueryParams.EVENT_ACTION).startsWith("org.matomo.sdk.extra.TrackHelperTest/testExceptionHandler:"));
         assertEquals(tracked.get(QueryParams.EVENT_NAME), "/ by zero");
         assertEquals(tracked.get(QueryParams.EVENT_VALUE), "1");
+
+        verify(mTracker).setDispatchMode(DispatchMode.EXCEPTION);
+        verify(mTracker).dispatchBlocking();
 
         boolean exception = false;
         try {

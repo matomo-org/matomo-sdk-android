@@ -63,6 +63,13 @@ public interface Dispatcher {
     boolean forceDispatch();
 
     /**
+     * Dispatch all events in the EventCache and return only after the dispatch is complete.
+     *
+     * This method may be invoked while the Runtime is being torn down and should not start new threads.
+     */
+    void forceDispatchBlocking();
+
+    /**
      * To clear the dispatchers queue
      */
     void clear();

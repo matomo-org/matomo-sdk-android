@@ -163,22 +163,57 @@ public class TrackerTest {
     }
 
     @Test
-    public void testSetDispatchMode() {
+    public void testDispatchMode_default() {
+        mTrackerPreferences.edit().clear();
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
         verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.ALWAYS);
+    }
 
+    @Test
+    public void testDispatchMode_change() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
         assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
         verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.WIFI_ONLY);
+    }
 
+    @Test
+    public void testDispatchMode_fallback() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         tracker.getPreferences().edit().putString(Tracker.PREF_KEY_DISPATCHER_MODE, "lol").apply();
         assertEquals(DispatchMode.ALWAYS, tracker.getDispatchMode());
-        verify(mDispatcher, times(2)).setDispatchMode(DispatchMode.ALWAYS);
+        verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.ALWAYS);
+    }
 
+    @Test
+    public void testSetDispatchMode_propagation() {
+        mTrackerPreferences.edit().clear();
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        verify(mDispatcher, times(1)).setDispatchMode(any());
+    }
+
+    @Test
+    public void testSetDispatchMode_propagation_change() {
+        mTrackerPreferences.edit().clear();
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
         tracker.setDispatchMode(DispatchMode.WIFI_ONLY);
         assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
         verify(mDispatcher, times(2)).setDispatchMode(DispatchMode.WIFI_ONLY);
+        verify(mDispatcher, times(3)).setDispatchMode(any());
+    }
+
+    @Test
+    public void testSetDispatchMode_exception() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        tracker.setDispatchMode(DispatchMode.WIFI_ONLY); // This is persisted
+        tracker.setDispatchMode(DispatchMode.EXCEPTION); // This isn't
+        assertEquals(DispatchMode.EXCEPTION, tracker.getDispatchMode());
+        verify(mDispatcher, times(1)).setDispatchMode(DispatchMode.EXCEPTION);
+
+        tracker = new Tracker(mMatomo, mTrackerBuilder);
+        assertEquals(DispatchMode.WIFI_ONLY, tracker.getDispatchMode());
     }
 
     @Test

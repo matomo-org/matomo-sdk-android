@@ -72,6 +72,7 @@ public class Tracker {
     private SharedPreferences mPreferences;
 
     private final LinkedHashSet<Callback> mTrackingCallbacks = new LinkedHashSet<>();
+    private DispatchMode mDispatchMode;
 
     protected Tracker(Matomo matomo, TrackerBuilder config) {
         mMatomo = matomo;
@@ -85,6 +86,7 @@ public class Tracker {
         mOptOut = getPreferences().getBoolean(PREF_KEY_TRACKER_OPTOUT, false);
 
         mDispatcher = mMatomo.getDispatcherFactory().build(this);
+        mDispatcher.setDispatchMode(getDispatchMode());
 
         String userId = getPreferences().getString(PREF_KEY_TRACKER_USERID, null);
         mDefaultTrackMe.set(QueryParams.USER_ID, userId);
@@ -205,6 +207,14 @@ public class Tracker {
     }
 
     /**
+     * Process all queued events and block until processing is complete
+     */
+    public void dispatchBlocking() {
+        if (mOptOut) return;
+        mDispatcher.forceDispatchBlocking();
+    }
+
+    /**
      * Set the interval to 0 to dispatch events as soon as they are queued.
      * If a negative value is used the dispatch timer will never run, a manual dispatch must be used.
      *
@@ -287,13 +297,12 @@ public class Tracker {
      * @see DispatchMode
      */
     public DispatchMode getDispatchMode() {
-        String raw = getPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
-        DispatchMode mode = DispatchMode.fromString(raw);
-        if (mode == null) {
-            mode = DispatchMode.ALWAYS;
-            setDispatchMode(mode);
+        if (mDispatchMode == null) {
+            String raw = getPreferences().getString(PREF_KEY_DISPATCHER_MODE, null);
+            mDispatchMode = DispatchMode.fromString(raw);
+            if (mDispatchMode == null) mDispatchMode = DispatchMode.ALWAYS;
         }
-        return mode;
+        return mDispatchMode;
     }
 
     /**
@@ -302,7 +311,10 @@ public class Tracker {
      * @see DispatchMode
      */
     public void setDispatchMode(DispatchMode mode) {
-        getPreferences().edit().putString(PREF_KEY_DISPATCHER_MODE, mode.toString()).apply();
+        mDispatchMode = mode;
+        if (mode != DispatchMode.EXCEPTION) {
+            getPreferences().edit().putString(PREF_KEY_DISPATCHER_MODE, mode.toString()).apply();
+        }
         mDispatcher.setDispatchMode(mode);
     }
 

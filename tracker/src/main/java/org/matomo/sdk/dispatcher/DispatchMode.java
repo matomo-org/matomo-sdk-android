@@ -11,7 +11,12 @@ public enum DispatchMode {
     /**
      * Dispatch only on WIFI
      */
-    WIFI_ONLY("wifi_only");
+    WIFI_ONLY("wifi_only"),
+    /**
+     * The dispatcher will assume being offline. This is not persisted and will revert on app restart.
+     * Ensures no information is lost when tracking exceptions. See #247
+     */
+    EXCEPTION("exception");
 
     private final String key;
 

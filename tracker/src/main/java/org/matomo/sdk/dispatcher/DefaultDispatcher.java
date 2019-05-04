@@ -7,6 +7,9 @@
 
 package org.matomo.sdk.dispatcher;
 
+
+import android.support.annotation.Nullable;
+
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.tools.Connectivity;
@@ -32,10 +35,12 @@ public class DefaultDispatcher implements Dispatcher {
     private volatile int mTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private volatile long mDispatchInterval = DEFAULT_DISPATCH_INTERVAL;
     private volatile int mRetryCounter = 0;
+    private volatile boolean mForcedBlocking = false;
 
     private boolean mDispatchGzipped = false;
-    private DispatchMode mDispatchMode = DispatchMode.ALWAYS;
+    private volatile DispatchMode mDispatchMode = DispatchMode.ALWAYS;
     private volatile boolean mRunning = false;
+    @Nullable private volatile Thread mDispatchThread = null;
     private List<Packet> mDryRunTarget = null;
 
     public DefaultDispatcher(EventCache eventCache, Connectivity connectivity, PacketFactory packetFactory, PacketSender packetSender) {
@@ -118,6 +123,7 @@ public class DefaultDispatcher implements Dispatcher {
                 mRunning = true;
                 Thread thread = new Thread(mLoop);
                 thread.setPriority(Thread.MIN_PRIORITY);
+                mDispatchThread = thread;
                 thread.start();
                 return true;
             }
@@ -137,6 +143,33 @@ public class DefaultDispatcher implements Dispatcher {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void forceDispatchBlocking() {
+        synchronized (mThreadControl) {
+            // force thread to exit after it completes its dispatch loop
+            mForcedBlocking = true;
+        }
+
+        if (forceDispatch()) {
+            mSleepToken.release();
+        }
+
+        Thread dispatchThread = mDispatchThread;
+
+        if (dispatchThread != null) {
+            try {
+                dispatchThread.join();
+            } catch (InterruptedException e) {
+                Timber.tag(TAG).d("Interrupted while waiting for dispatch thread to complete");
+            }
+        }
+
+        synchronized (mThreadControl) {
+            // re-enable default behavior
+            mForcedBlocking = false;
+        }
     }
 
     @Override
@@ -164,7 +197,7 @@ public class DefaultDispatcher implements Dispatcher {
                     // Either we wait the interval or forceDispatch() granted us one free pass
                     mSleepToken.tryAcquire(sleepTime, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {Timber.tag(TAG).e(e); }
-                if (mEventCache.updateState(isConnected())) {
+                if (mEventCache.updateState(isOnline())) {
                     int count = 0;
                     List<Event> drainedEvents = new ArrayList<>();
                     mEventCache.drainTo(drainedEvents);
@@ -183,18 +216,36 @@ public class DefaultDispatcher implements Dispatcher {
                             count += packet.getEventCount();
                             mRetryCounter = 0;
                         } else {
-                            Timber.tag(TAG).d("Unsuccesful assuming OFFLINE, requeuing events.");
-                            mEventCache.updateState(false);
-                            mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                            // On network failure, requeue all un-sent events, but use isOnline to determine if events should be cached in
+                            // memory or disk
+                            Timber.tag(TAG).d("Failure while trying to send packet");
                             mRetryCounter++;
                             break;
                         }
+
+                        // Re-check network connectivity to early exit if we drop offline.  This speeds up how quickly the setOffline method will
+                        // take effect
+                        if (!isOnline()) {
+                            Timber.tag(TAG).d("Disconnected during dispatch loop");
+                            break;
+                        }
                     }
+
                     Timber.tag(TAG).d("Dispatched %d events.", count);
+                    if (count < drainedEvents.size()) {
+                        Timber.tag(TAG).d("Unable to send all events, requeueing %d events", drainedEvents.size() - count);
+                        // Requeue events to the event cache that weren't processed (either PacketSender failure or we are now offline).  Once the
+                        // events are requeued we update the event cache state to write the requeued events to disk or to leave them in memory
+                        // depending on the connectivity state of the device.
+                        mEventCache.requeue(drainedEvents.subList(count, drainedEvents.size()));
+                        mEventCache.updateState(isOnline());
+                    }
                 }
+
                 synchronized (mThreadControl) {
-                    // We may be done or this was a forced dispatch
-                    if (mEventCache.isEmpty() || mDispatchInterval < 0) {
+                    // We may be done or this was a forced dispatch.  If we are in a blocking force dispatch we need to exit immediately to ensure
+                    // the blocking doesn't take too long.
+                    if (mForcedBlocking || mEventCache.isEmpty() || mDispatchInterval < 0) {
                         mRunning = false;
                         break;
                     }
@@ -203,10 +254,12 @@ public class DefaultDispatcher implements Dispatcher {
         }
     };
 
-    private boolean isConnected() {
+    private boolean isOnline() {
         if (!mConnectivity.isConnected()) return false;
 
         switch (mDispatchMode) {
+            case EXCEPTION:
+                return false;
             case ALWAYS:
                 return true;
             case WIFI_ONLY:
