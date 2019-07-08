@@ -27,6 +27,9 @@ public class DefaultPacketSender implements PacketSender {
         HttpURLConnection urlConnection = null;
         try {
             urlConnection = (HttpURLConnection) new URL(packet.getTargetURL()).openConnection();
+            if (packet.getTargetCookie() != null) {
+                urlConnection.setRequestProperty("Cookie", packet.getTargetCookie());
+            }
 
             Timber.tag(TAG).v("Connection is open to %s", urlConnection.getURL().toExternalForm());
             Timber.tag(TAG).v("Sending: %s", packet);

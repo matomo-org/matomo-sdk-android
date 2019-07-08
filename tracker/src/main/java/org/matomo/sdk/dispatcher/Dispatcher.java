@@ -91,4 +91,6 @@ public interface Dispatcher {
      * Mind thread-safety!
      */
     List<Packet> getDryRunTarget();
+
+    Dispatcher setApiCookie(String cookie);
 }

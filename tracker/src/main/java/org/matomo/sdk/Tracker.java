@@ -110,6 +110,15 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.URL_PATH, config.getApplicationBaseUrl());
     }
 
+    /**
+     * Defines tracking request cookie, which may be necessary, if the API is behind authorization.
+     * @param cookie
+     */
+    public Tracker setCookie(String cookie) {
+        mDispatcher.setApiCookie(cookie);
+        return this;
+    }
+
     public void addTrackingCallback(Callback callback) {
         this.mTrackingCallbacks.add(callback);
     }

@@ -19,12 +19,13 @@ public class Packet {
     private final JSONObject mPostData;
     private final long mTimeStamp;
     private final int mEventCount;
+    private final String mTargetCookie;
 
     /**
      * Constructor for GET requests
      */
-    public Packet(String targetURL) {
-        this(targetURL, null, 1);
+    public Packet(String targetURL, @Nullable String targetCookie) {
+        this(targetURL, targetCookie, null, 1);
     }
 
     /**
@@ -34,8 +35,9 @@ public class Packet {
      * @param JSONObject non null if HTTP POST packet
      * @param eventCount number of events in this packet
      */
-    public Packet(String targetURL, @Nullable JSONObject JSONObject, int eventCount) {
+    public Packet(String targetURL, @Nullable String targetCookie, @Nullable JSONObject JSONObject, int eventCount) {
         mTargetURL = targetURL;
+        mTargetCookie = targetCookie;
         mPostData = JSONObject;
         mEventCount = eventCount;
         mTimeStamp = System.currentTimeMillis();
@@ -43,6 +45,11 @@ public class Packet {
 
     public String getTargetURL() {
         return mTargetURL;
+    }
+
+    @Nullable
+    public String getTargetCookie() {
+        return mTargetCookie;
     }
 
     /**

@@ -29,9 +29,15 @@ public class PacketFactory {
     @VisibleForTesting
     public static final int PAGE_SIZE = 20;
     private final String mApiUrl;
+    private String mApiCookie;
 
     public PacketFactory(final String apiUrl) {
         mApiUrl = apiUrl;
+    }
+
+    public PacketFactory setApiCookie(String cookie) {
+        this.mApiCookie = cookie;
+        return this;
     }
 
     public List<Packet> buildPackets(final List<Event> events) {
@@ -68,7 +74,7 @@ public class PacketFactory {
             JSONArray jsonArray = new JSONArray();
             for (Event event : events) jsonArray.put(event.getEncodedQuery());
             params.put("requests", jsonArray);
-            return new Packet(mApiUrl, params, events.size());
+            return new Packet(mApiUrl, mApiCookie, params, events.size());
         } catch (JSONException e) {
             Timber.tag(TAG).w(e, "Cannot create json object:\n%s", TextUtils.join(", ", events));
         }
@@ -79,7 +85,7 @@ public class PacketFactory {
     @Nullable
     private Packet buildPacketForGet(@NonNull Event event) {
         if (event.getEncodedQuery().isEmpty()) return null;
-        return new Packet(mApiUrl + event);
+        return new Packet(mApiUrl + event, mApiCookie);
     }
 
 }

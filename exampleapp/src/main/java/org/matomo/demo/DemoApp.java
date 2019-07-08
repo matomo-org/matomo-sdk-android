@@ -48,6 +48,9 @@ public class DemoApp extends MatomoApplication {
         // String userEmail = ....preferences....getString
         // getTracker().setUserId(userEmail);
 
+        // Set cookies, if your Matomo API is locked behind authorization
+        // getTracker().setCookie("Cookie1=value1; Cookie2=value2");
+
         // Track this app install, this will only trigger once per app version.
         // i.e. "http://org.matomo.demo:1/185DECB5CFE28FDB2F45887022D668B4"
         TrackHelper.track().download().identifier(new DownloadTracker.Extra.ApkChecksum(this)).with(getTracker());

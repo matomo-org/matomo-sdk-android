@@ -278,4 +278,10 @@ public class DefaultDispatcher implements Dispatcher {
     public List<Packet> getDryRunTarget() {
         return mDryRunTarget;
     }
+
+    @Override
+    public Dispatcher setApiCookie(String cookie) {
+        mPacketFactory.setApiCookie(cookie);
+        return this;
+    }
 }
