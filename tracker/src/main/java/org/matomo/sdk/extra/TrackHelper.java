@@ -6,7 +6,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.QueryParams;

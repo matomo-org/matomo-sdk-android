@@ -7,7 +7,7 @@
 
 package org.matomo.sdk.tools;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import java.math.BigDecimal;
 
