@@ -1,6 +1,6 @@
 package org.matomo.sdk.dispatcher;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 
 public enum DispatchMode {
