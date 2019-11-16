@@ -1,7 +1,7 @@
 package org.matomo.sdk.tools;
 
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 public class PropertySource {
     @Nullable

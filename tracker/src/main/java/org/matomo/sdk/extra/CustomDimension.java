@@ -1,8 +1,8 @@
 package org.matomo.sdk.extra;
 
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;

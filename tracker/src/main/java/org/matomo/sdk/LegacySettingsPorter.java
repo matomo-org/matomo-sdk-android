@@ -2,7 +2,7 @@ package org.matomo.sdk;
 
 
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import java.util.Iterator;
 import java.util.Map;

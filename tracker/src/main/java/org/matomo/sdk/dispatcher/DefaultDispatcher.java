@@ -8,7 +8,7 @@
 package org.matomo.sdk.dispatcher;
 
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.TrackMe;

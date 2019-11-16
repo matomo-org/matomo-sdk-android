@@ -10,7 +10,7 @@ package org.matomo.sdk;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import org.matomo.sdk.dispatcher.DefaultDispatcherFactory;
 import org.matomo.sdk.dispatcher.DispatcherFactory;
