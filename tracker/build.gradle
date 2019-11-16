@@ -8,7 +8,6 @@ def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
 android {
     compileSdkVersion project.ext.globalCompileSdkVersion
-    buildToolsVersion project.ext.globalBuildToolsVersion
 
     defaultConfig {
         minSdkVersion project.ext.globalMinSdkVersion
