@@ -55,6 +55,7 @@ public class EventDiskCache {
         }
     }
 
+    // Must be called from a synchronized method
     private void checkCacheLimits() {
         long startTime = System.currentTimeMillis();
         if (mMaxAge < 0) {

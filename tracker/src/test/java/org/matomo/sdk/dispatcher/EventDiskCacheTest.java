@@ -210,20 +210,27 @@ public class EventDiskCacheTest extends BaseTest {
 
     @Test
     public void testMaxSize_limited() {
-        when(mTracker.getOfflineCacheSize()).thenReturn(500 * 1024L);
+        when(mTracker.getOfflineCacheSize()).thenReturn(1024L);
         mDiskCache = new EventDiskCache(mTracker);
         for (int j = 0; j < 4; j++) {
             List<Event> events = new ArrayList<>();
-            for (int k = 0; k < 4000; k++) {
-                events.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
+            for (int k = 0; k < 10; k++) {
+                events.add(new Event(System.nanoTime(), "set:" + j + " " + UUID.randomUUID().toString()));
             }
-            // About 206KB
+            // About ~512Byte
             mDiskCache.cache(events);
         }
 
-        assertEquals(3, mHostFolder.listFiles().length);
+        assertEquals(2, mHostFolder.listFiles().length);
         final List<Event> events = mDiskCache.uncache();
-        assertEquals(8000, events.size());
+        assertEquals(20, events.size());
+
+        for (Event e : events.subList(0, 10)) {
+            assertTrue(e.getEncodedQuery().startsWith("set:2"));
+        }
+        for (Event e : events.subList(10, 20)) {
+            assertTrue(e.getEncodedQuery().startsWith("set:3"));
+        }
     }
 
     @Test
