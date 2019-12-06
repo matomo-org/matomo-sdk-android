@@ -5,5 +5,12 @@
     <string name="action_settings">Settings</string>
     <string name="track_screen_vew_button_label">Track Screen View</string>
     <string name="title_activity_settings">Settings</string>
+    <string name="action_dispatch_now">Dispatch now</string>
+    <string name="action_track_custom_vars">Track Custom Vars</string>
+    <string name="action_divide_by_zero">Divide by zero</string>
+    <string name="action_add_ecommerce_item">Add Ecommerce Item</string>
+    <string name="action_track_ecommerce_cart_update">Track Ecommerce Cart Update</string>
+    <string name="action_track_ecommerce_order">Track Ecommerce Order</string>
+    <string name="action_track_goal">Track Goal</string>
 
 </resources>
