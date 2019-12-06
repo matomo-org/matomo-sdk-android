@@ -37,7 +37,8 @@ public class EventDiskCacheTest extends BaseTest {
     private File mCacheFolder;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        super.setup();
         when(mTracker.getMatomo()).thenReturn(mMatomo);
         when(mMatomo.getContext()).thenReturn(mContext);
         mBaseCacheDir = new File("baseCacheDir");
@@ -55,7 +56,8 @@ public class EventDiskCacheTest extends BaseTest {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        super.tearDown();
         for (File file : mBaseCacheDir.listFiles()[0].listFiles()[0].listFiles()) {
             file.delete();
         }
@@ -280,5 +282,32 @@ public class EventDiskCacheTest extends BaseTest {
         final List<Event> events = mDiskCache.uncache();
         assertEquals(40000, events.size());
         assertEquals(0, mHostFolder.listFiles().length);
+    }
+
+    @Test
+    public void testOfflineMode_issue_271() {
+        when(mTracker.getOfflineCacheSize()).thenReturn(1024L);
+        when(mTracker.getOfflineCacheAge()).thenReturn(5184000L * 1000L);
+        mDiskCache = new EventDiskCache(mTracker);
+
+        // Hit limit
+        List<Event> batch1 = new ArrayList<>();
+        for (int k = 0; k < 14; k++) {
+            batch1.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
+        }
+        mDiskCache.cache(batch1);
+
+        final List<Event> events1 = mDiskCache.uncache();
+        assertEquals(14, events1.size());
+
+        // Hit limit again
+        List<Event> batch2 = new ArrayList<>();
+        for (int k = 0; k < 16; k++) {
+            batch2.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
+        }
+        mDiskCache.cache(batch2);
+
+        final List<Event> events2 = mDiskCache.uncache();
+        assertEquals(16, events2.size());
     }
 }

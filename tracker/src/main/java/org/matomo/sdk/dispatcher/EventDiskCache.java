@@ -1,9 +1,6 @@
 package org.matomo.sdk.dispatcher;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.matomo.sdk.Matomo;
 import org.matomo.sdk.Tracker;
 
@@ -22,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import timber.log.Timber;
 
 public class EventDiskCache {
@@ -127,8 +126,6 @@ public class EventDiskCache {
         List<Event> events = new ArrayList<>();
         if (!isCachingEnabled()) return events;
 
-        checkCacheLimits();
-
         long startTime = System.currentTimeMillis();
         while (!mEventContainer.isEmpty()) {
             File head = mEventContainer.poll();
@@ -137,6 +134,8 @@ public class EventDiskCache {
                 if (!head.delete()) Timber.tag(TAG).e("Failed to delete cache container %s", head.getPath());
             }
         }
+
+        checkCacheLimits();
 
         long stopTime = System.currentTimeMillis();
         Timber.tag(TAG).d("Uncaching of %d events took %dms", events.size(), (stopTime - startTime));
