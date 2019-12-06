@@ -1,85 +1,84 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                android:paddingBottom="@dimen/activity_vertical_margin"
-                tools:context="org.matomo.demo.DemoActivity">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context="org.matomo.demo.DemoActivity">
 
     <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/track_screen_vew_button_label"
-            android:id="@+id/trackMainScreenViewButton" android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true" android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Track Custom Vars"
-            android:id="@+id/trackCustomVarsButton" android:layout_below="@+id/trackMainScreenViewButton"
-            android:layout_alignParentLeft="true" android:layout_alignParentStart="true"
-            android:layout_alignRight="@+id/trackMainScreenViewButton"
-            android:layout_alignEnd="@+id/trackMainScreenViewButton"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Divide by zero"
-            android:id="@+id/raiseExceptionButton" android:layout_below="@+id/trackCustomVarsButton"
-            android:layout_alignParentLeft="true" android:layout_alignParentStart="true"
-            android:layout_alignRight="@+id/trackCustomVarsButton"
-            android:layout_alignEnd="@+id/trackCustomVarsButton"/>
-    <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Track Goal"
-            android:id="@+id/trackGoalButton"
-            android:layout_below="@+id/raiseExceptionButton" android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
-
-    <Button
+        android:id="@+id/trackMainScreenViewButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Add Ecommerce Item"
+        android:text="@string/track_screen_vew_button_label" />
+
+    <Button
+        android:id="@+id/trackDispatchNow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_dispatch_now" />
+
+    <Button
+        android:id="@+id/trackCustomVarsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_track_custom_vars" />
+
+    <Button
+        android:id="@+id/raiseExceptionButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_divide_by_zero" />
+
+    <Button
         android:id="@+id/addEcommerceItemButton"
-        android:layout_below="@+id/trackGoalButton" android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
-
-    <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Track Ecommerce Cart Update"
+        android:text="@string/action_add_ecommerce_item" />
+
+    <Button
         android:id="@+id/trackEcommerceCartUpdateButton"
-        android:layout_below="@+id/addEcommerceItemButton" android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
-
-    <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Track Ecommerce Order"
-        android:id="@+id/completeEcommerceOrderButton"
-        android:layout_below="@+id/trackEcommerceCartUpdateButton" android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:text="@string/action_track_ecommerce_cart_update" />
 
-    <EditText
+    <Button
+        android:id="@+id/completeEcommerceOrderButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_track_ecommerce_order" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/trackGoalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="number"
+            android:text="@string/action_track_goal" />
+
+        <EditText
+            android:id="@+id/goalTextEditView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:ems="10"
-            android:id="@+id/goalTextEditView" android:layout_below="@+id/raiseExceptionButton"
-            android:layout_toRightOf="@+id/trackGoalButton" android:layout_toEndOf="@+id/trackGoalButton"
-            android:layout_alignBottom="@+id/trackGoalButton" android:text="1" android:layout_toLeftOf="@+id/textView"
-            android:layout_toStartOf="@+id/textView" android:editable="true"
-            android:layout_marginRight="0dp"/>
-    <TextView
+            android:hint="1"
+            android:inputType="number"
+            android:text="1"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="$ Revenue"
-            android:id="@+id/textView"
-            android:layout_alignParentRight="true" android:layout_alignParentEnd="true"
-            android:layout_alignBottom="@+id/goalTextEditView" android:layout_below="@+id/raiseExceptionButton"/>
-</RelativeLayout>
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+</LinearLayout>
