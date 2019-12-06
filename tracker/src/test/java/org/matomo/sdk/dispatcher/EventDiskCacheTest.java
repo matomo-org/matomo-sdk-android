@@ -293,28 +293,29 @@ public class EventDiskCacheTest extends BaseTest {
 
     @Test
     public void testOfflineMode_issue_271() {
-        when(mTracker.getOfflineCacheSize()).thenReturn(1024L);
-        when(mTracker.getOfflineCacheAge()).thenReturn(5184000L * 1000L);
+        when(mTracker.getOfflineCacheSize()).thenReturn(4096L);
         mDiskCache = new EventDiskCache(mTracker);
 
         // Hit limit
-        List<Event> batch1 = new ArrayList<>();
-        for (int k = 0; k < 14; k++) {
-            batch1.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
+        for (int i = 0; i < 2; i++) {
+            List<Event> batch1 = new ArrayList<>();
+            for (int k = 0; k < 100; k++) {
+                batch1.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
+            }
+            mDiskCache.cache(batch1);
         }
-        mDiskCache.cache(batch1);
 
         final List<Event> events1 = mDiskCache.uncache();
-        assertEquals(14, events1.size());
+        assertEquals(100, events1.size());
 
         // Hit limit again
         List<Event> batch2 = new ArrayList<>();
-        for (int k = 0; k < 16; k++) {
+        for (int k = 0; k < 100; k++) {
             batch2.add(new Event(System.nanoTime(), UUID.randomUUID().toString()));
         }
         mDiskCache.cache(batch2);
 
         final List<Event> events2 = mDiskCache.uncache();
-        assertEquals(16, events2.size());
+        assertEquals(100, events2.size());
     }
 }
