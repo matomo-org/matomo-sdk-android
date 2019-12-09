@@ -24,6 +24,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         String testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         testIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
+        Thread.sleep(250);
         String referrerDataFromPreferences = getMatomo().getPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData1, referrerDataFromPreferences);
         assertTrue(testIntent.getBooleanExtra("forwarded", false));
@@ -33,12 +34,14 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         testIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData2);
 
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
+        Thread.sleep(250);
         referrerDataFromPreferences = getMatomo().getPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData1, referrerDataFromPreferences);
 
 
         testIntent.putExtra("forwarded", false);
         receiver.onReceive(Robolectric.application.getApplicationContext(), testIntent);
+        Thread.sleep(250);
         referrerDataFromPreferences = getMatomo().getPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertEquals(testReferrerData2, referrerDataFromPreferences);
     }
@@ -52,6 +55,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         String testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         badIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), badIntent);
+        Thread.sleep(250);
         String referrerDataFromPreferences = getMatomo().getPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertNull(referrerDataFromPreferences);
 
@@ -62,6 +66,7 @@ public class InstallReferrerReceiverTest extends DefaultTestCase {
         testReferrerData1 = "utm_source=test_source&utm_medium=test_medium&utm_term=test_term&utm_content=test_content&utm_campaign=test_name";
         nullIntent.putExtra(InstallReferrerReceiver.ARG_KEY_GPLAY_REFERRER, testReferrerData1);
         receiver.onReceive(Robolectric.application.getApplicationContext(), nullIntent);
+        Thread.sleep(250);
         referrerDataFromPreferences = getMatomo().getPreferences().getString(InstallReferrerReceiver.PREF_KEY_INSTALL_REFERRER_EXTRAS, null);
         assertNull(referrerDataFromPreferences);
     }
