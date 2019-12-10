@@ -123,6 +123,7 @@ public class DefaultDispatcher implements Dispatcher {
                 mRunning = true;
                 Thread thread = new Thread(mLoop);
                 thread.setPriority(Thread.MIN_PRIORITY);
+                thread.setName("Matomo-default-dispatcher");
                 mDispatchThread = thread;
                 thread.start();
                 return true;
