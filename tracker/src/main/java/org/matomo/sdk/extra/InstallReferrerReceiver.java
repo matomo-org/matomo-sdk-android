@@ -3,7 +3,6 @@ package org.matomo.sdk.extra;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 
 import org.matomo.sdk.Matomo;
 
@@ -34,12 +33,15 @@ public class InstallReferrerReceiver extends BroadcastReceiver {
             Timber.tag(TAG).d("Dropping forwarded intent");
             return;
         }
-        SharedPreferences preferences = Matomo.getInstance(context.getApplicationContext()).getPreferences();
         if (intent.getAction().equals(REFERRER_SOURCE_GPLAY)) {
             String referrer = intent.getStringExtra(ARG_KEY_GPLAY_REFERRER);
             if (referrer != null) {
-                preferences.edit().putString(PREF_KEY_INSTALL_REFERRER_EXTRAS, referrer).apply();
-                Timber.tag(TAG).d("Stored Google Play referrer extras: %s", referrer);
+                final PendingResult result = goAsync();
+                new Thread(() -> {
+                    Matomo.getInstance(context.getApplicationContext()).getPreferences().edit().putString(PREF_KEY_INSTALL_REFERRER_EXTRAS, referrer).apply();
+                    Timber.tag(TAG).d("Stored Google Play referrer extras: %s", referrer);
+                    result.finish();
+                }).start();
             }
         }
         // Forward to other possible recipients
