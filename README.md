@@ -36,7 +36,9 @@ import org.matomo.sdk.TrackerBuilder;
 public class YourApplication extends Application {
     private Tracker tracker;
     public synchronized Tracker getTracker() {
-        if (tracker == null) tracker = TrackerBuilder.createDefault("http://domain.tld/matomo.php", 1);
+        if (tracker == null){
+            tracker = TrackerBuilder.createDefault("http://domain.tld/matomo.php", 1).build(Matomo.getInstance(this));
+        }
         return tracker;
     }
 }
