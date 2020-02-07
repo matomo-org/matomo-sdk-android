@@ -46,7 +46,7 @@ public class Matomo {
         return sInstance;
     }
 
-    private Matomo(Context context) {
+    protected Matomo(Context context) {
         mContext = context.getApplicationContext();
         mBasePreferences = context.getSharedPreferences(BASE_PREFERENCE_FILE, Context.MODE_PRIVATE);
     }
