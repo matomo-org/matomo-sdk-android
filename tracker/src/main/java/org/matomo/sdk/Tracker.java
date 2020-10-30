@@ -16,7 +16,7 @@ import org.matomo.sdk.dispatcher.Dispatcher;
 import org.matomo.sdk.dispatcher.Packet;
 import org.matomo.sdk.tools.Objects;
 
-import java.text.SimpleDateFormat;
+//import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -415,7 +415,7 @@ public class Tracker {
         trackMe.trySet(QueryParams.RECORD, DEFAULT_RECORD_VALUE);
         trackMe.trySet(QueryParams.API_VERSION, DEFAULT_API_VERSION_VALUE);
         trackMe.trySet(QueryParams.RANDOM_NUMBER, mRandomAntiCachingValue.nextInt(100000));
-        trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ", Locale.US).format(new Date()));
+        trackMe.trySet(QueryParams.DATETIME_OF_REQUEST, System.currentTimeMillis());
         trackMe.trySet(QueryParams.SEND_IMAGE, "0");
 
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
