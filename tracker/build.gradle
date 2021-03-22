@@ -127,8 +127,8 @@ ext {
 
     libraryDescription = 'SDK for Android to measure your apps with Matomo'
 
-    siteUrl = 'https://github.com/matomo/matomo-sdk-android'
-    gitUrl = 'https://github.com/matomo/matomo-sdk-android.git'
+    siteUrl = 'https://github.com/matomo-org/matomo-sdk-android'
+    gitUrl = 'https://github.com/matomo-org/matomo-sdk-android.git'
 
     libraryVersion = myVersionName
 
@@ -137,7 +137,7 @@ ext {
     developerEmail = 'darken@darken.eu'
 
     licenseName = 'BSD-3 Clause'
-    licenseUrl = 'https://github.com/matomo/matomo-sdk-android/blob/master/LICENSE'
+    licenseUrl = 'https://github.com/matomo-org/matomo-sdk-android/blob/master/LICENSE'
     allLicenses = ["BSD 3-Clause"]
 }
 if (credentialsFile.canRead()) {
