@@ -379,24 +379,25 @@ public class Tracker {
         long visitCount;
         long previousVisit;
 
+        SharedPreferences prefs = getPreferences();
         // Protected against Trackers on other threads trying to do the same thing.
         // This works because they would use the same preference object.
-        synchronized (getPreferences()) {
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (prefs) {
+            SharedPreferences.Editor editor = prefs.edit();
             visitCount = 1 + getPreferences().getLong(PREF_KEY_TRACKER_VISITCOUNT, 0);
-            getPreferences().edit().putLong(PREF_KEY_TRACKER_VISITCOUNT, visitCount).apply();
-        }
+            editor.putLong(PREF_KEY_TRACKER_VISITCOUNT, visitCount);
 
-        synchronized (getPreferences()) {
-            firstVisitTime = getPreferences().getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
+            firstVisitTime = prefs.getLong(PREF_KEY_TRACKER_FIRSTVISIT, -1);
             if (firstVisitTime == -1) {
                 firstVisitTime = System.currentTimeMillis() / 1000;
-                getPreferences().edit().putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime).apply();
+                editor.putLong(PREF_KEY_TRACKER_FIRSTVISIT, firstVisitTime);
             }
-        }
 
-        synchronized (getPreferences()) {
-            previousVisit = getPreferences().getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
-            getPreferences().edit().putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000).apply();
+            previousVisit = prefs.getLong(PREF_KEY_TRACKER_PREVIOUSVISIT, -1);
+            editor.putLong(PREF_KEY_TRACKER_PREVIOUSVISIT, System.currentTimeMillis() / 1000);
+
+            editor.apply();
         }
 
         // trySet because the developer could have modded these after creating the Tracker
