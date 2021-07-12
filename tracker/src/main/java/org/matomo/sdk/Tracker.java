@@ -8,12 +8,14 @@
 package org.matomo.sdk;
 
 import android.content.SharedPreferences;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import org.matomo.sdk.dispatcher.DispatchMode;
 import org.matomo.sdk.dispatcher.Dispatcher;
 import org.matomo.sdk.dispatcher.Packet;
+import org.matomo.sdk.tools.DeviceHelper;
 import org.matomo.sdk.tools.Objects;
 
 import java.text.SimpleDateFormat;
@@ -100,13 +102,15 @@ public class Tracker {
 
         mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
 
+        DeviceHelper deviceHelper = mMatomo.getDeviceHelper();
+
         String resolution = DEFAULT_UNKNOWN_VALUE;
-        int[] res = mMatomo.getDeviceHelper().getResolution();
+        int[] res = deviceHelper.getResolution();
         if (res != null) resolution = String.format("%sx%s", res[0], res[1]);
         mDefaultTrackMe.set(QueryParams.SCREEN_RESOLUTION, resolution);
 
-        mDefaultTrackMe.set(QueryParams.USER_AGENT, mMatomo.getDeviceHelper().getUserAgent());
-        mDefaultTrackMe.set(QueryParams.LANGUAGE, mMatomo.getDeviceHelper().getUserLanguage());
+        mDefaultTrackMe.set(QueryParams.USER_AGENT, deviceHelper.getUserAgent());
+        mDefaultTrackMe.set(QueryParams.LANGUAGE, deviceHelper.getUserLanguage());
         mDefaultTrackMe.set(QueryParams.URL_PATH, config.getApplicationBaseUrl());
     }
 
