@@ -405,6 +405,8 @@ public class Tracker {
         trackMe.trySet(QueryParams.FIRST_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.FIRST_VISIT_TIMESTAMP));
         trackMe.trySet(QueryParams.TOTAL_NUMBER_OF_VISITS, mDefaultTrackMe.get(QueryParams.TOTAL_NUMBER_OF_VISITS));
         trackMe.trySet(QueryParams.PREVIOUS_VISIT_TIMESTAMP, mDefaultTrackMe.get(QueryParams.PREVIOUS_VISIT_TIMESTAMP));
+
+        injectFingerprintParams(trackMe);
     }
 
     /**
@@ -438,17 +440,27 @@ public class Tracker {
         mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
         trackMe.set(QueryParams.URL_PATH, urlPath);
 
-        if (mLastEvent == null || !Objects.equals(trackMe.get(QueryParams.USER_ID), mLastEvent.get(QueryParams.USER_ID))) {
+        if (mLastEvent != null && !Objects.equals(trackMe.get(QueryParams.USER_ID), mLastEvent.get(QueryParams.USER_ID))) {
             // https://github.com/matomo-org/matomo-sdk-android/issues/209
-            trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
-            trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
-            trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
+            injectFingerprintParams(trackMe);
         }
+    }
+
+    /**
+     * These parameters are generally only needed as part of the session start (injectInitialParams)
+     * However they are also used for fingerprint to track User ID changes. Therefor they are also
+     * injected as part of injectBaseParam when the USER_ID changes
+     */
+    private void injectFingerprintParams(TrackMe trackMe) {
+        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
+        trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
+        trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
     }
 
     public Tracker track(TrackMe trackMe) {
         synchronized (mTrackingLock) {
-            final boolean newSession = System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
+            final boolean newSession = trackMe.has(QueryParams.SESSION_START) ||
+                    System.currentTimeMillis() - mSessionStartTime > mSessionTimeout;
 
             if (newSession) {
                 mSessionStartTime = System.currentTimeMillis();
