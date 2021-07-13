@@ -210,7 +210,8 @@ public class EventDiskCache {
             }
         } catch (IOException e) {
             Timber.tag(TAG).e(e);
-            newFile.deleteOnExit();
+            //noinspection ResultOfMethodCallIgnored
+            newFile.delete();
             return null;
         } finally {
             if (out != null) {
