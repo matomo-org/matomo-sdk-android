@@ -58,8 +58,9 @@ public class EventDiskCacheTest extends BaseTest {
     @After
     public void tearDown() throws Exception {
         super.tearDown();
-        for (File file : mBaseCacheDir.listFiles()[0].listFiles()[0].listFiles()) {
-            file.delete();
+        if (mHostFolder.exists()) {
+            for (File file : mHostFolder.listFiles())
+                file.delete();
         }
         mHostFolder.delete();
         mCacheFolder.delete();

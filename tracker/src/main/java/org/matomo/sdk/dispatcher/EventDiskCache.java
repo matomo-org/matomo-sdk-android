@@ -50,8 +50,6 @@ public class EventDiskCache {
                 mCurrentSize += container.length();
                 mEventContainer.add(container);
             }
-        } else {
-            if (!mCacheDir.mkdirs()) Timber.tag(TAG).e("Failed to make disk-cache dir %s", mCacheDir);
         }
     }
 
@@ -194,6 +192,9 @@ public class EventDiskCache {
     private File writeEventFile(@NonNull List<Event> events) {
         if (events.isEmpty()) return null;
 
+        if (!mCacheDir.exists() && !mCacheDir.mkdirs())
+            Timber.tag(TAG).e("Failed to make disk-cache dir '%s'", mCacheDir);
+
         File newFile = new File(mCacheDir, "events_" + events.get(events.size() - 1).getTimeStamp());
         FileWriter out = null;
         boolean dataWritten = false;
@@ -209,7 +210,8 @@ public class EventDiskCache {
             }
         } catch (IOException e) {
             Timber.tag(TAG).e(e);
-            newFile.deleteOnExit();
+            //noinspection ResultOfMethodCallIgnored
+            newFile.delete();
             return null;
         } finally {
             if (out != null) {
