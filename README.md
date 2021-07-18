@@ -2,7 +2,7 @@ Matomo SDK for Android
 ========================
 
 [![Download](https://api.bintray.com/packages/darken/maven/matomo-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/matomo-sdk-android/_latestVersion)
-[![Build](https://travis-ci.org/matomo-org/matomo-sdk-android.svg?branch=master)](https://travis-ci.org/matomo-org/matomo-sdk-android)
+![Build](https://github.com/matomo-org/matomo-sdk-android/actions/workflows/pull-request-ci.yml/badge.svg)
 [![Codecov](https://codecov.io/gh/matomo-org/matomo-sdk-android/branch/master/graph/badge.svg)](https://codecov.io/gh/matomo-org/matomo-sdk-android?branch=master)
 
 Welcome to the [Matomo](http://matomo.org) Tracking SDK for Android. This library helps you send analytics data from Android apps to Matomo instances. Until v4 this library was known as **Piwik** Tracking SDK for Android.
