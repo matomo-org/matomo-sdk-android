@@ -76,14 +76,14 @@ makeJar.dependsOn(clearJar, build)
 /**
  * Coverage
  */
-apply plugin: "com.vanniktech.android.junit.jacoco"
+apply plugin: 'com.dicedmelon.gradle.jacoco-android'
 
-junitJacoco {
-    jacocoVersion = '0.8.2'
-    ignoreProjects = []
-    excludes = []
-    includeNoLocationClasses = false
-    includeInstrumentationCoverageInMergedReport = false
+jacoco {
+    toolVersion = '0.8.4'
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
 }
 
 /**

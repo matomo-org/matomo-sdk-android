@@ -26,7 +26,7 @@ jobs:
       - name: Run tests
         run: ./gradlew test
       - name: Jacoco
-        run: ./gradlew :tracker:jacocoTestReportDebug
+        run: ./gradlew :tracker:jacocoTestReport
       - name: Codecov
         run: bash <(curl -s https://codecov.io/bash)
   Check:
