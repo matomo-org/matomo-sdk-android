@@ -654,7 +654,6 @@ public class TrackerTest {
                     assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) != null);
                     assertTrue(out.get(SESSION_START) != null);
                 } else {
-                    assertTrue(out.get(QueryParams.LANGUAGE) == null);
                     assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) == null);
                     assertTrue(out.get(SESSION_START) == null);
                 }
