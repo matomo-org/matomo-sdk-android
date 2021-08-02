@@ -23,9 +23,9 @@ import org.matomo.sdk.dispatcher.PacketFactory;
 import org.matomo.sdk.dispatcher.PacketSender;
 import org.matomo.sdk.extra.TrackHelper;
 import org.matomo.sdk.tools.Connectivity;
-import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
+import androidx.test.core.app.ApplicationProvider;
 import testhelpers.BaseTest;
 import testhelpers.FullEnvTestRunner;
 import testhelpers.MatomoTestApplication;
@@ -44,14 +44,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@Config(emulateSdk = 18, manifest = Config.NONE)
+@Config(sdk = 28, manifest = Config.NONE, application = MatomoTestApplication.class)
 @RunWith(FullEnvTestRunner.class)
 public class MatomoTest extends BaseTest {
 
     @Test
     public void testNewTracker() {
-        MatomoTestApplication app = (MatomoTestApplication) Robolectric.application;
-        Tracker tracker = app.onCreateTrackerConfig().build(Matomo.getInstance(Robolectric.application));
+        MatomoTestApplication app = ApplicationProvider.getApplicationContext();
+        Tracker tracker = app.onCreateTrackerConfig().build(Matomo.getInstance(ApplicationProvider.getApplicationContext()));
         assertNotNull(tracker);
         assertEquals(app.onCreateTrackerConfig().getApiUrl(), tracker.getAPIUrl());
         assertEquals(app.onCreateTrackerConfig().getSiteId(), tracker.getSiteId());
@@ -59,7 +59,7 @@ public class MatomoTest extends BaseTest {
 
     @Test
     public void testNormalTracker() {
-        Matomo matomo = Matomo.getInstance(Robolectric.application);
+        Matomo matomo = Matomo.getInstance(ApplicationProvider.getApplicationContext());
         Tracker tracker = new TrackerBuilder("http://test/matomo.php", 1, "Default Tracker").build(matomo);
         assertEquals("http://test/matomo.php", tracker.getAPIUrl());
         assertEquals(1, tracker.getSiteId());
@@ -74,7 +74,7 @@ public class MatomoTest extends BaseTest {
     @SuppressLint("InlinedApi")
     @Test
     public void testLowMemoryDispatch() {
-        MatomoTestApplication app = (MatomoTestApplication) Robolectric.application;
+        MatomoTestApplication app = ApplicationProvider.getApplicationContext();
         final PacketSender packetSender = mock(PacketSender.class);
         app.getMatomo().setDispatcherFactory(new DefaultDispatcherFactory() {
             @Override
@@ -111,7 +111,7 @@ public class MatomoTest extends BaseTest {
         Tracker tracker3 = mock(Tracker.class);
         when(tracker3.getName()).thenReturn("1");
 
-        final Matomo matomo = Matomo.getInstance(Robolectric.application);
+        final Matomo matomo = Matomo.getInstance(ApplicationProvider.getApplicationContext());
         assertEquals(matomo.getTrackerPreferences(tracker1), matomo.getTrackerPreferences(tracker1));
         assertNotEquals(matomo.getTrackerPreferences(tracker1), matomo.getTrackerPreferences(tracker2));
         assertEquals(matomo.getTrackerPreferences(tracker1), matomo.getTrackerPreferences(tracker3));
@@ -119,7 +119,7 @@ public class MatomoTest extends BaseTest {
 
     @Test
     public void testSetDispatcherFactory() {
-        final Matomo matomo = Matomo.getInstance(Robolectric.application);
+        final Matomo matomo = Matomo.getInstance(ApplicationProvider.getApplicationContext());
         Dispatcher dispatcher = mock(Dispatcher.class);
         DispatcherFactory factory = mock(DispatcherFactory.class);
         when(factory.build(any(Tracker.class))).thenReturn(dispatcher);
