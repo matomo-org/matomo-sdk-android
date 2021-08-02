@@ -1,7 +1,7 @@
 Matomo SDK for Android
 ========================
 
-[![Download](https://api.bintray.com/packages/darken/maven/matomo-sdk-android/images/download.svg) ](https://bintray.com/darken/maven/matomo-sdk-android/_latestVersion)
+[![](https://jitpack.io/v/matomo-org/matomo-sdk-android.svg)](https://jitpack.io/#matomo-org/matomo-sdk-android)
 ![Build](https://github.com/matomo-org/matomo-sdk-android/actions/workflows/pull-request-ci.yml/badge.svg)
 [![Codecov](https://codecov.io/gh/matomo-org/matomo-sdk-android/branch/master/graph/badge.svg)](https://codecov.io/gh/matomo-org/matomo-sdk-android?branch=master)
 
@@ -25,8 +25,15 @@ For the not so quick start, [see here](https://github.com/matomo-org/matomo-sdk-
 
 * [Setup Matomo](https://matomo.org/docs/installation/) on your server.
 * Include the library in your app modules `build.gradle` file
+  via [JitPack](https://jitpack.io/#matomo-org/matomo-sdk-android)
+
 ```groovy
-    implementation 'org.matomo.sdk:tracker:<latest-version>'
+repositories {
+  maven { url 'https://jitpack.io' }
+}
+dependencies {
+  implementation 'org.matomo.sdk:tracker:<latest-version>'
+}
 ```
 
 * Now you need to initialize your `Tracker`. It's recommended to store it as singleton. You can extend `MatomoApplication` or create and store a `Tracker` instance yourself:
