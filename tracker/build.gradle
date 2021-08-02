@@ -12,8 +12,6 @@ android {
     defaultConfig {
         minSdkVersion project.ext.globalMinSdkVersion
         targetSdkVersion project.ext.globalTargetSdkVersion
-        versionCode myVersionCode
-        versionName myVersionName
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
