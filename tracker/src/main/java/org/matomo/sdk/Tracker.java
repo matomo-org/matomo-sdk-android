@@ -9,14 +9,10 @@ package org.matomo.sdk;
 
 import android.content.SharedPreferences;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-
 import org.matomo.sdk.dispatcher.DispatchMode;
 import org.matomo.sdk.dispatcher.Dispatcher;
 import org.matomo.sdk.dispatcher.Packet;
 import org.matomo.sdk.tools.DeviceHelper;
-import org.matomo.sdk.tools.Objects;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -27,6 +23,8 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import timber.log.Timber;
 
 
@@ -426,6 +424,10 @@ public class Tracker {
         trackMe.trySet(QueryParams.VISITOR_ID, mDefaultTrackMe.get(QueryParams.VISITOR_ID));
         trackMe.trySet(QueryParams.USER_ID, mDefaultTrackMe.get(QueryParams.USER_ID));
 
+        trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
+        trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
+        trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
+
         String urlPath = trackMe.get(QueryParams.URL_PATH);
         if (urlPath == null) {
             urlPath = mDefaultTrackMe.get(QueryParams.URL_PATH);
@@ -442,13 +444,6 @@ public class Tracker {
         // https://github.com/matomo-org/matomo-sdk-android/issues/92
         mDefaultTrackMe.set(QueryParams.URL_PATH, urlPath);
         trackMe.set(QueryParams.URL_PATH, urlPath);
-
-        if (mLastEvent == null || !Objects.equals(trackMe.get(QueryParams.USER_ID), mLastEvent.get(QueryParams.USER_ID))) {
-            // https://github.com/matomo-org/matomo-sdk-android/issues/209
-            trackMe.trySet(QueryParams.SCREEN_RESOLUTION, mDefaultTrackMe.get(QueryParams.SCREEN_RESOLUTION));
-            trackMe.trySet(QueryParams.USER_AGENT, mDefaultTrackMe.get(QueryParams.USER_AGENT));
-            trackMe.trySet(QueryParams.LANGUAGE, mDefaultTrackMe.get(QueryParams.LANGUAGE));
-        }
     }
 
     public Tracker track(TrackMe trackMe) {
