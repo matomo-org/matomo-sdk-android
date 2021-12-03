@@ -32,7 +32,7 @@ repositories {
   maven { url 'https://jitpack.io' }
 }
 dependencies {
-  implementation 'org.matomo.sdk:tracker:<latest-version>'
+  implementation 'com.github.matomo-org:matomo-sdk-android:<latest-version>'
 }
 ```
 
