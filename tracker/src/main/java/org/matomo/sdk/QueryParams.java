@@ -36,7 +36,7 @@ public enum QueryParams {
     //Recommended parameters
     /**
      * The title of the action being tracked.<p>
-     * It is possible to <a href="http://matomo.org/faq/how-to/#faq_62">use slashes / to set one or several categories for this action.</a>
+     * It is possible to <a href="http://matomo.org/faq/how-to/faq_62">use slashes / to set one or several categories for this action.</a>
      * For example, Help / Feedback will create the Action Feedback in the category Help.
      * <p>
      * (recommended)
@@ -132,7 +132,7 @@ public enum QueryParams {
     USER_AGENT("ua"),
     /**
      * An override value for the Accept-Language HTTP header field.<p>
-     * This value is used to detect the visitor's country if <a href="http://matomo.org/faq/troubleshooting/#faq_65">GeoIP</a> is not enabled.
+     * This value is used to detect the visitor's country if <a href="http://matomo.org/faq/troubleshooting/faq_65">GeoIP</a> is not enabled.
      */
     LANGUAGE("lang"),
     /**
@@ -196,7 +196,7 @@ public enum QueryParams {
      * The expected format is: 2011-04-05 00:11:42 (remember to URL encode the value!).
      * The datetime must be sent in UTC timezone.
      * Events can only be backdated for a maximum time of 24h.
-     * Note: if you record data in the past, you will need to <a href="http://matomo.org/faq/how-to/#faq_59">force Matomo to re-process reports for the past dates.</a>
+     * Note: if you record data in the past, you will need to <a href="http://matomo.org/faq/how-to/faq_59">force Matomo to re-process reports for the past dates.</a>
      */
     DATETIME_OF_REQUEST("cdt"),
 
