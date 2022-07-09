@@ -4,7 +4,6 @@ apply plugin: 'maven-publish'
 def versionMajor = 4
 def versionMinor = 1
 def versionPatch = 4
-def myVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
 
 android {
