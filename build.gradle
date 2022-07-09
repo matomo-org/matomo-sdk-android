@@ -18,7 +18,6 @@ allprojects {
         globalMinSdkVersion = 14
         globalTargetSdkVersion = 28
         globalCompileSdkVersion = 28
-        supportLibVersion = '28.0.0'
         timberVersion = '4.7.1'
     }
 }
