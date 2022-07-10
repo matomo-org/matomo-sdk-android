@@ -1,11 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
-def versionMajor = 4
-def versionMinor = 1
-def versionPatch = 4
-def myVersionName = "${versionMajor}.${versionMinor}.${versionPatch}"
-
 android {
     compileSdkVersion project.ext.globalCompileSdkVersion
 
@@ -89,7 +84,7 @@ afterEvaluate {
 
                 groupId = 'org.matomo.sdk'
                 artifactId = 'tracker'
-                version = myVersionName
+                version = getTag()
 
                 pom {
                     name = 'Matomo SDK for Android'
@@ -106,4 +101,10 @@ afterEvaluate {
             }
         }
     }
+}
+
+@SuppressWarnings('unused')
+static def getTag() {
+    def process = "git describe --tags".execute()
+    return process.text.toString().trim()
 }
