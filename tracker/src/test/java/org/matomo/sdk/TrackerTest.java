@@ -34,6 +34,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.matomo.sdk.QueryParams.FIRST_VISIT_TIMESTAMP;
 import static org.matomo.sdk.QueryParams.SESSION_START;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,9 +57,6 @@ public class TrackerTest {
     @Mock DeviceHelper mDeviceHelper;
     SharedPreferences mTrackerPreferences = new TestPreferences();
     SharedPreferences mPreferences = new TestPreferences();
-    private final String mApiUrl = "http://example.com";
-    private final int mSiteId = 11;
-    private final String mTrackerName = "Default Tracker";
     @Mock TrackerBuilder mTrackerBuilder;
 
     @Before
@@ -74,8 +72,11 @@ public class TrackerTest {
         when(mDeviceHelper.getUserAgent()).thenReturn("aUserAgent");
         when(mDeviceHelper.getUserLanguage()).thenReturn("en");
 
+        String mApiUrl = "http://example.com";
         when(mTrackerBuilder.getApiUrl()).thenReturn(mApiUrl);
+        int mSiteId = 11;
         when(mTrackerBuilder.getSiteId()).thenReturn(mSiteId);
+        String mTrackerName = "Default Tracker";
         when(mTrackerBuilder.getTrackerName()).thenReturn(mTrackerName);
         when(mTrackerBuilder.getApplicationBaseUrl()).thenReturn("http://this.is.our.package/");
 
@@ -302,7 +303,7 @@ public class TrackerTest {
         TrackHelper.track().screen("test/test").title("Test title").with(tracker);
         verify(mDispatcher).submit(mCaptor.capture());
         validateDefaultQuery(mCaptor.getValue());
-        assertTrue(mCaptor.getValue().get(QueryParams.URL_PATH).equals("http://my-domain.com/test/test"));
+        assertEquals("http://my-domain.com/test/test", mCaptor.getValue().get(QueryParams.URL_PATH));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -441,7 +442,7 @@ public class TrackerTest {
     @Test
     public void testSetNewSessionRaceCondition() {
         for (int retry = 0; retry < 5; retry++) {
-            final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<TrackMe>());
+            final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<>());
             doAnswer(invocation -> {
                 trackMes.add(invocation.getArgument(0));
                 return null;
@@ -501,7 +502,7 @@ public class TrackerTest {
         tracker.setSessionTimeout(60000);
         TrackHelper.track().screen("test").with(tracker);
         verify(mDispatcher, times(3)).submit(mCaptor.capture());
-        assertEquals(null, mCaptor.getValue().get(QueryParams.SESSION_START));
+        assertNull(mCaptor.getValue().get(SESSION_START));
     }
 
     @Test
@@ -520,8 +521,8 @@ public class TrackerTest {
         Tracker tracker3 = new Tracker(mMatomo, builder3);
 
         assertNotNull(tracker);
-        assertFalse(tracker.equals(tracker2));
-        assertTrue(tracker.equals(tracker3));
+        assertNotEquals(tracker, tracker2);
+        assertEquals(tracker, tracker3);
     }
 
     @Test
@@ -560,7 +561,7 @@ public class TrackerTest {
         trackMe = new TrackMe();
         tracker.getDefaultTrackMe().set(QueryParams.USER_AGENT, null);
         tracker.track(trackMe);
-        assertEquals(null, trackMe.get(QueryParams.USER_AGENT));
+        assertNull(trackMe.get(QueryParams.USER_AGENT));
     }
 
     @Test
@@ -620,7 +621,7 @@ public class TrackerTest {
 
     @Test
     public void testSessionStartRaceCondition() throws Exception {
-        final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<TrackMe>());
+        final List<TrackMe> trackMes = Collections.synchronizedList(new ArrayList<>());
         doAnswer(invocation -> {
             trackMes.add(invocation.getArgument(0));
             return null;
@@ -643,19 +644,19 @@ public class TrackerTest {
                         countDownLatch.countDown();
                     } catch (Exception e) {
                         e.printStackTrace();
-                        assertFalse(true);
+                        fail();
                     }
                 }).start();
             }
             countDownLatch.await();
             for (TrackMe out : trackMes) {
                 if (trackMes.indexOf(out) == 0) {
-                    assertTrue(i + "#" + out.toMap().size(), out.get(QueryParams.LANGUAGE) != null);
-                    assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) != null);
-                    assertTrue(out.get(SESSION_START) != null);
+                    assertNotNull(i + "#" + out.toMap().size(), out.get(QueryParams.LANGUAGE));
+                    assertNotNull(out.get(FIRST_VISIT_TIMESTAMP));
+                    assertNotNull(out.get(SESSION_START));
                 } else {
-                    assertTrue(out.get(QueryParams.FIRST_VISIT_TIMESTAMP) == null);
-                    assertTrue(out.get(SESSION_START) == null);
+                    assertNull(out.get(FIRST_VISIT_TIMESTAMP));
+                    assertNull(out.get(SESSION_START));
                 }
             }
         }
@@ -666,12 +667,12 @@ public class TrackerTest {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         int threadCount = 100;
         final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-        final List<Long> firstVisitTimes = Collections.synchronizedList(new ArrayList<Long>());
+        final List<Long> firstVisitTimes = Collections.synchronizedList(new ArrayList<>());
         for (int i = 0; i < threadCount; i++) {
             new Thread(() -> {
                 TestHelper.sleep(new Random().nextInt(20 - 0) + 0);
                 TrackHelper.track().event("TestCategory", "TestAction").with(tracker);
-                long firstVisit = Long.valueOf(tracker.getDefaultTrackMe().get(FIRST_VISIT_TIMESTAMP));
+                long firstVisit = Long.parseLong(tracker.getDefaultTrackMe().get(FIRST_VISIT_TIMESTAMP));
                 firstVisitTimes.add(firstVisit);
                 countDownLatch.countDown();
             }).start();
@@ -695,7 +696,7 @@ public class TrackerTest {
 
         }
         assertFalse(previousVisitTimes.contains(0L));
-        Long lastTime = 0L;
+        long lastTime = 0L;
         for (Long time : previousVisitTimes) {
             assertTrue(lastTime < time);
             lastTime = time;

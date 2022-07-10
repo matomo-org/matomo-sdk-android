@@ -28,6 +28,7 @@ import testhelpers.TestHelper;
 import testhelpers.TestPreferences;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -62,7 +63,7 @@ public class DownloadTrackerTest extends BaseTest {
     }
 
     @Test
-    public void testTrackAppDownload() throws Exception {
+    public void testTrackAppDownload() {
         DownloadTracker downloadTracker = new DownloadTracker(mTracker);
         downloadTracker.trackOnce(new TrackMe(), new DownloadTracker.Extra.None());
         verify(mTracker).track(mCaptor.capture());
@@ -74,7 +75,7 @@ public class DownloadTrackerTest extends BaseTest {
     }
 
     @Test
-    public void testTrackIdentifier() throws Exception {
+    public void testTrackIdentifier() {
         ApplicationInfo applicationInfo = new ApplicationInfo();
         mPackageInfo.applicationInfo = applicationInfo;
         applicationInfo.sourceDir = UUID.randomUUID().toString();
@@ -110,17 +111,17 @@ public class DownloadTrackerTest extends BaseTest {
         assertEquals(3, m.groupCount());
         assertEquals("package", m.group(1));
         assertEquals(123, Integer.parseInt(m.group(2)));
-        assertEquals(null, m.group(3));
+        assertNull(m.group(3));
         assertEquals("http://installer", mCaptor.getValue().get(QueryParams.REFERRER));
         //noinspection ResultOfMethodCallIgnored
         new File(applicationInfo.sourceDir).delete();
     }
 
     // http://org.matomo.sdk.test:1/some.package or http://org.matomo.sdk.test:1
-    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("(?:https?:\\/\\/)([\\w.]+)(?::)([\\d]+)(?:(?:\\/)([\\W\\w]+))?");
+    private final Pattern REGEX_DOWNLOADTRACK = Pattern.compile("https?://([\\w.]+):([\\d]+)(?:/([\\W\\w]+))?");
 
     @Test
-    public void testTrackReferrer() throws Exception {
+    public void testTrackReferrer() {
         DownloadTracker downloadTracker = new DownloadTracker(mTracker);
         downloadTracker.trackNewAppDownload(new TrackMe(), new DownloadTracker.Extra.None());
         verify(mTracker).track(mCaptor.capture());
@@ -131,7 +132,7 @@ public class DownloadTrackerTest extends BaseTest {
         assertEquals(3, m.groupCount());
         assertEquals("package", m.group(1));
         assertEquals(123, Integer.parseInt(m.group(2)));
-        assertEquals(null, m.group(3));
+        assertNull(m.group(3));
         assertEquals("http://installer", mCaptor.getValue().get(QueryParams.REFERRER));
 
         when(mPackageManager.getInstallerPackageName(anyString())).thenReturn(null);
@@ -143,12 +144,12 @@ public class DownloadTrackerTest extends BaseTest {
         assertEquals(3, m.groupCount());
         assertEquals("package", m.group(1));
         assertEquals(123, Integer.parseInt(m.group(2)));
-        assertEquals(null, m.group(3));
-        assertEquals(null, mCaptor.getValue().get(QueryParams.REFERRER));
+        assertNull(m.group(3));
+        assertNull(mCaptor.getValue().get(QueryParams.REFERRER));
     }
 
     @Test
-    public void testTrackNewAppDownloadWithVersion() throws Exception {
+    public void testTrackNewAppDownloadWithVersion() {
         DownloadTracker downloadTracker = new DownloadTracker(mTracker);
         downloadTracker.setVersion("2");
         downloadTracker.trackOnce(new TrackMe(), new DownloadTracker.Extra.None());
@@ -175,12 +176,11 @@ public class DownloadTrackerTest extends BaseTest {
         assertEquals("http://installer", mCaptor.getValue().get(QueryParams.REFERRER));
     }
 
-    private boolean checkNewAppDownload(TrackMe trackMe) {
+    private void checkNewAppDownload(TrackMe trackMe) {
         assertTrue(trackMe.get(QueryParams.DOWNLOAD).length() > 0);
         assertTrue(trackMe.get(QueryParams.URL_PATH).length() > 0);
         assertEquals(trackMe.get(QueryParams.EVENT_CATEGORY), "Application");
         assertEquals(trackMe.get(QueryParams.EVENT_ACTION), "downloaded");
         assertEquals(trackMe.get(QueryParams.ACTION_NAME), "application/downloaded");
-        return true;
     }
 }
