@@ -7,7 +7,7 @@ import org.robolectric.annotation.Config;
 
 import androidx.test.core.app.ApplicationProvider;
 
-@Config(sdk = 18, manifest = Config.NONE)
+@Config(sdk = 19, manifest = Config.NONE)
 @RunWith(FullEnvTestRunner.class)
 public abstract class DefaultTestCase extends BaseTest {
     public Tracker createTracker() {

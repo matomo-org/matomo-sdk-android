@@ -6,16 +6,13 @@
  */
 package org.matomo.sdk.tools;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
 import org.matomo.sdk.Matomo;
 
-import java.lang.reflect.Method;
 import java.util.Locale;
 
 import timber.log.Timber;
@@ -71,9 +68,8 @@ public class DeviceHelper {
      *
      * @return [width, height]
      */
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     public int[] getResolution() {
-        int width = -1, height = -1;
+        int width, height;
 
         Display display;
         try {
@@ -84,23 +80,11 @@ public class DeviceHelper {
             return null;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            // Recommended way to get the resolution but only available since API17
-            DisplayMetrics dm = new DisplayMetrics();
-            display.getRealMetrics(dm);
-            width = dm.widthPixels;
-            height = dm.heightPixels;
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            // Reflection bad, still this is the best way to get an accurate screen size on API14-16.
-            try {
-                Method getRawWidth = Display.class.getMethod("getRawWidth");
-                Method getRawHeight = Display.class.getMethod("getRawHeight");
-                width = (int) getRawWidth.invoke(display);
-                height = (int) getRawHeight.invoke(display);
-            } catch (Exception e) {
-                Timber.tag(TAG).w(e, "Reflection of getRawWidth/getRawHeight failed on API14-16 unexpectedly.");
-            }
-        }
+        // Recommended way to get the resolution but only available since API17
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        display.getRealMetrics(displayMetrics);
+        width = displayMetrics.widthPixels;
+        height = displayMetrics.heightPixels;
 
         if (width == -1 || height == -1) {
             // This is not accurate on all 4.2+ devices, usually the height is wrong due to statusbar/softkeys
