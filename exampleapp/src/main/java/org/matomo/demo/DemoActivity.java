@@ -71,8 +71,7 @@ public class DemoActivity extends AppCompatActivity {
         findViewById(R.id.trackGoalButton).setOnClickListener(v -> {
             float revenue;
             try {
-                revenue = Integer.valueOf(((EditText) findViewById(R.id.goalTextEditView)).getText().toString()
-                );
+                revenue = Integer.parseInt(((EditText) findViewById(R.id.goalTextEditView)).getText().toString());
             } catch (Exception e) {
                 TrackHelper.track().exception(e).description("wrong revenue").with(getTracker());
                 revenue = 0;

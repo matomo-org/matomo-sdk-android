@@ -6,8 +6,6 @@
  */
 package org.matomo.sdk.dispatcher;
 
-import android.content.Context;
-
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +15,6 @@ import org.matomo.sdk.tools.Connectivity;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
@@ -40,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
@@ -49,14 +47,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 
-@SuppressWarnings("ALL")
 public class DefaultDispatcherTest extends BaseTest {
 
     DefaultDispatcher mDispatcher;
     @Mock EventCache mEventCache;
     @Mock PacketSender mPacketSender;
     @Mock Connectivity mConnectivity;
-    @Mock Context mContext;
     final String mApiUrl = "http://example.com";
 
     final LinkedBlockingQueue<Event> mEventCacheData = new LinkedBlockingQueue<>();
@@ -69,18 +65,11 @@ public class DefaultDispatcherTest extends BaseTest {
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
         doAnswer(invocation -> {
-            mEventCacheData.add((Event) invocation.getArgument(0));
+            mEventCacheData.add(invocation.getArgument(0));
             return null;
         }).when(mEventCache).add(any(Event.class));
-        when(mEventCache.isEmpty()).then(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                return mEventCacheData.isEmpty();
-            }
-        });
-        when(mEventCache.updateState(anyBoolean())).thenAnswer(invocation -> {
-            return (Boolean) invocation.getArgument(0) && !mEventCacheData.isEmpty();
-        });
+        when(mEventCache.isEmpty()).then((Answer<Boolean>) invocation -> mEventCacheData.isEmpty());
+        when(mEventCache.updateState(anyBoolean())).thenAnswer(invocation -> (Boolean) invocation.getArgument(0) && !mEventCacheData.isEmpty());
         doAnswer(invocation -> {
             List<Event> drainTarget = invocation.getArgument(0);
             mEventCacheData.drainTo(drainTarget);
@@ -105,8 +94,8 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testClear_cleanExit() throws InterruptedException {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+    public void testClear_cleanExit() {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.submit(getTestEvent());
         mDispatcher.forceDispatch();
@@ -138,8 +127,8 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testDispatchMode_wifiOnly() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+    public void testDispatchMode_wifiOnly() {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.MOBILE);
 
@@ -152,15 +141,15 @@ public class DefaultDispatcherTest extends BaseTest {
 
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.WIFI);
         mDispatcher.forceDispatch();
-        await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
+        await().atMost(1, TimeUnit.SECONDS).until(dryRunData::size, is(1));
 
         verify(mEventCache).updateState(true);
         verify(mEventCache).drainTo(ArgumentMatchers.anyList());
     }
 
     @Test
-    public void testConnectivityChange() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+    public void testConnectivityChange() {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         when(mConnectivity.isConnected()).thenReturn(false);
 
@@ -174,7 +163,7 @@ public class DefaultDispatcherTest extends BaseTest {
         when(mConnectivity.isConnected()).thenReturn(true);
         mDispatcher.forceDispatch();
 
-        await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
+        await().atMost(1, TimeUnit.SECONDS).until(dryRunData::size, is(1));
 
         verify(mEventCache).updateState(true);
         verify(mEventCache).drainTo(ArgumentMatchers.anyList());
@@ -189,24 +178,24 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testDefaultConnectionTimeout() throws Exception {
+    public void testDefaultConnectionTimeout() {
         assertEquals(Dispatcher.DEFAULT_CONNECTION_TIMEOUT, mDispatcher.getConnectionTimeOut());
     }
 
     @Test
-    public void testSetConnectionTimeout() throws Exception {
+    public void testSetConnectionTimeout() {
         mDispatcher.setConnectionTimeOut(100);
         assertEquals(100, mDispatcher.getConnectionTimeOut());
         verify(mPacketSender).setTimeout(100);
     }
 
     @Test
-    public void testDefaultDispatchInterval() throws Exception {
+    public void testDefaultDispatchInterval() {
         assertEquals(Dispatcher.DEFAULT_DISPATCH_INTERVAL, mDispatcher.getDispatchInterval());
     }
 
     @Test
-    public void testForceDispatchTwice() throws Exception {
+    public void testForceDispatchTwice() {
         mDispatcher.setDispatchInterval(-1);
         mDispatcher.setConnectionTimeOut(20);
         mDispatcher.submit(getTestEvent());
@@ -217,13 +206,13 @@ public class DefaultDispatcherTest extends BaseTest {
 
     @Test
     public void testMultiThreadDispatch() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(20);
 
         final int threadCount = 20;
         final int queryCount = 100;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
@@ -231,13 +220,13 @@ public class DefaultDispatcherTest extends BaseTest {
 
     @Test
     public void testForceDispatch() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(-1L);
 
         final int threadCount = 10;
         final int queryCount = 10;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
         TestHelper.sleep(500);
         assertEquals(threadCount * queryCount, createdEvents.size());
@@ -249,33 +238,33 @@ public class DefaultDispatcherTest extends BaseTest {
 
     @Test
     public void testBatchDispatch() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(1500);
 
         final int threadCount = 5;
         final int queryCount = 5;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
         assertEquals(0, dryRunData.size());
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
         checkForMIAs(threadCount * queryCount, createdEvents, dryRunData);
     }
 
     @Test
     public void testBlockingDispatch() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(-1);
 
         final int threadCount = 5;
         final int queryCount = 5;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
 
         assertEquals(dryRunData.size(), 0);
         assertEquals(createdEvents.size(), threadCount * queryCount);
@@ -288,15 +277,15 @@ public class DefaultDispatcherTest extends BaseTest {
 
     @Test
     public void testBlockingDispatchInFlight() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(20);
 
         final int threadCount = 5;
         final int queryCount = 5;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
 
         assertEquals(createdEvents.size(), threadCount * queryCount);
         assertNotEquals(new ArrayList(dryRunData).size(), 0);
@@ -314,18 +303,15 @@ public class DefaultDispatcherTest extends BaseTest {
 
         mDispatcher.setDispatchInterval(-1);
 
-        when(mPacketSender.send(any())).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                Packet packet = invocation.getArgument(0);
+        when(mPacketSender.send(any())).thenAnswer((Answer<Boolean>) invocation -> {
+            Packet packet = invocation.getArgument(0);
 
-                eventCount.addAndGet(packet.getEventCount());
+            eventCount.addAndGet(packet.getEventCount());
 
-                lock.release();
-                Thread.sleep(100);
+            lock.release();
+            Thread.sleep(100);
 
-                return true;
-            }
+            return true;
         });
 
         final int threadCount = 7;
@@ -333,7 +319,7 @@ public class DefaultDispatcherTest extends BaseTest {
         final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
 
         mDispatcher.forceDispatch();
 
@@ -356,19 +342,16 @@ public class DefaultDispatcherTest extends BaseTest {
 
         final AtomicInteger sentEvents = new AtomicInteger(0);
 
-        when(mPacketSender.send(any())).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                Packet packet = invocation.getArgument(0);
-                sentEvents.addAndGet(packet.getEventCount());
+        when(mPacketSender.send(any())).thenAnswer((Answer<Boolean>) invocation -> {
+            Packet packet = invocation.getArgument(0);
+            sentEvents.addAndGet(packet.getEventCount());
 
-                mDispatcher.setDispatchMode(DispatchMode.EXCEPTION);
+            mDispatcher.setDispatchMode(DispatchMode.EXCEPTION);
 
-                return true;
-            }
+            return true;
         });
 
-        await().atMost(2, TimeUnit.SECONDS).until(() -> createdEvents.size(), is(threadCount * queryCount));
+        await().atMost(2, TimeUnit.SECONDS).until(createdEvents::size, is(threadCount * queryCount));
 
         mDispatcher.forceDispatchBlocking();
 
@@ -379,14 +362,9 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testDispatchRetryWithBackoff() throws Exception {
+    public void testDispatchRetryWithBackoff() {
         AtomicInteger cnt = new AtomicInteger(0);
-        when(mPacketSender.send(any())).then(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                return cnt.incrementAndGet() > 5;
-            }
-        });
+        when(mPacketSender.send(any())).then((Answer<Boolean>) invocation -> cnt.incrementAndGet() > 5);
 
         mDispatcher.setDispatchInterval(100);
         mDispatcher.submit(getTestEvent());
@@ -401,8 +379,8 @@ public class DefaultDispatcherTest extends BaseTest {
     }
 
     @Test
-    public void testDispatchInterval() throws Exception {
-        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+    public void testDispatchInterval() {
+        List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
         mDispatcher.setDispatchInterval(500);
         assertThat(dryRunData.isEmpty(), is(true));
@@ -412,22 +390,19 @@ public class DefaultDispatcherTest extends BaseTest {
 
     @Test
     public void testRandomDispatchIntervals() throws Exception {
-        final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<Packet>());
+        final List<Packet> dryRunData = Collections.synchronizedList(new ArrayList<>());
         mDispatcher.setDryRunTarget(dryRunData);
 
         final int threadCount = 10;
         final int queryCount = 100;
-        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> createdEvents = Collections.synchronizedList(new ArrayList<>());
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount) {
-                        mDispatcher.setDispatchInterval(new Random().nextInt(20 - -1) + -1);
-                    }
-                } catch (Exception e) {e.printStackTrace();}
-            }
+        new Thread(() -> {
+            try {
+                while (getFlattenedQueries(new ArrayList<>(dryRunData)).size() != threadCount * queryCount) {
+                    mDispatcher.setDispatchInterval(new Random().nextInt(20 + 1) - 1);
+                }
+            } catch (Exception e) {e.printStackTrace();}
         }).start();
 
         launchTestThreads(mApiUrl, mDispatcher, threadCount, queryCount, createdEvents);
@@ -439,7 +414,6 @@ public class DefaultDispatcherTest extends BaseTest {
         int previousEventCount = 0;
         int previousFlatQueryCount = 0;
         List<String> flattenedQueries;
-        long lastChange = System.currentTimeMillis();
         int nothingHappenedCounter = 0;
         while (true) {
             TestHelper.sleep(100);
@@ -451,13 +425,13 @@ public class DefaultDispatcherTest extends BaseTest {
                 int currentEventCount = createdEvents.size();
                 int currentFlatQueryCount = flattenedQueries.size();
                 if (previousEventCount != currentEventCount && previousFlatQueryCount != currentFlatQueryCount) {
-                    lastChange = System.currentTimeMillis();
                     previousEventCount = currentEventCount;
                     previousFlatQueryCount = currentFlatQueryCount;
                     nothingHappenedCounter = 0;
                 } else {
                     nothingHappenedCounter++;
-                    if (nothingHappenedCounter > 50) assertTrue("Test seems stuck, nothing happens", false);
+                    if (nothingHappenedCounter > 50)
+                        fail("Test seems stuck, nothing happens");
                 }
             }
         }
@@ -476,24 +450,21 @@ public class DefaultDispatcherTest extends BaseTest {
 
     public static void launchTestThreads(final String apiUrl, final Dispatcher dispatcher, int threadCount, final int queryCount, final List<String> createdQueries) {
         for (int i = 0; i < threadCount; i++) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int j = 0; j < queryCount; j++) {
-                            TestHelper.sleep(new Random().nextInt(20 - 0) + 0);
-                            TrackMe trackMe = new TrackMe()
-                                    .set(QueryParams.EVENT_ACTION, UUID.randomUUID().toString())
-                                    .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
-                                    .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
-                                    .set(QueryParams.EVENT_VALUE, j);
-                            dispatcher.submit(trackMe);
-                            createdQueries.add(apiUrl + new Event(trackMe.toMap()).getEncodedQuery());
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        assertFalse(true);
+            new Thread(() -> {
+                try {
+                    for (int j = 0; j < queryCount; j++) {
+                        TestHelper.sleep(new Random().nextInt(20));
+                        TrackMe trackMe = new TrackMe()
+                                .set(QueryParams.EVENT_ACTION, UUID.randomUUID().toString())
+                                .set(QueryParams.EVENT_CATEGORY, UUID.randomUUID().toString())
+                                .set(QueryParams.EVENT_NAME, UUID.randomUUID().toString())
+                                .set(QueryParams.EVENT_VALUE, j);
+                        dispatcher.submit(trackMe);
+                        createdQueries.add(apiUrl + new Event(trackMe.toMap()).getEncodedQuery());
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fail();
                 }
             }).start();
         }

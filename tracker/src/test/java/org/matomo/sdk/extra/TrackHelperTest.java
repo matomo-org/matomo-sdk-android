@@ -121,21 +121,21 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testDownloadTrackChecksum() throws Exception {
+    public void testDownloadTrackChecksum() {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
         track().download(downloadTracker).identifier(new DownloadTracker.Extra.ApkChecksum(mContext)).with(mTracker);
         verify(downloadTracker).trackOnce(any(TrackMe.class), any(DownloadTracker.Extra.ApkChecksum.class));
     }
 
     @Test
-    public void testDownloadTrackForced() throws Exception {
+    public void testDownloadTrackForced() {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
         track().download(downloadTracker).force().with(mTracker);
         verify(downloadTracker).trackNewAppDownload(any(TrackMe.class), any(DownloadTracker.Extra.None.class));
     }
 
     @Test
-    public void testDownloadCustomVersion() throws Exception {
+    public void testDownloadCustomVersion() {
         DownloadTracker downloadTracker = mock(DownloadTracker.class);
         String version = UUID.randomUUID().toString();
 
@@ -145,7 +145,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testVisitCustomVariables_merge_base() throws Exception {
+    public void testVisitCustomVariables_merge_base() {
         CustomVariables varsA = new CustomVariables().put(1, "visit1", "A");
         CustomVariables varsB = new CustomVariables().put(2, "visit2", "B");
         CustomVariables combined = new CustomVariables().put(1, "visit1", "A").put(2, "visit2", "B");
@@ -161,7 +161,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testVisitCustomVariables_merge_singles() throws Exception {
+    public void testVisitCustomVariables_merge_singles() {
         CustomVariables varsA = new CustomVariables().put(1, "visit1", "A");
         CustomVariables varsB = new CustomVariables().put(2, "visit2", "B");
         CustomVariables combined = new CustomVariables().put(1, "visit1", "A").put(2, "visit2", "B");
@@ -178,7 +178,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testVisitCustomVariables_add() throws Exception {
+    public void testVisitCustomVariables_add() {
         CustomVariables _vars = new CustomVariables();
         _vars.put(1, "visit1", "A");
         _vars.put(2, "visit2", "B");
@@ -195,7 +195,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testSetScreenCustomVariable() throws Exception {
+    public void testSetScreenCustomVariable() {
         track()
                 .screen("")
                 .variable(1, "2", "3")
@@ -206,7 +206,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testSetScreenCustomDimension() throws Exception {
+    public void testSetScreenCustomDimension() {
         track()
                 .screen("")
                 .dimension(1, "dim1")
@@ -224,7 +224,7 @@ public class TrackHelperTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetScreem_empty_path() throws Exception {
+    public void testSetScreem_empty_path() {
         TrackHelper.track().screen((String) null).build();
     }
 
@@ -259,14 +259,14 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackScreenView() throws Exception {
+    public void testTrackScreenView() {
         track().screen("/test/test").title("title").with(mTracker);
         verify(mTracker).track(mCaptor.capture());
         assertTrue(mCaptor.getValue().get(QueryParams.URL_PATH).endsWith("/test/test"));
     }
 
     @Test
-    public void testTrackScreenWithTitleView() throws Exception {
+    public void testTrackScreenWithTitleView() {
         track().screen("/test/test").title("Test title").with(mTracker);
         verify(mTracker).track(mCaptor.capture());
         assertTrue(mCaptor.getValue().get(QueryParams.URL_PATH).endsWith("/test/test"));
@@ -283,7 +283,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackEvent() throws Exception {
+    public void testTrackEvent() {
         track().event("category", "test action").with(mTracker);
         verify(mTracker).track(mCaptor.capture());
         TrackMe tracked = mCaptor.getValue();
@@ -292,7 +292,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackEventName() throws Exception {
+    public void testTrackEventName() {
         String name = "test name2";
         track().event("category", "test action").name(name).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
@@ -303,7 +303,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackEventNameAndValue() throws Exception {
+    public void testTrackEventNameAndValue() {
         String name = "test name3";
         track().event("category", "test action").name(name).value(1f).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
@@ -315,7 +315,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackEventNameAndValueWithpath() throws Exception {
+    public void testTrackEventNameAndValueWithpath() {
         track().event("category", "test action").name("test name3").path("/path").value(1f).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
         TrackMe tracked = mCaptor.getValue();
@@ -327,7 +327,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackGoal() throws Exception {
+    public void testTrackGoal() {
         track().goal(1).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
 
@@ -336,12 +336,12 @@ public class TrackHelperTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testTrackGoal_invalid_id() throws Exception {
+    public void testTrackGoal_invalid_id() {
         track().goal(-1).revenue(100f).build();
     }
 
     @Test
-    public void testTrackSiteSearch() throws Exception {
+    public void testTrackSiteSearch() {
         track().search("keyword").category("category").count(1337).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
 
@@ -358,16 +358,16 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackGoalRevenue() throws Exception {
+    public void testTrackGoalRevenue() {
         track().goal(1).revenue(100f).with(mTracker);
         verify(mTracker).track(mCaptor.capture());
 
         assertEquals("1", mCaptor.getValue().get(QueryParams.GOAL_ID));
-        assertTrue(100f == Float.valueOf(mCaptor.getValue().get(QueryParams.REVENUE)));
+        assertEquals(100f, Float.parseFloat(mCaptor.getValue().get(QueryParams.REVENUE)), 0.0);
     }
 
     @Test
-    public void testTrackContentImpression() throws Exception {
+    public void testTrackContentImpression() {
         String name = "test name2";
         track().impression(name).piece("test").target("test2").with(mTracker);
         verify(mTracker).track(mCaptor.capture());
@@ -378,17 +378,17 @@ public class TrackHelperTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testTrackContentImpression_invalid_name_empty() throws Exception {
+    public void testTrackContentImpression_invalid_name_empty() {
         track().impression("").build();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testTrackContentImpression_invalid_name_null() throws Exception {
+    public void testTrackContentImpression_invalid_name_null() {
         track().impression(null).build();
     }
 
     @Test
-    public void testTrackContentInteraction_invalid_name_empty() throws Exception {
+    public void testTrackContentInteraction_invalid_name_empty() {
         int errorCount = 0;
         try {
             track().interaction("", "test").piece("test").target("test2").build();
@@ -403,7 +403,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackContentInteraction_invalid_name_null() throws Exception {
+    public void testTrackContentInteraction_invalid_name_null() {
         int errorCount = 0;
         try {
             track().interaction(null, "test").piece("test").target("test2").build();
@@ -463,7 +463,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testTrackException() throws Exception {
+    public void testTrackException() {
         Exception catchedException;
         try {
             throw new Exception("Test");
@@ -481,7 +481,7 @@ public class TrackHelperTest {
     }
 
     @Test
-    public void testExceptionHandler() throws Exception {
+    public void testExceptionHandler() {
         assertFalse(Thread.getDefaultUncaughtExceptionHandler() instanceof MatomoExceptionHandler);
         track().uncaughtExceptions().with(mTracker);
         assertTrue(Thread.getDefaultUncaughtExceptionHandler() instanceof MatomoExceptionHandler);

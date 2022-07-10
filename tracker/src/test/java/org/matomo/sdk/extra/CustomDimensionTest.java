@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class CustomDimensionTest extends BaseTest {
 
     @Test
-    public void testSetCustomDimensions() throws Exception {
+    public void testSetCustomDimensions() {
         TrackMe trackMe = new TrackMe();
         CustomDimension.setDimension(trackMe, 0, "foo");
         CustomDimension.setDimension(trackMe, 1, "foo");
@@ -36,21 +36,21 @@ public class CustomDimensionTest extends BaseTest {
     }
 
     @Test
-    public void testSet_truncate() throws Exception {
+    public void testSet_truncate() {
         TrackMe trackMe = new TrackMe();
         CustomDimension.setDimension(trackMe, 1, new String(new char[1000]));
         assertEquals(255, trackMe.get("dimension1").length());
     }
 
     @Test
-    public void testSet_badId() throws Exception {
+    public void testSet_badId() {
         TrackMe trackMe = new TrackMe();
         CustomDimension.setDimension(trackMe, 0, UUID.randomUUID().toString());
         assertTrue(trackMe.isEmpty());
     }
 
     @Test
-    public void testSet_removal() throws Exception {
+    public void testSet_removal() {
         TrackMe trackMe = new TrackMe();
         CustomDimension.setDimension(trackMe, 1, UUID.randomUUID().toString());
         assertFalse(trackMe.isEmpty());
@@ -59,7 +59,7 @@ public class CustomDimensionTest extends BaseTest {
     }
 
     @Test
-    public void testSet_empty() throws Exception {
+    public void testSet_empty() {
         TrackMe trackMe = new TrackMe();
         CustomDimension.setDimension(trackMe, 1, UUID.randomUUID().toString());
         assertFalse(trackMe.isEmpty());

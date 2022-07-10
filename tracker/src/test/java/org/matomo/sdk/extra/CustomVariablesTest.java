@@ -14,6 +14,7 @@ import java.util.Collections;
 import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("deprecation")
@@ -21,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 public class CustomVariablesTest extends BaseTest {
 
     @Test
-    public void testPutAll() throws Exception {
+    public void testPutAll() {
         CustomVariables target = new CustomVariables();
         target.put(1, "name1", "value1");
         target.put(2, "name2", "value2");
@@ -64,7 +65,7 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testToStringJSON() throws Exception {
+    public void testToStringJSON() {
         CustomVariables cv = new CustomVariables();
         cv.put(5, "name 1", "\"@<& '");
 
@@ -75,7 +76,7 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testTrimLongValue() throws Exception {
+    public void testTrimLongValue() {
         CustomVariables cv = new CustomVariables();
         String multipleA = String.join("", Collections.nCopies(CustomVariables.MAX_LENGTH + 41, "a"));
         String multipleB = String.join("", Collections.nCopies(CustomVariables.MAX_LENGTH + 100, "B"));
@@ -86,7 +87,7 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testWrongIndex() throws Exception {
+    public void testWrongIndex() {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
         cv.put(-1, "name-1", "value");
@@ -98,20 +99,17 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testWrongValueSize() throws Exception {
+    public void testWrongValueSize() {
         CustomVariables cv = new CustomVariables();
         cv.put("test", new JSONArray(Arrays.asList("1", "2", "3")));
         assertEquals(0, cv.size());
-        assertEquals(null, cv.toString());
+        assertNull(cv.toString());
         cv.put("test", new JSONArray(Arrays.asList("1", "2")));
-        assertEquals(
-                "{\"test\":[\"1\",\"2\"]}",
-                cv.toString()
-        );
+        assertEquals("{\"test\":[\"1\",\"2\"]}", cv.toString());
     }
 
     @Test
-    public void testInject() throws Exception {
+    public void testInject() {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
         TrackMe trackMe = new TrackMe();
@@ -120,7 +118,7 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testToTrackMe() throws Exception {
+    public void testToTrackMe() {
         CustomVariables cv = new CustomVariables();
         cv.put(1, "name", "value");
         TrackMe trackMe = cv.toVisitVariables();
@@ -128,7 +126,7 @@ public class CustomVariablesTest extends BaseTest {
     }
 
     @Test
-    public void testVisitCustomVariables() throws Exception {
+    public void testVisitCustomVariables() {
         CustomVariables visitVars = new CustomVariables();
         visitVars.put(1, "visit", "valueX");
 

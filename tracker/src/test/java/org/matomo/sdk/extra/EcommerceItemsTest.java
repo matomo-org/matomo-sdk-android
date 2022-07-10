@@ -16,13 +16,13 @@ import static org.junit.Assert.assertTrue;
 public class EcommerceItemsTest extends BaseTest {
 
     @Test
-    public void testEmptyItems() throws Exception {
+    public void testEmptyItems() {
         EcommerceItems items = new EcommerceItems();
         assertEquals("[]", items.toJson());
     }
 
     @Test
-    public void testAddItems() throws Exception {
+    public void testAddItems() {
         Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem(new EcommerceItems.Item("fake_sku").name("fake_product").category("fake_category").price(200).quantity(2));
@@ -36,7 +36,7 @@ public class EcommerceItemsTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveItem() throws Exception {
+    public void testRemoveItem() {
         Locale.setDefault(Locale.US);
         EcommerceItems items = new EcommerceItems();
         items.addItem(new EcommerceItems.Item("fake_sku").name("fake_product").category("fake_category").price(200).quantity(2));
@@ -51,7 +51,7 @@ public class EcommerceItemsTest extends BaseTest {
     }
 
     @Test
-    public void testRemoveAllItems() throws Exception {
+    public void testRemoveAllItems() {
         EcommerceItems items = new EcommerceItems();
         items.addItem(new EcommerceItems.Item("fake_sku").name("fake_product").category("fake_category").price(200).quantity(2));
         items.addItem(new EcommerceItems.Item("fake_sku_2").name("fake_product_2").category("fake_category_2").price(400).quantity(3));
@@ -71,8 +71,8 @@ public class EcommerceItemsTest extends BaseTest {
         assertEquals("fake_sku", item.getSku());
         assertEquals("fake_product", item.getName());
         assertEquals("fake_category", item.getCategory());
-        assertTrue(200 == item.getPrice());
-        assertTrue(2 == item.getQuantity());
+        assertEquals(200, (int) item.getPrice());
+        assertEquals(2, (int) item.getQuantity());
     }
 
 }

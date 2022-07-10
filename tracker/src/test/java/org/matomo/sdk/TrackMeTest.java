@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(MockitoJUnitRunner.class)
 public class TrackMeTest extends BaseTest {
     @Test
-    public void testSourcingFromOtherTrackMe() throws Exception {
+    public void testSourcingFromOtherTrackMe() {
         TrackMe base = new TrackMe();
         for (QueryParams param : QueryParams.values()) {
             String testValue = UUID.randomUUID().toString();
@@ -54,7 +54,7 @@ public class TrackMeTest extends BaseTest {
     }
 
     @Test
-    public void testSet() throws Exception {
+    public void testSet() {
         TrackMe trackMe = new TrackMe();
         trackMe.set(QueryParams.HOURS, "String");
         assertEquals("String", trackMe.get(QueryParams.HOURS));
@@ -77,7 +77,7 @@ public class TrackMeTest extends BaseTest {
     }
 
     @Test
-    public void testTrySet() throws Exception {
+    public void testTrySet() {
         TrackMe trackMe = new TrackMe();
         trackMe.trySet(QueryParams.HOURS, "A");
         trackMe.trySet(QueryParams.HOURS, "B");
@@ -105,7 +105,7 @@ public class TrackMeTest extends BaseTest {
     }
 
     @Test
-    public void testSetAll() throws Exception {
+    public void testSetAll() {
         TrackMe trackMe = new TrackMe();
         Map<QueryParams, String> testValues = new HashMap<>();
         for (QueryParams param : QueryParams.values()) {
