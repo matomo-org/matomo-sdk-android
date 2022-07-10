@@ -1,6 +1,5 @@
 package org.matomo.sdk.extra;
 
-import org.apache.maven.artifact.ant.shaded.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -10,6 +9,7 @@ import org.matomo.sdk.TrackMe;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import testhelpers.BaseTest;
 
@@ -77,9 +77,10 @@ public class CustomVariablesTest extends BaseTest {
     @Test
     public void testTrimLongValue() throws Exception {
         CustomVariables cv = new CustomVariables();
+        String multipleA = String.join("", Collections.nCopies(CustomVariables.MAX_LENGTH + 41, "a"));
+        String multipleB = String.join("", Collections.nCopies(CustomVariables.MAX_LENGTH + 100, "B"));
 
-        cv.put(1, StringUtils.repeat("a", CustomVariables.MAX_LENGTH + 41),
-                StringUtils.repeat("b", CustomVariables.MAX_LENGTH + 100));
+        cv.put(1, multipleA, multipleB);
 
         assertEquals(cv.toString().length(), 13 + CustomVariables.MAX_LENGTH * 2); // 13 + 200x2
     }

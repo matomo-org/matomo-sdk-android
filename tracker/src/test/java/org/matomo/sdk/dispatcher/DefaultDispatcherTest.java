@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.matomo.sdk.QueryParams;
 import org.matomo.sdk.TrackMe;
 import org.matomo.sdk.tools.Connectivity;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -85,12 +85,12 @@ public class DefaultDispatcherTest extends BaseTest {
             List<Event> drainTarget = invocation.getArgument(0);
             mEventCacheData.drainTo(drainTarget);
             return null;
-        }).when(mEventCache).drainTo(Matchers.anyList());
+        }).when(mEventCache).drainTo(ArgumentMatchers.anyList());
         doAnswer(invocation -> {
             List<Event> toRequeue = invocation.getArgument(0);
             mEventCacheData.addAll(toRequeue);
             return null;
-        }).when(mEventCache).requeue(Matchers.anyList());
+        }).when(mEventCache).requeue(ArgumentMatchers.anyList());
         doAnswer(invocation -> {
             mEventCacheData.clear();
             return null;
@@ -148,14 +148,14 @@ public class DefaultDispatcherTest extends BaseTest {
         mDispatcher.forceDispatch();
 
         verify(mEventCache, timeout(1000)).updateState(false);
-        verify(mEventCache, never()).drainTo(Matchers.anyList());
+        verify(mEventCache, never()).drainTo(ArgumentMatchers.anyList());
 
         when(mConnectivity.getType()).thenReturn(Connectivity.Type.WIFI);
         mDispatcher.forceDispatch();
         await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
 
         verify(mEventCache).updateState(true);
-        verify(mEventCache).drainTo(Matchers.anyList());
+        verify(mEventCache).drainTo(ArgumentMatchers.anyList());
     }
 
     @Test
@@ -168,7 +168,7 @@ public class DefaultDispatcherTest extends BaseTest {
         mDispatcher.forceDispatch();
 
         verify(mEventCache, timeout(1000)).add(any());
-        verify(mEventCache, never()).drainTo(Matchers.anyList());
+        verify(mEventCache, never()).drainTo(ArgumentMatchers.anyList());
         assertThat(dryRunData.size(), is(0));
 
         when(mConnectivity.isConnected()).thenReturn(true);
@@ -177,7 +177,7 @@ public class DefaultDispatcherTest extends BaseTest {
         await().atMost(1, TimeUnit.SECONDS).until(() -> dryRunData.size(), is(1));
 
         verify(mEventCache).updateState(true);
-        verify(mEventCache).drainTo(Matchers.anyList());
+        verify(mEventCache).drainTo(ArgumentMatchers.anyList());
     }
 
     @Test
