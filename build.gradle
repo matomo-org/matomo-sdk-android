@@ -16,8 +16,8 @@ allprojects {
     }
     ext {
         globalMinSdkVersion = 14
-        globalTargetSdkVersion = 28
-        globalCompileSdkVersion = 28
+        globalTargetSdkVersion = 30
+        globalCompileSdkVersion = 30
         timberVersion = '4.7.1'
     }
 }
