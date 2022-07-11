@@ -16,8 +16,8 @@
         <activity
             android:name="org.matomo.demo.DemoActivity"
             android:alwaysRetainTaskState="true"
-            android:label="@string/app_name"
-            android:launchMode="singleInstance">
+            android:launchMode="singleInstance"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

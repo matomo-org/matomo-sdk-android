@@ -55,7 +55,7 @@ public class EventTest extends BaseTest {
             String testVal = UUID.randomUUID().toString();
             TrackMe trackMe = new TrackMe();
             trackMe.set(param, testVal);
-            assertEquals("?" + param.toString() + "=" + testVal, new Event(trackMe.toMap()).getEncodedQuery());
+            assertEquals("?" + param + "=" + testVal, new Event(trackMe.toMap()).getEncodedQuery());
         }
     }
 

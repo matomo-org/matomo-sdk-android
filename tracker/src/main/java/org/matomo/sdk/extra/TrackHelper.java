@@ -797,7 +797,6 @@ public class TrackHelper {
      * @param app your app
      * @return the registered callback, you need this if you wanted to unregister the callback again
      */
-    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     public AppTracking screens(Application app) {
         return new AppTracking(this, app);
     }
@@ -815,7 +814,6 @@ public class TrackHelper {
          * @param tracker the tracker to use
          * @return the registered callback, you need this if you wanted to unregister the callback again
          */
-        @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
         public Application.ActivityLifecycleCallbacks with(final Tracker tracker) {
             final Application.ActivityLifecycleCallbacks callback = new Application.ActivityLifecycleCallbacks() {
                 @Override
