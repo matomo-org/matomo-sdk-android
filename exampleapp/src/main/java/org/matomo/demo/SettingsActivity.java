@@ -30,7 +30,7 @@ public class SettingsActivity extends Activity {
 
     private void refreshUI(final Activity settingsActivity) {
         // auto track button
-        Button button = (Button) findViewById(R.id.bindtoapp);
+        Button button = findViewById(R.id.bindtoapp);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -39,7 +39,7 @@ public class SettingsActivity extends Activity {
         });
 
         // Dry run
-        CheckBox dryRun = (CheckBox) findViewById(R.id.dryRunCheckbox);
+        CheckBox dryRun = findViewById(R.id.dryRunCheckbox);
         dryRun.setChecked(((MatomoApplication) getApplication()).getTracker().getDryRunTarget() != null);
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,7 +49,7 @@ public class SettingsActivity extends Activity {
         });
 
         // out out
-        CheckBox optOut = (CheckBox) findViewById(R.id.optOutCheckbox);
+        CheckBox optOut = findViewById(R.id.optOutCheckbox);
         optOut.setChecked(((MatomoApplication) getApplication()).getTracker().isOptOut());
         optOut.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,7 +59,7 @@ public class SettingsActivity extends Activity {
         });
 
         // dispatch interval
-        EditText input = (EditText) findViewById(R.id.dispatchIntervallInput);
+        EditText input = findViewById(R.id.dispatchIntervallInput);
         input.setText(Long.toString(
                 ((MatomoApplication) getApplication()).getTracker().getDispatchInterval()
         ));
@@ -88,7 +88,7 @@ public class SettingsActivity extends Activity {
         );
 
         //session Timeout Input
-        input = (EditText) findViewById(R.id.sessionTimeoutInput);
+        input = findViewById(R.id.sessionTimeoutInput);
         input.setText(Long.toString(
                 (((MatomoApplication) getApplication()).getTracker().getSessionTimeout() / 60000)
         ));

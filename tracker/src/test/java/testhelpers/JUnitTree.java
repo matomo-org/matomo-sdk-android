@@ -13,10 +13,6 @@ public class JUnitTree extends Timber.DebugTree {
         minlogLevel = Log.VERBOSE;
     }
 
-    public JUnitTree(int minlogLevel) {
-        this.minlogLevel = minlogLevel;
-    }
-
     private static String priorityToString(int priority) {
         switch (priority) {
             case Log.ERROR:

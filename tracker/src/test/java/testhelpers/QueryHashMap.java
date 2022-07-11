@@ -16,7 +16,4 @@ public class QueryHashMap extends HashMap<String, String> {
         return get(key.toString());
     }
 
-    public boolean containsKey(QueryParams key) {
-        return super.containsKey(key.toString());
-    }
 }
