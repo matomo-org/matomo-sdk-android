@@ -30,7 +30,7 @@ public class ChecksumTest extends BaseTest {
     public void testgetMD5ChecksumDir() throws Exception {
         File directory = new File(".", "");
         String md5 = Checksum.getMD5Checksum(directory);
-        assertTrue(md5 == null);
+        assertNull(md5);
     }
 
 }

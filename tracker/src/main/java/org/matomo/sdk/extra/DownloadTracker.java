@@ -88,6 +88,7 @@ public class DownloadTracker {
         /**
          * Custom exta identifier. Supply your own \o/.
          */
+        @SuppressWarnings("unused")
         abstract class Custom implements Extra {
         }
 
