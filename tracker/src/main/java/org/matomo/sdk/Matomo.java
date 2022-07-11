@@ -30,7 +30,7 @@ public class Matomo {
     private static final String TAG = Matomo.tag(Matomo.class);
     private static final String BASE_PREFERENCE_FILE = "org.matomo.sdk";
 
-    @SuppressLint("StaticFieldLeak") private static Matomo sInstance;
+    @SuppressLint("StaticFieldLeak") private static volatile Matomo sInstance;
 
     private final Map<Tracker, SharedPreferences> mPreferenceMap = new HashMap<>();
     private final Context mContext;

@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 /**
  * Tries to emulate a full app environment to satisfy more in-depth tests
  */
+@SuppressWarnings("unused")
 public class FullEnvTestRunner extends RobolectricTestRunner {
     public FullEnvTestRunner(Class<?> testClass) throws InitializationError {
         super(testClass);

@@ -18,7 +18,6 @@ import org.matomo.sdk.extra.TrackHelper;
 import timber.log.Timber;
 
 public class DemoApp extends MatomoApplication {
-    private DimensionQueue mDimensionQueue;
 
     @Override
     public TrackerBuilder onCreateTrackerConfig() {
@@ -55,7 +54,7 @@ public class DemoApp extends MatomoApplication {
         // i.e. "http://org.matomo.demo:1/com.android.vending"
         // getTracker().download();
 
-        mDimensionQueue = new DimensionQueue(getTracker());
+        DimensionQueue mDimensionQueue = new DimensionQueue(getTracker());
 
         // This will be send the next time something is tracked.
         mDimensionQueue.add(0, "test");

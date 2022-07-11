@@ -4,7 +4,6 @@ package org.matomo.sdk;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -57,9 +56,7 @@ public class LegacySettingsPorter {
             ).apply();
             mLegacyPrefs.edit().remove(LEGACY_PREF_PREV_VISIT).apply();
         }
-        final Iterator<? extends Map.Entry<String, ?>> it = mLegacyPrefs.getAll().entrySet().iterator();
-        while (it.hasNext()) {
-            final Map.Entry<String, ?> oldEntry = it.next();
+        for (Map.Entry<String, ?> oldEntry : mLegacyPrefs.getAll().entrySet()) {
             if (oldEntry.getKey().startsWith("downloaded:")) {
                 newSettings.edit().putBoolean(oldEntry.getKey(), true).apply();
                 mLegacyPrefs.edit().remove(oldEntry.getKey()).apply();

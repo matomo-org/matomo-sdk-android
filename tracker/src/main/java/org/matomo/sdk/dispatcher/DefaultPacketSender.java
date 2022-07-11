@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPOutputStream;
 
 import timber.log.Timber;
@@ -46,15 +46,11 @@ public class DefaultPacketSender implements PacketSender {
                     urlConnection.addRequestProperty("Content-Encoding", "gzip");
                     ByteArrayOutputStream byteArrayOS = new ByteArrayOutputStream();
 
-                    GZIPOutputStream gzipStream = null;
-                    try {
-                        gzipStream = new GZIPOutputStream(byteArrayOS);
-                        gzipStream.write(toPost.getBytes(Charset.forName("UTF8")));
-                    } finally {
-                        // If closing fails we assume the written data to be invalid.
-                        // Don't catch the exception and let it abort the `send(Packet)` call.
-                        if (gzipStream != null) gzipStream.close();
+                    try (GZIPOutputStream gzipStream = new GZIPOutputStream(byteArrayOS)) {
+                        gzipStream.write(toPost.getBytes(StandardCharsets.UTF_8));
                     }
+                    // If closing fails we assume the written data to be invalid.
+                    // Don't catch the exception and let it abort the `send(Packet)` call.
 
                     OutputStream outputStream = null;
                     try {
@@ -75,7 +71,7 @@ public class DefaultPacketSender implements PacketSender {
 
                     BufferedWriter writer = null;
                     try {
-                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
+                        writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), StandardCharsets.UTF_8));
                         writer.write(toPost);
                     } finally {
                         if (writer != null) {

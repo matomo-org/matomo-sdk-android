@@ -7,8 +7,8 @@ import java.net.URL;
  * Configuration details for a {@link Tracker}
  */
 public class TrackerBuilder {
-    private String mApiUrl;
-    private int mSiteId;
+    private final String mApiUrl;
+    private final int mSiteId;
     private String mTrackerName;
     private String mApplicationBaseUrl;
 

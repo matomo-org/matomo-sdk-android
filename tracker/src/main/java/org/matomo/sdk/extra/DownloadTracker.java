@@ -26,7 +26,6 @@ public class DownloadTracker {
     private final Object mTrackOnceLock = new Object();
     private final PackageManager mPackMan;
     private final SharedPreferences mPreferences;
-    private final Context mContext;
     private final boolean mInternalTracking;
     private String mVersion;
     private final PackageInfo mPkgInfo;
@@ -68,8 +67,6 @@ public class DownloadTracker {
                     mPackageInfo = null;
                 }
             }
-
-            public ApkChecksum(PackageInfo packageInfo) {mPackageInfo = packageInfo;}
 
             @Override
             public boolean isIntensiveWork() {
@@ -128,7 +125,7 @@ public class DownloadTracker {
 
     public DownloadTracker(Tracker tracker, @NonNull PackageInfo packageInfo) {
         mTracker = tracker;
-        mContext = tracker.getMatomo().getContext();
+        Context mContext = tracker.getMatomo().getContext();
         mPreferences = tracker.getPreferences();
         mPackMan = tracker.getMatomo().getContext().getPackageManager();
         mPkgInfo = packageInfo;

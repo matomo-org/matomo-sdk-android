@@ -46,7 +46,7 @@ public class MatomoExceptionHandler implements Thread.UncaughtExceptionHandler {
     }
 
     @Override
-    public void uncaughtException(Thread thread, Throwable ex) {
+    public void uncaughtException(@NonNull Thread thread, @NonNull Throwable ex) {
         try {
             String excInfo = ex.getMessage();
 

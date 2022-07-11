@@ -36,7 +36,7 @@ public class Checksum {
     public static String getMD5Checksum(String string) throws Exception {
         MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
         digest.update(string.getBytes());
-        byte messageDigest[] = digest.digest();
+        byte[] messageDigest = digest.digest();
         return getHex(messageDigest);
     }
 

@@ -71,7 +71,7 @@ public class EventDiskCache {
                 long timestamp;
                 try {
                     final String[] split = head.getName().split("_");
-                    timestamp = Long.valueOf(split[1]);
+                    timestamp = Long.parseLong(split[1]);
                 } catch (Exception e) {
                     Timber.tag(TAG).e(e);
                     timestamp = 0;
