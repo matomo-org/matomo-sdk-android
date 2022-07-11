@@ -7,6 +7,7 @@
 
 package org.matomo.demo;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -16,7 +17,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
-import org.matomo.sdk.dispatcher.Packet;
 import org.matomo.sdk.extra.MatomoApplication;
 import org.matomo.sdk.extra.TrackHelper;
 
@@ -44,7 +44,7 @@ public class SettingsActivity extends Activity {
         dryRun.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MatomoApplication) getApplication()).getTracker().setDryRunTarget(((CheckBox) v).isChecked() ? Collections.synchronizedList(new ArrayList<Packet>()) : null);
+                ((MatomoApplication) getApplication()).getTracker().setDryRunTarget(((CheckBox) v).isChecked() ? Collections.synchronizedList(new ArrayList<>()) : null);
             }
         });
 
@@ -68,7 +68,7 @@ public class SettingsActivity extends Activity {
                     @Override
                     public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
                         try {
-                            int interval = Integer.valueOf(charSequence.toString().trim());
+                            int interval = Integer.parseInt(charSequence.toString().trim());
                             ((MatomoApplication) getApplication()).getTracker()
                                     .setDispatchInterval(interval);
                         } catch (NumberFormatException e) {
@@ -94,10 +94,11 @@ public class SettingsActivity extends Activity {
         ));
         input.addTextChangedListener(
                 new TextWatcher() {
+                    @SuppressLint("SetTextI18n")
                     @Override
                     public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
                         try {
-                            int timeoutMin = Integer.valueOf(charSequence.toString().trim());
+                            int timeoutMin = Integer.parseInt(charSequence.toString().trim());
                             timeoutMin = Math.abs(timeoutMin);
                             ((MatomoApplication) getApplication()).getTracker()
                                     .setSessionTimeout(timeoutMin * 60);

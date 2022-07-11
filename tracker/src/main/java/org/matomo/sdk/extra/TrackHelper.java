@@ -1,11 +1,10 @@
 package org.matomo.sdk.extra;
 
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Application;
-import android.os.Build;
 import android.os.Bundle;
+
 import androidx.annotation.Nullable;
 
 import org.matomo.sdk.Matomo;
