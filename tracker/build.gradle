@@ -23,6 +23,8 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "com.jakewharton.timber:timber:${timberVersion}"
 
+    implementation "com.squareup.okhttp3:okhttp:3.12.+"
+
     testImplementation 'org.awaitility:awaitility:3.0.0'
     testImplementation 'androidx.test:core:1.4.0'
     // Robolectric

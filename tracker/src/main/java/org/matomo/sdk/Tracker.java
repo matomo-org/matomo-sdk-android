@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import okhttp3.OkHttpClient;
 import timber.log.Timber;
 
 
@@ -56,6 +58,7 @@ public class Tracker {
     private static final Pattern VALID_URLS = Pattern.compile("^(\\w+)(?:://)(.+?)$");
 
     private final Matomo mMatomo;
+    private final OkHttpClient mClient;
     private final String mApiUrl;
     private final int mSiteId;
     private final String mDefaultApplicationBaseUrl;
@@ -79,6 +82,7 @@ public class Tracker {
         mApiUrl = config.getApiUrl();
         mSiteId = config.getSiteId();
         mName = config.getTrackerName();
+        mClient = config.getOkHttpClient();
         mDefaultApplicationBaseUrl = config.getApplicationBaseUrl();
 
         new LegacySettingsPorter(mMatomo).port(this);
@@ -527,6 +531,14 @@ public class Tracker {
      */
     public void setDryRunTarget(List<Packet> dryRunTarget) {
         mDispatcher.setDryRunTarget(dryRunTarget);
+    }
+
+    /**
+     * return the OkHttpClient to use
+     * @return OkHttpClient
+     */
+    public OkHttpClient getOkHttpClient() {
+         return mClient;
     }
 
     /**

@@ -3,6 +3,8 @@ package org.matomo.sdk;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import okhttp3.OkHttpClient;
+
 /**
  * Configuration details for a {@link Tracker}
  */
@@ -11,6 +13,7 @@ public class TrackerBuilder {
     private int mSiteId;
     private String mTrackerName;
     private String mApplicationBaseUrl;
+    private OkHttpClient mClient;
 
     public static TrackerBuilder createDefault(String apiUrl, int siteId) {
         return new TrackerBuilder(apiUrl, siteId, "Default Tracker");
@@ -63,6 +66,18 @@ public class TrackerBuilder {
         return this;
     }
 
+    /**
+     * set okHttp3 client to use instead of default http implementation
+     * @param client an OKHttpClient to use
+     */
+    public void setOkHttpClient(OkHttpClient client) {
+        mClient = client;
+    }
+
+    public OkHttpClient getOkHttpClient() {
+        return mClient;
+    }
+
     public String getApplicationBaseUrl() {
         return mApplicationBaseUrl;
     }
@@ -91,5 +106,4 @@ public class TrackerBuilder {
         result = 31 * result + mTrackerName.hashCode();
         return result;
     }
-
 }
