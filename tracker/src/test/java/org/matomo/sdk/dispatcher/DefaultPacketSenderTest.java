@@ -21,6 +21,8 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import androidx.annotation.NonNull;
+
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultPacketSenderTest extends BaseTest {
 
@@ -91,8 +93,9 @@ public class DefaultPacketSenderTest extends BaseTest {
 
         mDefaultPacketSender.setTimeout(50);
         mMockWebServer.setDispatcher(new Dispatcher() {
+            @NonNull
             @Override
-            public MockResponse dispatch(RecordedRequest recordedRequest) {
+            public MockResponse dispatch(@NonNull RecordedRequest recordedRequest) {
                 TestHelper.sleep(100);
                 return new MockResponse();
             }
@@ -100,8 +103,9 @@ public class DefaultPacketSenderTest extends BaseTest {
         assertThat(mDefaultPacketSender.send(packet), is(false));
 
         mMockWebServer.setDispatcher(new Dispatcher() {
+            @NonNull
             @Override
-            public MockResponse dispatch(RecordedRequest recordedRequest) {
+            public MockResponse dispatch(@NonNull RecordedRequest recordedRequest) {
                 return new MockResponse();
             }
         });

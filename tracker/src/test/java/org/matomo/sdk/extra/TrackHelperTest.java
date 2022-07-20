@@ -480,13 +480,13 @@ public class TrackHelperTest {
         assertEquals(mCaptor.getValue().get(QueryParams.EVENT_NAME), "<Null> exception");
     }
 
+    @SuppressWarnings({"divzero", "NumericOverflow"})
     @Test
     public void testExceptionHandler() {
         assertFalse(Thread.getDefaultUncaughtExceptionHandler() instanceof MatomoExceptionHandler);
         track().uncaughtExceptions().with(mTracker);
         assertTrue(Thread.getDefaultUncaughtExceptionHandler() instanceof MatomoExceptionHandler);
         try {
-            //noinspection NumericOverflow
             int i = 1 / 0;
             assertNotEquals(i, 0);
         } catch (Exception e) {
