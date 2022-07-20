@@ -34,7 +34,7 @@ public class EventTest extends BaseTest {
     }
 
     @Test
-    public void testEncoding_escaping() throws Exception {
+    public void testEncoding_escaping() {
         Map<String, String> data = new HashMap<>();
         data.put(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES.toString(), "{\"1\":[\"2& ?\",\"3@#\"]}");
         Event event = new Event(data);
@@ -43,14 +43,14 @@ public class EventTest extends BaseTest {
 
 
     @Test
-    public void testBncoding_empty() throws Exception {
+    public void testBncoding_empty() {
         Map<String, String> data = new HashMap<>();
         Event event = new Event(data);
         assertEquals("", event.getEncodedQuery());
     }
 
     @Test
-    public void testEncondingSingles() throws Exception {
+    public void testEncondingSingles() {
         for (QueryParams param : QueryParams.values()) {
             String testVal = UUID.randomUUID().toString();
             TrackMe trackMe = new TrackMe();

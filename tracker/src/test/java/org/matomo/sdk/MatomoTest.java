@@ -26,6 +26,7 @@ import org.matomo.sdk.tools.Connectivity;
 import org.robolectric.annotation.Config;
 
 import androidx.test.core.app.ApplicationProvider;
+
 import testhelpers.BaseTest;
 import testhelpers.FullEnvTestRunner;
 import testhelpers.MatomoTestApplication;
@@ -36,7 +37,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;

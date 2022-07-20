@@ -46,7 +46,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testDrain_simple() throws Exception {
+    public void testDrain_simple() {
         assertTrue(mEventCache.isEmpty());
         mEventCache.add(new Event("test"));
         assertFalse(mEventCache.isEmpty());
@@ -57,14 +57,14 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testDrain_empty() throws Exception {
+    public void testDrain_empty() {
         List<Event> events = new ArrayList<>();
         mEventCache.drainTo(events);
         assertTrue(events.isEmpty());
     }
 
     @Test
-    public void testDrain_diskCache_empty() throws Exception {
+    public void testDrain_diskCache_empty() {
         List<Event> events = new ArrayList<>();
         mEventCache.drainTo(events);
         verify(mEventDiskCache, never()).uncache();
@@ -72,7 +72,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testDrain_diskCache_nonempty() throws Exception {
+    public void testDrain_diskCache_nonempty() {
         List<Event> events = new ArrayList<>();
         when(mEventDiskCache.uncache()).thenReturn(Collections.singletonList(new Event("test")));
         mEventCache.updateState(true);
@@ -82,7 +82,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testDrain_diskCache_first() throws Exception {
+    public void testDrain_diskCache_first() {
         mEventCache.add(new Event("3"));
         List<Event> events = new ArrayList<>();
         when(mEventDiskCache.uncache()).thenReturn(Arrays.asList(new Event("1"), new Event("2")));
@@ -96,7 +96,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateState_online() throws Exception {
+    public void testUpdateState_online() {
         verify(mEventDiskCache, never()).uncache();
         mEventCache.updateState(true);
         mEventCache.updateState(true);
@@ -104,7 +104,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateState_offline() throws Exception {
+    public void testUpdateState_offline() {
         assertTrue(mEventCache.isEmpty());
         mEventCache.add(new Event("test"));
         assertFalse(mEventCache.isEmpty());
@@ -119,7 +119,7 @@ public class EventCacheTest extends BaseTest {
     }
 
     @Test
-    public void testUpdateState_offline_ordering() throws Exception {
+    public void testUpdateState_offline_ordering() {
         assertTrue(mEventCache.isEmpty());
         mEventCache.add(new Event("test2"));
         when(mEventDiskCache.uncache()).thenReturn(Arrays.asList(new Event("test0"), new Event("test1")));

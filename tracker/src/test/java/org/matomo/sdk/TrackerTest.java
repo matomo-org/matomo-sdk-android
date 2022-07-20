@@ -61,7 +61,7 @@ public class TrackerTest {
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
         when(mMatomo.getContext()).thenReturn(mContext);
         when(mMatomo.getTrackerPreferences(any(Tracker.class))).thenReturn(mTrackerPreferences);
         when(mMatomo.getPreferences()).thenReturn(mPreferences);

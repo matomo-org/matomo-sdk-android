@@ -10,7 +10,6 @@ import testhelpers.BaseTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ChecksumTest extends BaseTest {
@@ -22,7 +21,7 @@ public class ChecksumTest extends BaseTest {
     }
 
     @Test
-    public void testHex() throws Exception {
+    public void testHex() {
         assertNull(Checksum.getHex(null));
     }
 
