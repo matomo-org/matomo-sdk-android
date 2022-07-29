@@ -21,7 +21,7 @@ public class DemoApp extends MatomoApplication {
 
     @Override
     public TrackerBuilder onCreateTrackerConfig() {
-        return TrackerBuilder.createDefault("https://demo.matomo.org/matomo.php", 53);
+        return TrackerBuilder.createDefault("https://demo2.matomo.org/matomo.php", 81);
     }
 
     @Override
