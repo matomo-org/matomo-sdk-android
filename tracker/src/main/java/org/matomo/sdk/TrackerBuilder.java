@@ -69,7 +69,7 @@ public class TrackerBuilder {
 
     public Tracker build(Matomo matomo) {
         if (mApplicationBaseUrl == null) {
-            mApplicationBaseUrl = String.format("https://%s/", matomo.getContext().getPackageName());
+            mApplicationBaseUrl = String.format("https://guide.helsingborg.se");
         }
         return new Tracker(matomo, this);
     }
