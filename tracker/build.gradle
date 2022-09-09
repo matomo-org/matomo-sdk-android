@@ -34,7 +34,7 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.10.0'
 
     // Mocktio
-    testImplementation 'org.mockito:mockito-core:4.7.0'
+    testImplementation 'org.mockito:mockito-core:4.8.0'
     testImplementation 'org.json:json:20220320'
     testImplementation 'org.robolectric:robolectric:4.8.2'
 }
