@@ -120,6 +120,41 @@ public class Tracker {
         this.mTrackingCallbacks.remove(callback);
     }
 
+    public void reset() {
+        dispatch();
+
+        String visitorId = makeRandomVisitorId();
+
+        SharedPreferences prefs = getPreferences();
+
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (prefs) {
+            SharedPreferences.Editor editor = mPreferences.edit();
+
+            editor.remove(PREF_KEY_TRACKER_VISITCOUNT);
+            editor.remove(PREF_KEY_TRACKER_PREVIOUSVISIT);
+            editor.remove(PREF_KEY_TRACKER_FIRSTVISIT);
+            editor.remove(PREF_KEY_TRACKER_USERID);
+            editor.remove(PREF_KEY_TRACKER_OPTOUT);
+
+            editor.putString(PREF_KEY_TRACKER_VISITORID, visitorId);
+
+            editor.apply();
+        }
+
+        mDefaultTrackMe.set(QueryParams.VISITOR_ID, visitorId);
+        mDefaultTrackMe.set(QueryParams.USER_ID, null);
+        mDefaultTrackMe.set(QueryParams.FIRST_VISIT_TIMESTAMP, null);
+        mDefaultTrackMe.set(QueryParams.TOTAL_NUMBER_OF_VISITS, null);
+        mDefaultTrackMe.set(QueryParams.PREVIOUS_VISIT_TIMESTAMP, null);
+        mDefaultTrackMe.set(QueryParams.SESSION_START, DEFAULT_TRUE_VALUE);
+        mDefaultTrackMe.set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, null);
+        mDefaultTrackMe.set(QueryParams.CAMPAIGN_NAME, null);
+        mDefaultTrackMe.set(QueryParams.CAMPAIGN_KEYWORD, null);
+
+        startNewSession();
+    }
+
     /**
      * Use this to disable this Tracker, e.g. if the user opted out of tracking.
      * The Tracker will persist the choice and remain disable on next instance creation.<p>

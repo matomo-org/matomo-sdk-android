@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.prefs.Preferences;
 
 import testhelpers.TestHelper;
 import testhelpers.TestPreferences;
@@ -36,7 +37,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.matomo.sdk.QueryParams.FIRST_VISIT_TIMESTAMP;
+import static org.matomo.sdk.QueryParams.PREVIOUS_VISIT_TIMESTAMP;
 import static org.matomo.sdk.QueryParams.SESSION_START;
+import static org.matomo.sdk.QueryParams.TOTAL_NUMBER_OF_VISITS;
+import static org.matomo.sdk.QueryParams.VISITOR_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -45,6 +49,8 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import androidx.annotation.Nullable;
 
 
 @SuppressWarnings("PointlessArithmeticExpression")
@@ -503,6 +509,52 @@ public class TrackerTest {
         TrackHelper.track().screen("test").with(tracker);
         verify(mDispatcher, times(3)).submit(mCaptor.capture());
         assertNull(mCaptor.getValue().get(SESSION_START));
+    }
+
+    @Test
+    public void testReset() {
+        Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
+        Tracker.Callback callback = new Tracker.Callback() {
+            @Nullable
+            @Override
+            public TrackMe onTrack(TrackMe trackMe) {
+                return null;
+            }
+        };
+        tracker.addTrackingCallback(callback);
+        tracker.getDefaultTrackMe().set(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES, "custom1");
+        tracker.getDefaultTrackMe().set(QueryParams.CAMPAIGN_NAME, "campaign_name");
+        tracker.getDefaultTrackMe().set(QueryParams.CAMPAIGN_KEYWORD, "campaign_keyword");
+
+        TrackHelper.track().screen("test1").with(tracker);
+        tracker.startNewSession();
+        TrackHelper.track().screen("test2").with(tracker);
+
+        String preResetDefaultVisitorId = tracker.getDefaultTrackMe().get(VISITOR_ID);
+        String preResetFirstVisitTimestamp = tracker.getDefaultTrackMe().get(FIRST_VISIT_TIMESTAMP);
+        String preResetTotalNumberOfVisits = tracker.getDefaultTrackMe().get(TOTAL_NUMBER_OF_VISITS);
+        String preResetPreviousVisitTimestamp = tracker.getDefaultTrackMe().get(PREVIOUS_VISIT_TIMESTAMP);
+
+        tracker.reset();
+
+        SharedPreferences prefs = tracker.getPreferences();
+
+        assertNotEquals(preResetDefaultVisitorId, tracker.getVisitorId());
+        assertNotEquals(preResetDefaultVisitorId, tracker.getDefaultTrackMe().get(VISITOR_ID));
+        assertNotEquals(preResetDefaultVisitorId, prefs.getString(Tracker.PREF_KEY_TRACKER_VISITORID, ""));
+
+        assertNotEquals(preResetFirstVisitTimestamp, tracker.getDefaultTrackMe().get(FIRST_VISIT_TIMESTAMP));
+        assertNotEquals(Long.parseLong(preResetFirstVisitTimestamp), prefs.getLong(Tracker.PREF_KEY_TRACKER_FIRSTVISIT, -1));
+
+        assertNotEquals(preResetPreviousVisitTimestamp, tracker.getDefaultTrackMe().get(PREVIOUS_VISIT_TIMESTAMP));
+        assertNotEquals(Long.parseLong(preResetPreviousVisitTimestamp), prefs.getLong(Tracker.PREF_KEY_TRACKER_PREVIOUSVISIT, -1));
+
+        assertNotEquals(preResetTotalNumberOfVisits, tracker.getDefaultTrackMe().get(TOTAL_NUMBER_OF_VISITS));
+        assertNotEquals(preResetTotalNumberOfVisits, prefs.getString(Tracker.PREF_KEY_TRACKER_VISITCOUNT, ""));
+
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.VISIT_SCOPE_CUSTOM_VARIABLES));
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.CAMPAIGN_NAME));
+        assertNull(tracker.getDefaultTrackMe().get(QueryParams.CAMPAIGN_KEYWORD));
     }
 
     @Test
