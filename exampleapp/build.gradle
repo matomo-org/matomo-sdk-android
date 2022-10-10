@@ -14,6 +14,7 @@ android {
         release {
         }
     }
+    namespace 'org.matomo.demo'
 }
 
 dependencies {

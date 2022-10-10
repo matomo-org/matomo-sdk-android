@@ -17,6 +17,7 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
+    namespace 'org.matomo.sdk'
 }
 
 dependencies {
