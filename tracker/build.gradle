@@ -25,7 +25,7 @@ dependencies {
     implementation "com.jakewharton.timber:timber:${timberVersion}"
 
     testImplementation 'org.awaitility:awaitility:4.2.0'
-    testImplementation 'androidx.test:core:1.4.0'
+    testImplementation 'androidx.test:core:1.5.0'
     // Robolectric
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:hamcrest-core:2.2'
