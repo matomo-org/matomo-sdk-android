@@ -21,7 +21,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.5.0'
+    implementation 'androidx.annotation:annotation:1.6.0'
     implementation "com.jakewharton.timber:timber:${timberVersion}"
 
     testImplementation 'org.awaitility:awaitility:4.2.0'
