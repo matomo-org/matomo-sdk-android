@@ -28,7 +28,7 @@ android {
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.7.0'
-    implementation "com.jakewharton.timber:timber:${timberVersion}"
+    implementation "com.github.AppDevNext.Logcat:LogcatCoreLib:3.2"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation 'org.awaitility:awaitility:4.2.0'

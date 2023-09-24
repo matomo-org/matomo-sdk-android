@@ -15,11 +15,11 @@ allprojects {
     repositories {
         google()
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url 'https://jitpack.io' }
     }
     ext {
         globalMinSdkVersion = 19
         globalTargetSdkVersion = 33
         globalCompileSdkVersion = 33
-        timberVersion = '5.0.1'
     }
 }
