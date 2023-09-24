@@ -49,16 +49,19 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.10.3'
 }
 
-//apply plugin: 'com.dicedmelon.gradle.jacoco-android'
-//
-//jacoco {
-//    toolVersion = '0.8.5'
-//}
-//
-//tasks.withType(Test) {
-//    jacoco.includeNoLocationClasses = true
-//    jacoco.excludes = ['jdk.internal.*']
-//}
+/**
+ * Coverage
+ */
+apply plugin: 'com.dicedmelon.gradle.jacoco-android'
+
+jacoco {
+    toolVersion = '0.8.5'
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
 
 /**
  * Javadoc
