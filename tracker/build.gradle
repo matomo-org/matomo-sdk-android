@@ -81,28 +81,11 @@ android.libraryVariants.all { variant ->
     }
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
+publishing {
+    publications {
+        release(MavenPublication) {
+            afterEvaluate {
                 from components.release
-
-                groupId = 'org.matomo.sdk'
-                artifactId = 'tracker'
-                version = getTag()
-
-                pom {
-                    name = 'Matomo SDK for Android'
-                    description = 'SDK for Android to measure your apps with Matomo'
-                    url = 'https://github.com/matomo-org/matomo-sdk-android'
-
-                    licenses {
-                        license {
-                            name = 'BSD-3 Clause'
-                            url = 'https://github.com/matomo-org/matomo-sdk-android/blob/master/LICENSE'
-                        }
-                    }
-                }
             }
         }
     }
