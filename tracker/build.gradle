@@ -2,10 +2,9 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
 
 android {
-    compileSdkVersion project.ext.globalCompileSdkVersion
-
     defaultConfig {
         minSdkVersion project.ext.globalMinSdkVersion
+        compileSdk project.ext.globalCompileSdkVersion
         targetSdkVersion project.ext.globalTargetSdkVersion
     }
 
