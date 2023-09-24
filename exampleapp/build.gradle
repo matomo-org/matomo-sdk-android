@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion project.ext.globalCompileSdkVersion
-
     defaultConfig {
         applicationId "org.matomo.demo"
         minSdkVersion project.ext.globalMinSdkVersion
+        compileSdk project.ext.globalCompileSdkVersion
         targetSdkVersion project.ext.globalTargetSdkVersion
         versionCode 2
         versionName "2.0"
