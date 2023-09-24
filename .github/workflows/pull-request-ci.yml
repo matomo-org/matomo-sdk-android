@@ -21,16 +21,16 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: 11
+          java-version: 17
       - uses: gradle/wrapper-validation-action@v1
       - name: Build project
         run: ./gradlew assembleDebug
       - name: Run tests
         run: ./gradlew test
-      - name: Jacoco
-        run: ./gradlew :tracker:jacocoTestReport
-      - name: Codecov
-        run: bash <(curl -s https://codecov.io/bash)
+#      - name: Jacoco
+#        run: ./gradlew :tracker:jacocoTestReport
+#      - name: Codecov
+#        run: bash <(curl -s https://codecov.io/bash)
   Check:
     name: Check
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: 11
+          java-version: 17
       - name: Code checks
         run: ./gradlew check
       - name: Archive Lint report
