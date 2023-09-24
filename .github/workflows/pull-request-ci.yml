@@ -44,7 +44,7 @@ jobs:
       - name: Run tests
         run: ./gradlew test
       - name: Jacoco
-        run: ./gradlew :tracker:jacocoTestReport
+        run: ./gradlew :tracker:jacocoTestReport --no-daemon
       - name: Codecov
         run: bash <(curl -s https://codecov.io/bash)
   Check:
