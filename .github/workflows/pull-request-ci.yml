@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: 11
+          java-version: 17
       - uses: gradle/wrapper-validation-action@v1
       - name: Build project
         run: ./gradlew assembleDebug
@@ -43,7 +43,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: 11
+          java-version: 17
       - name: Code checks
         run: ./gradlew check
       - name: Archive Lint report
