@@ -105,4 +105,6 @@ jobs:
         if: ${{ always() }}
         with:
           name: matomo-Espresso-report
-          path: demo/build/reports/androidTests/connected
+          path: |
+            demo/build/reports/androidTests/connected
+            demo/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected
