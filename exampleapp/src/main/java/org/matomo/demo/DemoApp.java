@@ -15,6 +15,7 @@ import org.matomo.sdk.extra.DownloadTracker;
 import org.matomo.sdk.extra.MatomoApplication;
 import org.matomo.sdk.extra.TrackHelper;
 
+import info.hannes.timber.DebugFormatTree;
 import timber.log.Timber;
 
 public class DemoApp extends MatomoApplication {
@@ -37,7 +38,7 @@ public class DemoApp extends MatomoApplication {
 
     private void onInitTracker() {
         // Print debug output when working on an app.
-        Timber.plant(new Timber.DebugTree());
+        Timber.plant(new DebugFormatTree());
 
         // When working on an app we don't want to skew tracking results.
         // getMatomo().setDryRun(BuildConfig.DEBUG);
