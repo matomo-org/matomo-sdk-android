@@ -9,6 +9,9 @@ android {
         targetSdkVersion project.ext.globalTargetSdkVersion
         versionCode 2
         versionName "2.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments useTestStorageService: 'true'
     }
     buildTypes {
         release {
@@ -30,4 +33,8 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation "com.jakewharton.timber:timber:${timberVersion}"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    androidTestImplementation "androidx.test.ext:junit-ktx:1.1.5"
+    androidTestUtil "androidx.test.services:test-services:1.4.2"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
 }
