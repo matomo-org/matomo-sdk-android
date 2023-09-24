@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven-publish'
+apply plugin: 'kotlin-android'
 
 android {
     defaultConfig {
@@ -28,6 +29,7 @@ android {
 dependencies {
     implementation 'androidx.annotation:annotation:1.7.0'
     implementation "com.jakewharton.timber:timber:${timberVersion}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation 'org.awaitility:awaitility:4.2.0'
     testImplementation 'androidx.test:core:1.5.0'
