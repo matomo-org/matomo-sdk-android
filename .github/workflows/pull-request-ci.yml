@@ -104,7 +104,8 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
-          name: matomo-Espresso-report
+          name: matomo-Espresso-${{ needs.env-job.outputs.modified-branch-name }}
           path: |
-            demo/build/reports/androidTests/connected
-            demo/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected
+            ./**/build/reports/androidTests/connected
+            ./**/build/outputs
+            !./**/build/outputs/apk
