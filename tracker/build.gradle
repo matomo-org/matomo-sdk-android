@@ -1,6 +1,9 @@
-apply plugin: 'com.android.library'
-apply plugin: 'maven-publish'
-apply plugin: 'kotlin-android'
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+    id "com.mxalbert.gradle.jacoco-android"
+}
 
 android {
     defaultConfig {
@@ -47,16 +50,14 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.10.3'
 }
 
-//apply plugin: 'com.dicedmelon.gradle.jacoco-android'
-//
-//jacoco {
-//    toolVersion = '0.8.5'
-//}
-//
-//tasks.withType(Test) {
-//    jacoco.includeNoLocationClasses = true
-//    jacoco.excludes = ['jdk.internal.*']
-//}
+jacoco {
+    toolVersion = '0.8.10'
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
+}
 
 /**
  * Javadoc

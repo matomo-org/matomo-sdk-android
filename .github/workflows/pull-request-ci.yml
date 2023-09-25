@@ -43,10 +43,10 @@ jobs:
         run: ./gradlew assembleDebug
       - name: Run tests
         run: ./gradlew test
-  #      - name: Jacoco
-  #        run: ./gradlew :tracker:jacocoTestReport
-  #      - name: Codecov
-  #        run: bash <(curl -s https://codecov.io/bash)
+      - name: Jacoco
+        run: ./gradlew :tracker:jacocoTestReport --no-daemon
+      - name: Codecov
+        run: bash <(curl -s https://codecov.io/bash)
   Check:
     name: Check
     runs-on: ubuntu-latest
