@@ -2,6 +2,7 @@ plugins {
     id 'com.android.library'
     id 'kotlin-android'
     id 'maven-publish'
+    id "com.mxalbert.gradle.jacoco-android"
 }
 
 android {
@@ -49,13 +50,8 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:4.10.3'
 }
 
-/**
- * Coverage
- */
-apply plugin: 'com.dicedmelon.gradle.jacoco-android'
-
 jacoco {
-    toolVersion = '0.8.5'
+    toolVersion = '0.8.10'
 }
 
 tasks.withType(Test) {
