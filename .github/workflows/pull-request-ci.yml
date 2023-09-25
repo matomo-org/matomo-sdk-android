@@ -96,7 +96,7 @@ jobs:
         uses: malinskiy/action-android/emulator-run-cmd@release/0.1.4
         with:
           cmd: ./gradlew cAT --continue
-          api: 28
+          api: 30
           tag: default
           abi: x86_64
           cmdOptions: -noaudio -no-boot-anim -no-window
