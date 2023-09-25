@@ -30,14 +30,49 @@ class SmokeTest {
     @Test
     fun testExpand() {
         onView(withId(R.id.trackMainScreenViewButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-trackMainScreenViewButton")
+
         onView(withId(R.id.trackDispatchNow)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-trackDispatchNow")
+
         onView(withId(R.id.trackCustomVarsButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-trackCustomVarsButton")
+
         onView(withId(R.id.raiseExceptionButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-raiseExceptionButton")
+
         onView(withId(R.id.addEcommerceItemButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-addEcommerceItemButton")
+
         onView(withId(R.id.trackEcommerceCartUpdateButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-trackEcommerceCartUpdateButton")
+
         onView(withId(R.id.completeEcommerceOrderButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-completeEcommerceOrderButton")
+
         onView(withId(R.id.trackGoalButton)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-trackGoalButton")
+
         onView(withId(R.id.goalTextEditView)).perform(click())
+        onView(ViewMatchers.isRoot())
+            .captureToBitmap()
+            .writeToTestStorage("${javaClass.simpleName}_${nameRule.methodName}-goalTextEditView")
     }
 
 }
