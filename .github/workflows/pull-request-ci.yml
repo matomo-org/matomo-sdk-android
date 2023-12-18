@@ -65,7 +65,7 @@ jobs:
       - name: Code checks
         run: ./gradlew check
       - name: Archive Lint report
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: Matomo-Lint-${{ needs.env-job.outputs.modified-branch-name }}
@@ -101,7 +101,7 @@ jobs:
           abi: x86_64
           cmdOptions: -noaudio -no-boot-anim -no-window
       - name: Archive Espresso results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: matomo-Espresso-${{ needs.env-job.outputs.modified-branch-name }}
