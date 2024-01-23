@@ -38,20 +38,6 @@ public class PacketFactoryTest extends BaseTest {
     }
 
     @Test
-    public void testGET_apiUrl() {
-        String url = "http://example.com/";
-        PacketFactory factory = new PacketFactory(url);
-        List<Packet> packets = factory.buildPackets(Collections.singletonList(new Event("strawberries")));
-        assertTrue(packets.get(0).getTargetURL().startsWith(url));
-    }
-
-    @Test
-    public void testGET_badUrl() {
-        PacketFactory factory = new PacketFactory("http://example.com/");
-        assertTrue(factory.buildPackets(Collections.singletonList(new Event(""))).isEmpty());
-    }
-
-    @Test
     public void testEmptyEvents() {
         PacketFactory factory = new PacketFactory("http://example.com/");
         assertTrue(factory.buildPackets(Collections.emptyList()).isEmpty());
@@ -71,8 +57,7 @@ public class PacketFactoryTest extends BaseTest {
 
         Packet second = packets.get(1);
         assertEquals(1, second.getEventCount());
-        assertNull(second.getPostData());
-        assertTrue(second.getTargetURL().endsWith("?eve" + events.size()));
+        assertNotNull(second.getPostData());
     }
 
     @Test
