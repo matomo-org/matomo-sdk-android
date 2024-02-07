@@ -164,7 +164,6 @@ public class Tracker {
     public void setOptOut(boolean optOut) {
         mOptOut = optOut;
         getPreferences().edit().putBoolean(PREF_KEY_TRACKER_OPTOUT, optOut).apply();
-        mDispatcher.clear();
     }
 
     /**
