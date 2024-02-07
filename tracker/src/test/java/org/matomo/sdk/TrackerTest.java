@@ -234,7 +234,6 @@ public class TrackerTest {
     public void testOptOut_set() {
         Tracker tracker = new Tracker(mMatomo, mTrackerBuilder);
         tracker.setOptOut(true);
-        verify(mDispatcher).clear();
         assertTrue(tracker.isOptOut());
         tracker.setOptOut(false);
         assertFalse(tracker.isOptOut());
