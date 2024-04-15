@@ -38,7 +38,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 17
-      - uses: gradle/wrapper-validation-action@v2
+      - uses: gradle/wrapper-validation-action@v3
       - name: Build project
         run: ./gradlew assembleDebug
       - name: Run tests
