@@ -5,8 +5,7 @@ on:
     branches:
       - master
   pull_request:
-    branches:
-      - master
+
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
@@ -38,7 +37,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 17
-      - uses: gradle/wrapper-validation-action@v3
+      - uses: gradle/actions/wrapper-validation@v3
       - name: Build project
         run: ./gradlew assembleDebug
       - name: Run tests
@@ -72,7 +71,7 @@ jobs:
           path: tracker/build/reports/lint-results.html
 
   EspressoTest:
-    runs-on: macOS-latest
+    runs-on: macOS-13
     needs:
       - env-job
     steps:
@@ -91,9 +90,9 @@ jobs:
           distribution: 'adopt'
           java-version: 17
       - name: Install Android SDK
-        uses: malinskiy/action-android/install-sdk@release/0.1.4
+        uses: hannesa2/action-android/install-sdk@0.1.16.5
       - name: Run instrumentation tests
-        uses: malinskiy/action-android/emulator-run-cmd@release/0.1.4
+        uses: hannesa2/action-android/emulator-run-cmd@0.1.16.5
         with:
           cmd: ./gradlew cAT --continue
           api: 30
