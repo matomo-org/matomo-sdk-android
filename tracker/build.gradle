@@ -86,7 +86,16 @@ publishing {
     publications {
         release(MavenPublication) {
             afterEvaluate {
-                from components.release
+                from components.release {
+                    pom {
+                        licenses {
+                            license {
+                                name = 'BSD 3-Clause "New" or "Revised" License'
+                                url = 'https://github.com/matomo-org/matomo-sdk-android/blob/master/LICENSE'
+                            }
+                        }
+                    }
+                }
             }
         }
     }
