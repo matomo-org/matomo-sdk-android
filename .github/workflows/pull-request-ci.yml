@@ -25,8 +25,12 @@ jobs:
           cat ${GITHUB_OUTPUT}
 
   buildTest:
-    name: Build & Run Unit-Tests
-    runs-on: ubuntu-latest
+    name: Build & Unit-Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,7 +52,11 @@ jobs:
         run: bash <(curl -s https://codecov.io/bash)
   Check:
     name: Check
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
     needs:
       - env-job
     steps:
@@ -70,8 +78,15 @@ jobs:
           name: Matomo-Lint-${{ needs.env-job.outputs.modified-branch-name }}
           path: tracker/build/reports/lint-results.html
 
-  EspressoTest:
-    runs-on: macOS-13
+  Espresso:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macOS-13 ]
+        api: [ 30 ]
+        abi: [ x86_64 ]
+        tag: [ default ]
     needs:
       - env-job
     steps:
@@ -95,9 +110,9 @@ jobs:
         uses: hannesa2/action-android/emulator-run-cmd@0.1.16.7
         with:
           cmd: ./gradlew cAT --continue
-          api: 30
-          tag: default
-          abi: x86_64
+          api: ${{ matrix.api }}
+          tag: ${{ matrix.tag }}
+          abi: ${{ matrix.abi }}
           cmdOptions: -noaudio -no-boot-anim -no-window
       - name: Archive Espresso results
         uses: actions/upload-artifact@v4
