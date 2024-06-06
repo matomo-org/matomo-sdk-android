@@ -19,7 +19,7 @@ allprojects {
         maven { url 'https://jitpack.io' }
     }
     ext {
-        globalMinSdkVersion = 19
+        globalMinSdkVersion = 21
         globalTargetSdkVersion = 34
         globalCompileSdkVersion = 34
     }
