@@ -83,13 +83,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macOS-13 ]
+        os: [ ubuntu-latest ]
         api: [ 30 ]
         abi: [ x86_64 ]
         tag: [ default ]
     needs:
       - env-job
     steps:
+      - name: kvm support
+        run: |
+          egrep -c '(vmx|svm)' /proc/cpuinfo
+          id
+          sudo adduser $USER kvm
+          sudo chown -R $USER /dev/kvm
+          id
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -97,8 +104,6 @@ jobs:
       - name: show envs
         run: |
           echo ${{ needs.env-job.outputs.modified-branch-name }}
-      - name: prepare
-        run: brew install exiftool imagemagick
       - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
