@@ -35,7 +35,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation 'org.awaitility:awaitility:4.2.1'
-    testImplementation 'androidx.test:core:1.5.0'
+    testImplementation 'androidx.test:core:1.6.0'
     // Robolectric
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.hamcrest:hamcrest-core:2.2'
