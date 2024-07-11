@@ -40,6 +40,7 @@ class DemoApp : MatomoApplication() {
 
         // Track this app install, this will only trigger once per app version.
         // i.e. "http://org.matomo.demo:1/185DECB5CFE28FDB2F45887022D668B4"
+        tracker.dispatchTimeout = 1
         TrackHelper.track().download().identifier(Extra.ApkChecksum(this)).with(tracker)
         // Alternative:
         // i.e. "http://org.matomo.demo:1/com.android.vending"
