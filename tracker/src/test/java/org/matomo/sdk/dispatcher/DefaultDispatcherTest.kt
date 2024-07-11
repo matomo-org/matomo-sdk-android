@@ -300,7 +300,7 @@ class DefaultDispatcherTest : BaseTest() {
 
         mDispatcher!!.dispatchInterval = -1
 
-        Mockito.`when`(mPacketSender!!.send(ArgumentMatchers.any())).thenAnswer { invocation: InvocationOnMock ->
+        Mockito.`when`<Exception?>(mPacketSender!!.send(ArgumentMatchers.any())).thenAnswer { invocation: InvocationOnMock ->
             val packet = invocation.getArgument<Packet>(0)
             eventCount.addAndGet(packet.eventCount)
 
@@ -337,7 +337,7 @@ class DefaultDispatcherTest : BaseTest() {
 
         val sentEvents = AtomicInteger(0)
 
-        Mockito.`when`(mPacketSender!!.send(ArgumentMatchers.any())).thenAnswer { invocation: InvocationOnMock ->
+        Mockito.`when`<Exception?>(mPacketSender!!.send(ArgumentMatchers.any())).thenAnswer { invocation: InvocationOnMock ->
             val packet = invocation.getArgument<Packet>(0)
             sentEvents.addAndGet(packet.eventCount)
 
