@@ -18,30 +18,25 @@ import org.matomo.sdk.tools.PropertySource
 import timber.log.Timber
 
 class Matomo private constructor(context: Context) {
-    private val mPreferenceMap: MutableMap<Tracker, SharedPreferences?> = HashMap()
-    val context: Context
+    private val preferenceMap: MutableMap<Tracker, SharedPreferences?> = HashMap()
+    val context: Context = context.applicationContext
 
     /**
      * Base preferences, tracker independent.
      */
-    val preferences: SharedPreferences
+    val preferences: SharedPreferences = context.getSharedPreferences(BASE_PREFERENCE_FILE, Context.MODE_PRIVATE)
 
     /**
      * If you want to use your own [org.matomo.sdk.dispatcher.Dispatcher]
      */
     var dispatcherFactory: DispatcherFactory = DefaultDispatcherFactory()
 
-    init {
-        this.context = context.applicationContext
-        preferences = context.getSharedPreferences(BASE_PREFERENCE_FILE, Context.MODE_PRIVATE)
-    }
-
     /**
      * @return Tracker specific settings object
      */
     fun getTrackerPreferences(tracker: Tracker): SharedPreferences? {
-        synchronized(mPreferenceMap) {
-            var newPrefs = mPreferenceMap[tracker]
+        synchronized(preferenceMap) {
+            var newPrefs = preferenceMap[tracker]
             if (newPrefs == null) {
                 val prefName: String = try {
                     "org.matomo.sdk_" + Checksum.getMD5Checksum(tracker.name)
@@ -50,7 +45,7 @@ class Matomo private constructor(context: Context) {
                     "org.matomo.sdk_" + tracker.name
                 }
                 newPrefs = context.getSharedPreferences(prefName, Context.MODE_PRIVATE)
-                mPreferenceMap[tracker] = newPrefs
+                preferenceMap[tracker] = newPrefs
             }
             return newPrefs
         }

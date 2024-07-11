@@ -6,8 +6,6 @@
  */
 package org.matomo.demo
 
-import android.os.StrictMode
-import android.os.StrictMode.ThreadPolicy
 import info.hannes.timber.DebugFormatTree
 import org.matomo.sdk.TrackMe
 import org.matomo.sdk.TrackerBuilder
@@ -46,10 +44,10 @@ class DemoApp : MatomoApplication() {
         // Alternative:
         // i.e. "http://org.matomo.demo:1/com.android.vending"
         // getTracker().download();
-        val mDimensionQueue = DimensionQueue(tracker)
+        val dimensionQueue = DimensionQueue(tracker)
 
         // This will be send the next time something is tracked.
-        mDimensionQueue.add(0, "test")
+        dimensionQueue.add(0, "test")
         tracker.addTrackingCallback { trackMe: TrackMe? ->
             Timber.i("Tracker.Callback.onTrack(%s)", trackMe)
             trackMe
