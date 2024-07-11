@@ -9,7 +9,7 @@ open class DefaultDispatcherFactory : DispatcherFactory {
             EventCache(EventDiskCache(tracker)),
             Connectivity(tracker.matomo.context),
             PacketFactory(tracker.apiUrl),
-            DefaultPacketSender()
+            DefaultPacketSender(), {}
         )
     }
 }
