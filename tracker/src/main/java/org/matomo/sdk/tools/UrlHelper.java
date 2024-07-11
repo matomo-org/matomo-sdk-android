@@ -34,7 +34,7 @@ public class UrlHelper {
     public static List<Pair<String, String>> parse(@NonNull final URI uri, @Nullable final String encoding) {
         List<Pair<String, String>> result = Collections.emptyList();
         final String query = uri.getRawQuery();
-        if (query != null && query.length() > 0) {
+        if (query != null && !query.isEmpty()) {
             result = new ArrayList<>();
             parse(result, new Scanner(query), encoding);
         }
