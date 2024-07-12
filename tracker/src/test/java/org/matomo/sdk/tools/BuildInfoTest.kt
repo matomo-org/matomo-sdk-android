@@ -10,27 +10,27 @@ import testhelpers.BaseTest
 
 @RunWith(MockitoJUnitRunner::class)
 class BuildInfoTest : BaseTest() {
-    private var mBuildInfo: BuildInfo? = null
+    private var buildInfo: BuildInfo? = null
 
     @Before
     @Throws(Exception::class)
     override fun setup() {
         super.setup()
-        mBuildInfo = BuildInfo()
+        buildInfo = BuildInfo()
     }
 
     @Test
     fun testGetRelease() {
-        Assert.assertEquals(Build.VERSION.RELEASE, mBuildInfo!!.release)
+        Assert.assertEquals(Build.VERSION.RELEASE, buildInfo!!.release)
     }
 
     @Test
     fun testGetModel() {
-        Assert.assertEquals(Build.MODEL, mBuildInfo!!.model)
+        Assert.assertEquals(Build.MODEL, buildInfo!!.model)
     }
 
     @Test
     fun testGetBuildId() {
-        Assert.assertEquals(Build.ID, mBuildInfo!!.buildId)
+        Assert.assertEquals(Build.ID, buildInfo!!.buildId)
     }
 }
