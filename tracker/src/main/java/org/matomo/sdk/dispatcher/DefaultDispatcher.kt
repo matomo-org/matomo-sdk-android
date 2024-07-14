@@ -23,8 +23,10 @@ class DefaultDispatcher(
     private val eventCache: EventCache,
     private val connectivity: Connectivity,
     private val packetFactory: PacketFactory,
-    private val packetSender: PacketSender
+    private val packetSender: PacketSender,
+    callback: ((Exception) -> Unit)?// = null
 ) : Dispatcher {
+
     private val threadControl = Any()
     private val sleepToken = Semaphore(0)
 
@@ -203,12 +205,13 @@ class DefaultDispatcher(
                 Timber.tag(TAG).d("Drained %s events.", drainedEvents.size)
                 for (packet in packetFactory.buildPackets(drainedEvents)) {
                     var success: Boolean
-
+                    var resultException: Exception? = null
                     if (mDryRunTarget != null) {
                         Timber.tag(TAG).d("DryRun, stored HttpRequest, now %d.", mDryRunTarget!!.size)
                         success = mDryRunTarget!!.add(packet)
                     } else {
-                        success = packetSender.send(packet)
+                        resultException = packetSender.send(packet)
+                        success = resultException == null
                     }
 
                     if (success) {
@@ -219,6 +222,7 @@ class DefaultDispatcher(
                         // memory or disk
                         Timber.tag(TAG).d("Failure while trying to send packet")
                         retryCounter++
+                        callback?.let { resultException?.let { exception -> it(exception) } }
                         break
                     }
 
