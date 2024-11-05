@@ -63,12 +63,12 @@ class Matomo private constructor(context: Context) {
         private var sInstance: Matomo? = null
 
         @JvmStatic
-        @Synchronized
-        fun getInstance(context: Context): Matomo? {
-            if (sInstance == null) {
-                synchronized(Matomo::class.java) { if (sInstance == null) sInstance = Matomo(context) }
+        fun getInstance(context: Context): Matomo {
+            return sInstance ?: synchronized(Matomo::class.java) {
+                sInstance ?: Matomo(context).also {
+                    sInstance = it
+                }
             }
-            return sInstance
         }
 
         @JvmStatic
