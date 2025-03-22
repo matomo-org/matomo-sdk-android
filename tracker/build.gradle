@@ -54,7 +54,7 @@ jacoco {
     toolVersion = "0.8.10"
 }
 
-tasks.withType(Test) {
+tasks.withType(Test).configureEach {
     jacoco.includeNoLocationClasses = true
     jacoco.excludes = ["jdk.internal.*"]
 }
@@ -62,7 +62,7 @@ tasks.withType(Test) {
 /**
  * Javadoc
  */
-android.libraryVariants.all { variant ->
+android.libraryVariants.configureEach { variant ->
     task("generate${variant.name.capitalize()}Javadoc", type: Javadoc) {
         title = "Documentation for Android $android.defaultConfig.versionName b$android.defaultConfig.versionCode"
         destinationDir = new File("${project.getProjectDir()}/build/docs/javadoc/")
