@@ -1,1 +1,2 @@
-include ':exampleapp', ':tracker'
+include ":exampleapp"
+include ":tracker"
