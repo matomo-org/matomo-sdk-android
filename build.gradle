@@ -20,7 +20,7 @@ allprojects {
     }
     ext {
         globalMinSdkVersion = 19
-        globalTargetSdkVersion = 34
-        globalCompileSdkVersion = 34
+        globalTargetSdkVersion = 35
+        globalCompileSdkVersion = 35
     }
 }
