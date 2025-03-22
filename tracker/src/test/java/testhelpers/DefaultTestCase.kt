@@ -7,7 +7,7 @@ import org.matomo.sdk.Matomo.Companion.getInstance
 import org.matomo.sdk.Tracker
 import org.robolectric.annotation.Config
 
-@Config(sdk = [19], manifest = Config.NONE)
+@Config(sdk = [21], manifest = Config.NONE)
 @RunWith(FullEnvTestRunner::class)
 abstract class DefaultTestCase : BaseTest() {
     fun createTracker(): Tracker {
