@@ -18,7 +18,7 @@ class DefaultPacketSender : PacketSender {
     private var mTimeout = Dispatcher.DEFAULT_CONNECTION_TIMEOUT.toLong()
     private var mGzip = false
 
-    override fun send(packet: Packet): Boolean {
+    override fun send(packet: Packet): Exception? {
         var urlConnection: HttpURLConnection? = null
         try {
             urlConnection = URL(packet.targetURL).openConnection() as HttpURLConnection
@@ -114,10 +114,11 @@ class DefaultPacketSender : PacketSender {
                 Timber.tag(TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString())
             }
 
-            return successful
+            return null
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Transmission failed unexpectedly.")
-            return false
+
+            return e
         } finally {
             urlConnection?.disconnect()
         }
