@@ -8,6 +8,7 @@ package org.matomo.demo
 
 import info.hannes.timber.DebugFormatTree
 import org.matomo.sdk.TrackMe
+import org.matomo.sdk.Tracker
 import org.matomo.sdk.TrackerBuilder
 import org.matomo.sdk.extra.DimensionQueue
 import org.matomo.sdk.extra.DownloadTracker.Extra
@@ -48,9 +49,11 @@ class DemoApp : MatomoApplication() {
 
         // This will be send the next time something is tracked.
         dimensionQueue.add(0, "test")
-        tracker.addTrackingCallback { trackMe: TrackMe? ->
-            Timber.i("Tracker.Callback.onTrack(%s)", trackMe)
-            trackMe
-        }
+        tracker.addTrackingCallback(object: Tracker.Callback {
+            override fun onTrack(trackMe: TrackMe?): TrackMe? {
+                Timber.i("Tracker.Callback.onTrack(%s)", trackMe)
+                return trackMe
+            }
+        })
     }
 }
