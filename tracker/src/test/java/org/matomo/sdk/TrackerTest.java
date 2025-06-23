@@ -97,7 +97,8 @@ public class TrackerTest {
     }
 
     /**
-     * https://github.com/matomo-org/matomo-sdk-android/issues/92
+     * Issue "Tracker.trackEvent should default URL to the last viewed"
+     * <a href="https://github.com/matomo-org/matomo-sdk-android/issues/92">Go to Github issue</a>
      */
     @Test
     public void testLastScreenUrl() {
