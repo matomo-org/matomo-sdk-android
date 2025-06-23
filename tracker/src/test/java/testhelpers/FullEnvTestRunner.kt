@@ -19,7 +19,7 @@ open class FullEnvTestRunner : RobolectricTestRunner {
 
     protected constructor(testClass: Class<*>?, injector: Injector?) : super(testClass, injector)
 
-    override fun getTestLifecycleClass(): Class<out TestLifecycle<*>?> {
+    override fun getTestLifecycleClass(): Class<out TestLifecycle> {
         return FullEnvTestLifeCycle::class.java
     }
 }
