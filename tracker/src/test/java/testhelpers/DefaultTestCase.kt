@@ -17,6 +17,6 @@ abstract class DefaultTestCase : BaseTest() {
         return tracker
     }
 
-    val matomo: Matomo?
+    val matomo: Matomo
         get() = getInstance(ApplicationProvider.getApplicationContext())
 }

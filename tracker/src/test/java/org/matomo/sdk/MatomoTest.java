@@ -25,6 +25,7 @@ import org.matomo.sdk.extra.TrackHelper;
 import org.matomo.sdk.tools.Connectivity;
 import org.robolectric.annotation.Config;
 
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 
 import testhelpers.BaseTest;
@@ -78,8 +79,9 @@ public class MatomoTest extends BaseTest {
         MatomoTestApplication app = ApplicationProvider.getApplicationContext();
         final PacketSender packetSender = mock(PacketSender.class);
         app.getMatomo().setDispatcherFactory(new DefaultDispatcherFactory() {
+            @NonNull
             @Override
-            public Dispatcher build(Tracker tracker) {
+            public Dispatcher build(@NonNull Tracker tracker) {
                 return new DefaultDispatcher(
                         new EventCache(new EventDiskCache(tracker)),
                         new Connectivity(tracker.getMatomo().getContext()),
