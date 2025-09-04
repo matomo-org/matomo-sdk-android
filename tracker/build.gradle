@@ -31,7 +31,7 @@ android {
 
 dependencies {
     implementation "androidx.annotation:annotation:1.9.1"
-    implementation "com.github.AppDevNext.Logcat:LogcatCoreLib:3.3.1"
+    implementation "com.github.AppDevNext.Logcat:LogcatCoreLib:3.4"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation "org.awaitility:awaitility:4.3.0"
