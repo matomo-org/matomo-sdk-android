@@ -1,0 +1,24 @@
+notifications:
+  email: false
+
+language: android
+jdk: oraclejdk8
+
+android:
+  components:
+    - tools
+    - build-tools-27.0.1
+    - android-27
+    - extra-android-support
+    - extra-android-m2repository
+  licenses:
+      - 'android-sdk-preview-license-.+'
+      - 'android-sdk-license-.+'
+      - 'google-gdk-license-.+'
+
+before_install:
+  - yes | sdkmanager "platforms;android-27"
+
+script: ./gradlew :piwik-sdk:assemble :piwik-sdk:testDebugUnitTest
+
+after_success: ./gradlew :piwik-sdk:jacocoTestReport :piwik-sdk:coveralls
