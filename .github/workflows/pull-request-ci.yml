@@ -1,4 +1,4 @@
-name: PullRequest
+name: PullRequest Edit
 
 on:
   push:
