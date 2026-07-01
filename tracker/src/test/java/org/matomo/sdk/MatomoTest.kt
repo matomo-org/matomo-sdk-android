@@ -33,6 +33,14 @@ import testhelpers.BaseTest
 import testhelpers.FullEnvTestRunner
 import testhelpers.MatomoTestApplication
 
+// ArgumentMatchers.any() returns null, which Kotlin's non-null parameter checks reject.
+// Call any() for its matcher-registration side effect, then return null via unchecked cast.
+@Suppress("UNCHECKED_CAST")
+private fun <T> anyKt(): T {
+    ArgumentMatchers.any<T>()
+    return null as T
+}
+
 @Config(sdk = [28], manifest = Config.NONE, application = MatomoTestApplication::class)
 @RunWith(FullEnvTestRunner::class)
 class MatomoTest : BaseTest() {
@@ -80,13 +88,13 @@ class MatomoTest : BaseTest() {
 
         tracker.track(TrackHelper.track().screen("test").build())
         tracker.dispatch()
-        Mockito.verify(packetSender, Mockito.timeout(500).times(1)).send(ArgumentMatchers.any(Packet::class.java))
+        Mockito.verify(packetSender, Mockito.timeout(500).times(1)).send(anyKt())
 
         tracker.track(TrackHelper.track().screen("test").build())
-        Mockito.verify(packetSender, Mockito.timeout(500).times(1)).send(ArgumentMatchers.any(Packet::class.java))
+        Mockito.verify(packetSender, Mockito.timeout(500).times(1)).send(anyKt())
 
         app.onTrimMemory(Application.TRIM_MEMORY_UI_HIDDEN)
-        Mockito.verify(packetSender, Mockito.timeout(500).atLeast(2)).send(ArgumentMatchers.any(Packet::class.java))
+        Mockito.verify(packetSender, Mockito.timeout(500).atLeast(2)).send(anyKt())
     }
 
     @Test
@@ -109,7 +117,7 @@ class MatomoTest : BaseTest() {
         val matomo = getInstance(ApplicationProvider.getApplicationContext())
         val dispatcher = Mockito.mock(Dispatcher::class.java)
         val factory = Mockito.mock(DispatcherFactory::class.java)
-        Mockito.`when`(factory.build(ArgumentMatchers.any(Tracker::class.java))).thenReturn(dispatcher)
+        Mockito.`when`(factory.build(anyKt())).thenReturn(dispatcher)
         MatcherAssert.assertThat(matomo.dispatcherFactory, Matchers.`is`(Matchers.not(Matchers.nullValue())))
         matomo.dispatcherFactory = factory
         MatcherAssert.assertThat(matomo.dispatcherFactory, Matchers.`is`(factory))
