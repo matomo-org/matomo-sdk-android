@@ -82,6 +82,7 @@ class DefaultPacketSender : PacketSender {
             val statusCode = urlConnection.responseCode
             Timber.tag(TAG).v("Transmission finished (code=%d).", statusCode)
             val successful = checkResponseCode(statusCode)
+            val rejected = isPermanentlyRejected(statusCode)
 
             if (successful) {
                 // https://github.com/matomo-org/matomo-sdk-android/issues/226
@@ -99,9 +100,13 @@ class DefaultPacketSender : PacketSender {
                 val errorReason = StringBuilder()
                 var errorReader: BufferedReader? = null
                 try {
-                    errorReader = BufferedReader(InputStreamReader(urlConnection.errorStream))
-                    var line: String?
-                    while ((errorReader.readLine().also { line = it }) != null) errorReason.append(line)
+                    // null if the error response has no body
+                    val errorStream = urlConnection.errorStream
+                    if (errorStream != null) {
+                        errorReader = BufferedReader(InputStreamReader(errorStream))
+                        var line: String?
+                        while ((errorReader.readLine().also { line = it }) != null) errorReason.append(line)
+                    }
                 } finally {
                     if (errorReader != null) {
                         try {
@@ -111,10 +116,15 @@ class DefaultPacketSender : PacketSender {
                         }
                     }
                 }
-                Timber.tag(TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString())
+                if (rejected) {
+                    Timber.tag(TAG).w("Transmission rejected, dropping the packet (code=%d, reason=%s)", statusCode, errorReason.toString())
+                } else {
+                    Timber.tag(TAG).w("Transmission failed (code=%d, reason=%s)", statusCode, errorReason.toString())
+                }
             }
 
-            return successful
+            // Sending a rejected packet again would fail the same way and hold up all packets after it.
+            return successful || rejected
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Transmission failed unexpectedly.")
             return false
@@ -136,5 +146,15 @@ class DefaultPacketSender : PacketSender {
         private fun checkResponseCode(code: Int): Boolean {
             return code == HttpURLConnection.HTTP_NO_CONTENT || code == HttpURLConnection.HTTP_OK
         }
+
+        /**
+         * A client error the server will answer the same way when the packet is sent again, unlike
+         * 408 Request Timeout and 429 Too Many Requests.
+         */
+        private fun isPermanentlyRejected(code: Int): Boolean {
+            return code in 400..499 && code != HttpURLConnection.HTTP_CLIENT_TIMEOUT && code != HTTP_TOO_MANY_REQUESTS
+        }
+
+        private const val HTTP_TOO_MANY_REQUESTS = 429
     }
 }

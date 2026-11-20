@@ -3,7 +3,8 @@ package org.matomo.sdk.dispatcher
 
 interface PacketSender {
     /**
-     * @return true if successful
+     * @return true if the packet must not be sent again: it was sent successfully, or the server
+     * rejected it permanently
      */
     fun send(packet: Packet): Boolean
 
