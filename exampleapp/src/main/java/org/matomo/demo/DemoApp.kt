@@ -23,6 +23,15 @@ class DemoApp : MatomoApplication() {
 
     override fun onCreate() {
         super.onCreate()
+        StrictMode.setThreadPolicy(
+            ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .penaltyDialog()
+                .penaltyLog()
+                .build()
+        )
         onInitTracker()
     }
 
