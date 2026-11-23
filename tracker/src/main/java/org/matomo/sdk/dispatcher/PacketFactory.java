@@ -7,10 +7,10 @@
 
 package org.matomo.sdk.dispatcher;
 
-import androidx.annotation.NonNull;
+import android.text.TextUtils;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import android.text.TextUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,19 +37,11 @@ public class PacketFactory {
     public List<Packet> buildPackets(final List<Event> events) {
         if (events.isEmpty()) return Collections.emptyList();
 
-        if (events.size() == 1) {
-            Packet p = buildPacketForGet(events.get(0));
-            if (p == null) return Collections.emptyList();
-            else return Collections.singletonList(p);
-        }
-
         int packets = (int) Math.ceil(events.size() * 1.0 / PAGE_SIZE);
         List<Packet> freshPackets = new ArrayList<>(packets);
         for (int i = 0; i < events.size(); i += PAGE_SIZE) {
             List<Event> batch = events.subList(i, Math.min(i + PAGE_SIZE, events.size()));
-            final Packet packet;
-            if (batch.size() == 1) packet = buildPacketForGet(batch.get(0));
-            else packet = buildPacketForPost(batch);
+            final Packet packet = buildPacketForPost(batch);
             if (packet != null) freshPackets.add(packet);
         }
         return freshPackets;
@@ -74,12 +66,4 @@ public class PacketFactory {
         }
         return null;
     }
-
-    // "http://domain.com/matomo.php?idsite=1&url=http://a.org&action_name=Test bulk log Pageview&rec=1"
-    @Nullable
-    private Packet buildPacketForGet(@NonNull Event event) {
-        if (event.getEncodedQuery().isEmpty()) return null;
-        return new Packet(mApiUrl + event);
-    }
-
 }
