@@ -7,6 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -102,6 +104,20 @@ public class DefaultPacketSenderTest extends BaseTest {
 
         mMockWebServer.enqueue(new MockResponse().setResponseCode(400));
         assertThat(mDefaultPacketSender.send(packet), is(true));
+    }
+
+    @Test
+    public void testFailingToReadTheErrorBodyDoesNotChangeWhetherThePacketIsSentAgain() throws Exception {
+        mMockWebServer.start();
+        Packet packet = mockPacket();
+        mDefaultPacketSender.setTimeout(200);
+
+        // the status line arrives, but reading the body times out
+        mMockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody("rejected").setBodyDelay(2, TimeUnit.SECONDS));
+        assertThat(mDefaultPacketSender.send(packet), is(true));
+
+        mMockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("failed").setBodyDelay(2, TimeUnit.SECONDS));
+        assertThat(mDefaultPacketSender.send(packet), is(false));
     }
 
     @Test

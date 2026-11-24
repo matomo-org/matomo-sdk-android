@@ -101,19 +101,19 @@ class DefaultPacketSender : PacketSender {
                 var errorReader: BufferedReader? = null
                 try {
                     // null if the error response has no body
-                    val errorStream = urlConnection.errorStream
-                    if (errorStream != null) {
-                        errorReader = BufferedReader(InputStreamReader(errorStream))
-                        var line: String?
-                        while ((errorReader.readLine().also { line = it }) != null) errorReason.append(line)
+                    urlConnection.errorStream?.let {
+                        val reader = BufferedReader(InputStreamReader(it))
+                        errorReader = reader
+                        reader.lineSequence().forEach { line -> errorReason.append(line) }
                     }
+                } catch (e: IOException) {
+                    // The body is only read for the log, so a failed read must not decide whether the packet is dropped.
+                    Timber.tag(TAG).d(e, "Failed to read the error stream.")
                 } finally {
-                    if (errorReader != null) {
-                        try {
-                            errorReader.close()
-                        } catch (e: IOException) {
-                            Timber.tag(TAG).d(e, "Failed to close the error stream.")
-                        }
+                    try {
+                        errorReader?.close()
+                    } catch (e: IOException) {
+                        Timber.tag(TAG).d(e, "Failed to close the error stream.")
                     }
                 }
                 if (rejected) {
