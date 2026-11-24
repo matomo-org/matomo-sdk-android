@@ -7,6 +7,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -85,6 +87,51 @@ public class DefaultPacketSenderTest extends BaseTest {
     }
 
     @Test
+    public void testPermanentlyRejectedPacketIsNotSentAgain() throws Exception {
+        mMockWebServer.start();
+        Packet packet = mockPacket();
+
+        for (int code : new int[]{400, 401, 403, 404}) {
+            mMockWebServer.enqueue(new MockResponse().setResponseCode(code).setBody("rejected"));
+            assertThat("status " + code, mDefaultPacketSender.send(packet), is(true));
+        }
+    }
+
+    @Test
+    public void testPermanentlyRejectedPacketWithoutBodyIsNotSentAgain() throws Exception {
+        mMockWebServer.start();
+        Packet packet = mockPacket();
+
+        mMockWebServer.enqueue(new MockResponse().setResponseCode(400));
+        assertThat(mDefaultPacketSender.send(packet), is(true));
+    }
+
+    @Test
+    public void testFailingToReadTheErrorBodyDoesNotChangeWhetherThePacketIsSentAgain() throws Exception {
+        mMockWebServer.start();
+        Packet packet = mockPacket();
+        mDefaultPacketSender.setTimeout(200);
+
+        // the status line arrives, but reading the body times out
+        mMockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody("rejected").setBodyDelay(2, TimeUnit.SECONDS));
+        assertThat(mDefaultPacketSender.send(packet), is(true));
+
+        mMockWebServer.enqueue(new MockResponse().setResponseCode(500).setBody("failed").setBodyDelay(2, TimeUnit.SECONDS));
+        assertThat(mDefaultPacketSender.send(packet), is(false));
+    }
+
+    @Test
+    public void testPacketIsSentAgainAfterAServerErrorOrRetryableClientError() throws Exception {
+        mMockWebServer.start();
+        Packet packet = mockPacket();
+
+        for (int code : new int[]{408, 429, 500, 503}) {
+            mMockWebServer.enqueue(new MockResponse().setResponseCode(code));
+            assertThat("status " + code, mDefaultPacketSender.send(packet), is(false));
+        }
+    }
+
+    @Test
     public void testTimeout() throws Exception {
         mMockWebServer.start();
 
@@ -110,5 +157,11 @@ public class DefaultPacketSenderTest extends BaseTest {
             }
         });
         assertThat(mDefaultPacketSender.send(packet), is(true));
+    }
+
+    private Packet mockPacket() {
+        Packet packet = mock(Packet.class);
+        when(packet.getTargetURL()).thenReturn(mMockWebServer.url("/").toString());
+        return packet;
     }
 }
